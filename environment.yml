@@ -1,0 +1,29 @@
+name: pytask-parallel
+channels:
+  - conda-forge
+  - pytask
+dependencies:
+  - python=3.7
+  - pip
+
+  # Conda
+  - anaconda-client
+  - conda-build
+  - conda-verify
+
+  # Package dependencies
+  - pytask
+  - cloudpickle
+
+  # Misc
+  - jupyterlab
+  - matplotlib
+  - pdbpp
+  - pre-commit
+  - pytest-cov
+
+  # Documentation
+  - numpydoc
+  - pydata-sphinx-theme
+  - sphinx
+  - sphinx-copybutton

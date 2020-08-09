@@ -21,6 +21,13 @@ pytask-parallel
 Parallelize the execution of tasks with `pytask-parallel` which is a plugin for `pytask
 <https://github.com/pytask-dev/pytask>`_.
 
+Install the plugin via ``conda`` with
+
+.. code-block:: bash
+
+    $ conda config --add channels conda-forge --add channels pytask
+    $ conda install pytask-parallel
+
 The plugin uses the ``ProcessPoolExecutor`` or ``ThreadPoolExecutor`` in the
 `concurrent.futures <https://docs.python.org/3/library/concurrent.futures.html>`_ module
 to execute tasks asynchronously.

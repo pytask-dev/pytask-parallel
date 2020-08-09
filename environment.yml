@@ -16,6 +16,7 @@ dependencies:
   - cloudpickle
 
   # Misc
+  - bump2version
   - jupyterlab
   - matplotlib
   - pdbpp

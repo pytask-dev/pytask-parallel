@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from pytask.main import main
+from pytask import main
 
 
 @pytest.mark.end_to_end

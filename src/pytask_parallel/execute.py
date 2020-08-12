@@ -5,10 +5,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 import cloudpickle
 import networkx as nx
-import pytask
-from pytask.report import ExecutionReport
+from _pytask.config import hookimpl
+from _pytask.report import ExecutionReport
 from pytask_parallel.scheduler import TopologicalSorter
-
 
 PARALLEL_BACKEND = {
     "processes": ProcessPoolExecutor,
@@ -16,7 +15,7 @@ PARALLEL_BACKEND = {
 }
 
 
-@pytask.hookimpl
+@hookimpl
 def pytask_post_parse(config):
     if config["parallel_backend"] == "processes":
         config["pm"].register(ProcessesNameSpace)
@@ -24,7 +23,7 @@ def pytask_post_parse(config):
         config["pm"].register(ThreadsNameSpace)
 
 
-@pytask.hookimpl(tryfirst=True)
+@hookimpl(tryfirst=True)
 def pytask_execute_create_scheduler(session):
     if session.config["n_workers"] > 1:
         task_names = {task.name for task in session.tasks}
@@ -40,7 +39,7 @@ def pytask_execute_create_scheduler(session):
         return scheduler
 
 
-@pytask.hookimpl(tryfirst=True)
+@hookimpl(tryfirst=True)
 def pytask_execute_build(session):
     if session.config["n_workers"] > 1:
         reports = []
@@ -123,7 +122,7 @@ def pytask_execute_build(session):
 
 
 class ProcessesNameSpace:
-    @pytask.hookimpl(tryfirst=True)
+    @hookimpl(tryfirst=True)
     def pytask_execute_task(session, task):  # noqa: N805
         if session.config["n_workers"] > 1:
             bytes_ = cloudpickle.dumps(task)
@@ -136,7 +135,7 @@ def unserialize_and_execute_task(bytes_):
 
 
 class ThreadsNameSpace:
-    @pytask.hookimpl(tryfirst=True)
+    @hookimpl(tryfirst=True)
     def pytask_execute_task(session, task):  # noqa: N805
         if session.config["n_workers"] > 1:
             return session.executor.submit(task.execute)

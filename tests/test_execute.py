@@ -4,7 +4,7 @@ from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-from pytask.main import main
+from pytask import main
 from pytask_parallel.execute import ProcessesNameSpace
 from pytask_parallel.execute import ThreadsNameSpace
 

@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - pytask
 dependencies:
-  - python=3.7
+  - python
   - pip
 
   # Conda
@@ -12,10 +12,11 @@ dependencies:
   - conda-verify
 
   # Package dependencies
-  - pytask
+  - pytask >= 0.0.5
   - cloudpickle
 
   # Misc
+  - bump2version
   - jupyterlab
   - matplotlib
   - pdbpp

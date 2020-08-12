@@ -1,8 +1,8 @@
 import click
-import pytask
+from _pytask.config import hookimpl
 
 
-@pytask.hookimpl
+@hookimpl
 def pytask_add_parameters_to_cli(command):
     additional_parameters = [
         click.Option(

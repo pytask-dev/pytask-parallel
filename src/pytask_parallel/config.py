@@ -26,6 +26,6 @@ def pytask_parse_config(config, config_from_cli, config_from_file):
 
 @hookimpl
 def pytask_post_parse(config):
-    # Disable parallelization if debugging is enabled.
+    """Disable parallelization if debugging is enabled."""
     if config["pdb"] or config["trace"]:
         config["n_workers"] = 1

@@ -9,7 +9,8 @@ all releases are available on `Anaconda.org <https://anaconda.org/pytask/pytask-
 0.0.2 - 2020-08-12
 ------------------
 
-- :gh:`2` prepares the plugin for pytask 0.0.5.
+- :gh:`2` prepares the plugin for pytask v0.0.5.
+- :gh:`3` better parsing and callbacks.
 
 
 0.0.1 - 2020-07-17

@@ -21,6 +21,7 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
     assert session.config["n_workers"] == expected
 
 
+@pytest.mark.end_to_end
 @pytest.mark.parametrize("config_file", ["pytask.ini", "tox.ini", "setup.cfg"])
 @pytest.mark.parametrize(
     "name, value",

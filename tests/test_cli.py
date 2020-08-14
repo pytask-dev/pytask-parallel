@@ -1,7 +1,10 @@
 import subprocess
 import textwrap
 
+import pytest
 
+
+@pytest.mark.end_to_end
 def test_delay_via_cli(tmp_path):
     source = """
     import pytask

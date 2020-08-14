@@ -1,20 +1,15 @@
-from contextlib import ExitStack as does_not_raise  # noqa: N813
-
-import click
-import pytest
-from pytask_parallel.cli import _validate_n_workers
+import subprocess
+import textwrap
 
 
-@pytest.mark.unit
-@pytest.mark.parametrize(
-    "value, expectation",
-    [
-        (0, pytest.raises(click.UsageError)),
-        (1, does_not_raise()),
-        (2, does_not_raise()),
-        ("auto", does_not_raise()),
-    ],
-)
-def test_validate_n_workers(value, expectation):
-    with expectation:
-        _validate_n_workers(None, None, value)
+def test_delay_via_cli(tmp_path):
+    source = """
+    import pytask
+
+    @pytask.mark.produces("out_1.txt")
+    def task_1(produces):
+        produces.write_text("1")
+    """
+    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+
+    subprocess.run(["pytask", tmp_path.as_posix(), "-n", "2", "--delay", "5"])

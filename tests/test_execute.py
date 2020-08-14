@@ -94,3 +94,31 @@ def test_pytask_execute_task_w_threads():
         executor.shutdown()
 
     assert future.result() is None
+
+
+@pytest.mark.end_to_end
+@pytest.mark.parametrize("parallel_backend", ["processes", "threads"])
+def test_parallel_execution_delay(tmp_path, parallel_backend):
+    source = """
+    import pytask
+
+    @pytask.mark.produces("out_1.txt")
+    def task_1(produces):
+        produces.write_text("1")
+
+    @pytask.mark.produces("out_2.txt")
+    def task_2(produces):
+        produces.write_text("2")
+    """
+    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+
+    session = main(
+        {
+            "paths": tmp_path,
+            "delay": 3,
+            "n_workers": 2,
+            "parallel_backend": parallel_backend,
+        }
+    )
+
+    assert 3 < session.execution_end - session.execution_start < 10

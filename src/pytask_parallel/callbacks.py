@@ -29,7 +29,7 @@ def n_workers_callback(value):
 
 
 def parallel_backend_callback(value):
-    if value not in ["processes", "threads"]:
+    if value not in ["processes", "threads", None]:
         raise click.UsageError("parallel_backend has to be 'processes' or 'threads'.")
     return value
 

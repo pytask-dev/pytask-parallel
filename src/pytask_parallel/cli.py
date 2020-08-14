@@ -1,5 +1,6 @@
 import click
 from _pytask.config import hookimpl
+from pytask_parallel.callbacks import delay_click_callback
 from pytask_parallel.callbacks import n_workers_click_callback
 
 
@@ -22,11 +23,12 @@ def pytask_add_parameters_to_cli(command):
         ),
         click.Option(
             ["--delay"],
-            type=float,
             help=(
                 "Delay between checking whether tasks have finished.  [default: 0.1 "
                 "(seconds)]"
             ),
+            metavar="NUMBER > 0",
+            callback=delay_click_callback,
         ),
     ]
     command.params.extend(additional_parameters)

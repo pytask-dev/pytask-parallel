@@ -39,6 +39,7 @@ def delay_click_callback(ctx, name, value):  # noqa: U100
 
 
 def delay_callback(value):
+    error_occurred = False
     if isinstance(value, float) and 0 < value:
         pass
     elif value is None:

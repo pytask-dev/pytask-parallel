@@ -24,31 +24,29 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
 @pytest.mark.end_to_end
 @pytest.mark.parametrize("config_file", ["pytask.ini", "tox.ini", "setup.cfg"])
 @pytest.mark.parametrize(
-    "name, value",
+    "name, value, exit_code",
     [
-        ("n_workers", "auto"),
-        ("n_workers", 1),
-        ("n_workers", 2),
-        ("delay", 0.1),
-        ("delay", 1),
-        ("parallel_backend", "threads"),
-        ("parallel_backend", "processes"),
-        ("parallel_backend", "unknown_backend"),
+        ("n_workers", "auto", 0),
+        ("n_workers", 1, 0),
+        ("n_workers", 2, 0),
+        ("delay", 0.1, 0),
+        ("delay", 1, 0),
+        ("parallel_backend", "threads", 0),
+        ("parallel_backend", "processes", 0),
+        ("parallel_backend", "unknown_backend", 2),
     ],
 )
-def test_reading_values_from_config_file(tmp_path, config_file, name, value):
+def test_reading_values_from_config_file(tmp_path, config_file, name, value, exit_code):
     config = f"""
     [pytask]
     {name} = {value}
     """
     tmp_path.joinpath(config_file).write_text(textwrap.dedent(config))
 
-    try:
-        session = main({"paths": tmp_path})
-    except Exception as e:
-        assert "Error while configuring pytask" in str(e)
-    else:
-        assert session.exit_code == 0
-        if value == "auto":
-            value = os.cpu_count() - 1
+    session = main({"paths": tmp_path})
+
+    assert session.exit_code == exit_code
+    if value == "auto":
+        value = os.cpu_count() - 1
+    if session.exit_code == 0:
         assert session.config[name] == value

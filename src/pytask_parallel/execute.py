@@ -17,6 +17,7 @@ PARALLEL_BACKEND = {
 
 @hookimpl
 def pytask_post_parse(config):
+    """Register the parallel backend."""
     if config["parallel_backend"] == "processes":
         config["pm"].register(ProcessesNameSpace)
     elif config["parallel_backend"] == "threads":
@@ -25,6 +26,7 @@ def pytask_post_parse(config):
 
 @hookimpl(tryfirst=True)
 def pytask_execute_create_scheduler(session):
+    """Create the scheduler."""
     if session.config["n_workers"] > 1:
         task_names = {task.name for task in session.tasks}
         task_dict = {
@@ -41,6 +43,16 @@ def pytask_execute_create_scheduler(session):
 
 @hookimpl(tryfirst=True)
 def pytask_execute_build(session):
+    """Execute tasks with a parallel backend.
+
+    There are three phases while the scheduler has tasks which need to be executed.
+
+    1. Take all ready tasks, set up their execution and submit them.
+    2. For all tasks which are running, find those which have finished and turn them
+       into a report.
+    3. Process all reports and report the result on the command line.
+
+    """
     if session.config["n_workers"] > 1:
         reports = []
         running_tasks = {}
@@ -124,12 +136,23 @@ def pytask_execute_build(session):
 class ProcessesNameSpace:
     @hookimpl(tryfirst=True)
     def pytask_execute_task(session, task):  # noqa: N805
+        """Execute a task.
+
+        Take a task, pickle it and send the bytes over to another process.
+
+        """
         if session.config["n_workers"] > 1:
             bytes_ = cloudpickle.dumps(task)
             return session.executor.submit(unserialize_and_execute_task, bytes_)
 
 
 def unserialize_and_execute_task(bytes_):
+    """Unserialize and execute task.
+
+    This function receives bytes and unpickles them to a task which is them execute in a
+    spawned process or thread.
+
+    """
     task = cloudpickle.loads(bytes_)
     task.execute()
 
@@ -137,5 +160,11 @@ def unserialize_and_execute_task(bytes_):
 class ThreadsNameSpace:
     @hookimpl(tryfirst=True)
     def pytask_execute_task(session, task):  # noqa: N805
+        """Execute a task.
+
+        Since threads share their memory, it is not necessary to pickle and unpickle the
+        task.
+
+        """
         if session.config["n_workers"] > 1:
             return session.executor.submit(task.execute)

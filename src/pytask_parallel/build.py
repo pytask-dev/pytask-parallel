@@ -1,11 +1,11 @@
+"""Extend the build command."""
 import click
 from _pytask.config import hookimpl
-from pytask_parallel.callbacks import delay_click_callback
-from pytask_parallel.callbacks import n_workers_click_callback
 
 
 @hookimpl
-def pytask_add_parameters_to_cli(command):
+def pytask_extend_command_line_interface(cli):
+    """Extend the command line interface."""
     additional_parameters = [
         click.Option(
             ["-n", "--n-workers"],
@@ -14,12 +14,13 @@ def pytask_add_parameters_to_cli(command):
                 "os.cpu_count() - 1.  [default: 1 (no parallelization)]"
             ),
             metavar="[INTEGER|auto]",
-            callback=n_workers_click_callback,
+            default=None,
         ),
         click.Option(
             ["--parallel-backend"],
             type=click.Choice(["processes", "threads"]),
             help="Backend for the parallelization.  [default: processes]",
+            default=None,
         ),
         click.Option(
             ["--delay"],
@@ -28,7 +29,7 @@ def pytask_add_parameters_to_cli(command):
                 "(seconds)]"
             ),
             metavar="NUMBER > 0",
-            callback=delay_click_callback,
+            default=None,
         ),
     ]
-    command.params.extend(additional_parameters)
+    cli.commands["build"].params.extend(additional_parameters)

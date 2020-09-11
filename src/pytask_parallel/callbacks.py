@@ -28,13 +28,15 @@ def parallel_backend_callback(value):
 
 def delay_callback(value):
     """Validate the delay option."""
-    if isinstance(value, float) and 0 < value:
-        pass
-    elif value is None or value == "None":
+    if value is None or value == "None":
         value = None
-    elif isinstance(value, str) and value.isnumeric():
-        value = float(value)
     else:
-        raise ValueError("delay has to be a number greater than 0.")
+        try:
+            value = float(value)
+        except ValueError:
+            pass
+
+        if not (isinstance(value, float) and value > 0):
+            raise ValueError("delay has to be a number greater than 0.")
 
     return value

@@ -55,7 +55,7 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
     )
 
     assert session.exit_code == 0
-    assert session.execution_end - session.execution_start < 12
+    assert session.execution_end - session.execution_start < 10
 
 
 @pytest.mark.end_to_end
@@ -101,7 +101,7 @@ def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
     end = time()
 
     assert result.exit_code == 0
-    assert end - start < 7
+    assert end - start < 10
 
 
 @pytest.mark.integration

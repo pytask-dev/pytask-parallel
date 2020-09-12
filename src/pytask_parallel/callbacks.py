@@ -9,7 +9,7 @@ def n_workers_callback(value):
         value = None
     elif isinstance(value, int) and 1 <= value:
         pass
-    elif isinstance(value, str) and value.isnumeric():
+    elif isinstance(value, str) and value.isdigit():
         value = int(value)
     else:
         raise ValueError("n_processes can either be an integer >= 1, 'auto' or None.")

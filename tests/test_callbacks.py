@@ -16,6 +16,9 @@ from pytask_parallel.callbacks import parallel_backend_callback
         ("auto", does_not_raise()),
         ("asdad", pytest.raises(ValueError)),
         (None, does_not_raise()),
+        ("None", does_not_raise()),
+        ("1", does_not_raise()),
+        ("1.1", pytest.raises(ValueError)),
     ],
 )
 def test_n_workers_callback(value, expectation):
@@ -32,6 +35,7 @@ def test_n_workers_callback(value, expectation):
         (1, pytest.raises(ValueError)),
         ("asdad", pytest.raises(ValueError)),
         (None, does_not_raise()),
+        ("None", does_not_raise()),
     ],
 )
 def test_parallel_backend_callback(value, expectation):
@@ -48,6 +52,7 @@ def test_parallel_backend_callback(value, expectation):
         (1, does_not_raise()),
         ("asdad", pytest.raises(ValueError)),
         (None, does_not_raise()),
+        ("None", does_not_raise()),
     ],
 )
 def test_delay_callback(value, expectation):

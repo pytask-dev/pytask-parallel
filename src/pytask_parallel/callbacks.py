@@ -1,59 +1,42 @@
-import click
-
-
-def n_workers_click_callback(ctx, name, value):  # noqa: U100
-    return n_workers_callback(value)
+"""Validate command line inputs and configuration values."""
 
 
 def n_workers_callback(value):
-    error_occurred = False
+    """Validate the n-workers option."""
     if value == "auto":
         pass
-    elif value is None:
-        pass
+    elif value is None or value == "None":
+        value = None
     elif isinstance(value, int) and 1 <= value:
         pass
+    elif isinstance(value, str) and value.isdigit():
+        value = int(value)
     else:
-        try:
-            value = int(value)
-        except ValueError:
-            error_occurred = True
-        else:
-            if value < 1:
-                error_occurred = True
-
-    if error_occurred:
-        raise click.UsageError("n-processes can either be an integer >= 1 or 'auto'.")
+        raise ValueError("n_processes can either be an integer >= 1, 'auto' or None.")
 
     return value
 
 
 def parallel_backend_callback(value):
+    """Validate the input for the parallel backend."""
+    if value == "None":
+        value = None
     if value not in ["processes", "threads", None]:
-        raise click.UsageError("parallel_backend has to be 'processes' or 'threads'.")
+        raise ValueError("parallel_backend has to be 'processes' or 'threads'.")
     return value
 
 
-def delay_click_callback(ctx, name, value):  # noqa: U100
-    return delay_callback(value)
-
-
 def delay_callback(value):
-    error_occurred = False
-    if isinstance(value, float) and 0 < value:
-        pass
-    elif value is None:
-        pass
+    """Validate the delay option."""
+    if value is None or value == "None":
+        value = None
     else:
         try:
             value = float(value)
         except ValueError:
-            error_occurred = True
-        else:
-            if value < 0:
-                error_occurred = True
+            pass
 
-    if error_occurred:
-        raise click.UsageError("delay has to be a number greater than 0.")
+        if not (isinstance(value, float) and value > 0):
+            raise ValueError("delay has to be a number greater than 0.")
 
     return value

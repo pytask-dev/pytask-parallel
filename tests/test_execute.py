@@ -2,8 +2,10 @@ import pickle
 import textwrap
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
+from time import time
 
 import pytest
+from pytask import cli
 from pytask import main
 from pytask_parallel.execute import ProcessesNameSpace
 from pytask_parallel.execute import ThreadsNameSpace
@@ -42,6 +44,7 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
 
     session = main({"paths": tmp_path})
 
+    assert session.exit_code == 0
     assert session.execution_end - session.execution_start > 10
 
     tmp_path.joinpath("out_1.txt").unlink()
@@ -51,7 +54,54 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
         {"paths": tmp_path, "n_workers": 2, "parallel_backend": parallel_backend}
     )
 
-    assert session.execution_end - session.execution_start < 12
+    assert session.exit_code == 0
+    assert session.execution_end - session.execution_start < 10
+
+
+@pytest.mark.end_to_end
+@pytest.mark.parametrize("parallel_backend", ["processes", "threads"])
+def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
+    source = """
+    import pytask
+    import time
+
+    @pytask.mark.produces("out_1.txt")
+    def task_1(produces):
+        time.sleep(5)
+        produces.write_text("1")
+
+    @pytask.mark.produces("out_2.txt")
+    def task_2(produces):
+        time.sleep(5)
+        produces.write_text("2")
+    """
+    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+
+    start = time()
+    result = runner.invoke(cli, [tmp_path.as_posix()])
+    end = time()
+
+    assert result.exit_code == 0
+    assert end - start > 10
+
+    tmp_path.joinpath("out_1.txt").unlink()
+    tmp_path.joinpath("out_2.txt").unlink()
+
+    start = time()
+    result = runner.invoke(
+        cli,
+        [
+            tmp_path.as_posix(),
+            "--n-workers",
+            "2",
+            "--parallel-backend",
+            parallel_backend,
+        ],
+    )
+    end = time()
+
+    assert result.exit_code == 0
+    assert end - start < 10
 
 
 @pytest.mark.integration

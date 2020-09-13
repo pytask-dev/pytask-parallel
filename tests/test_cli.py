@@ -1,11 +1,12 @@
-import subprocess
 import textwrap
+from time import time
 
 import pytest
+from pytask import cli
 
 
 @pytest.mark.end_to_end
-def test_delay_via_cli(tmp_path):
+def test_delay_via_cli(runner, tmp_path):
     source = """
     import pytask
 
@@ -15,4 +16,9 @@ def test_delay_via_cli(tmp_path):
     """
     tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
 
-    subprocess.run(["pytask", tmp_path.as_posix(), "-n", "2", "--delay", "5"])
+    start = time()
+    result = runner.invoke(cli, [tmp_path.as_posix(), "-n", "2", "--delay", "5"])
+    end = time()
+
+    assert result.exit_code == 0
+    assert end - start > 5

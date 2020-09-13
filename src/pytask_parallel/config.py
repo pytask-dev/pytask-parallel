@@ -1,14 +1,17 @@
+"""Configure pytask."""
 import os
 
 from _pytask.config import hookimpl
-from _pytask.shared import get_first_not_none_value
+from _pytask.shared import get_first_non_none_value
+from pytask_parallel.callbacks import delay_callback
 from pytask_parallel.callbacks import n_workers_callback
 from pytask_parallel.callbacks import parallel_backend_callback
 
 
 @hookimpl
 def pytask_parse_config(config, config_from_cli, config_from_file):
-    config["n_workers"] = get_first_not_none_value(
+    """Parse the configuration."""
+    config["n_workers"] = get_first_non_none_value(
         config_from_cli,
         config_from_file,
         key="n_workers",
@@ -18,11 +21,15 @@ def pytask_parse_config(config, config_from_cli, config_from_file):
     if config["n_workers"] == "auto":
         config["n_workers"] = max(os.cpu_count() - 1, 1)
 
-    config["delay"] = get_first_not_none_value(
-        config_from_cli, config_from_file, key="delay", default=0.1, callback=float
+    config["delay"] = get_first_non_none_value(
+        config_from_cli,
+        config_from_file,
+        key="delay",
+        default=0.1,
+        callback=delay_callback,
     )
 
-    config["parallel_backend"] = get_first_not_none_value(
+    config["parallel_backend"] = get_first_non_none_value(
         config_from_cli,
         config_from_file,
         key="parallel_backend",

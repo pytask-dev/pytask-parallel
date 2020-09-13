@@ -23,7 +23,7 @@ Parallelize the execution of tasks with `pytask-parallel` which is a plugin for 
 
 Install the plugin via ``conda`` with
 
-.. code-block:: bash
+.. code-block:: console
 
     $ conda config --add channels conda-forge --add channels pytask
     $ conda install pytask-parallel
@@ -35,7 +35,7 @@ to execute tasks asynchronously.
 To parallelize your tasks across many workers, pass an integer greater than 1 or
 ``'auto'`` to the command-line interface.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pytask -n 2
     $ pytask --n-workers 2
@@ -52,7 +52,7 @@ means.)
 For IO bound tasks, tasks where the limiting factor are network responses, accesses to
 files, you can parallelize via threads.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pytask --parallel-backend threads
 

@@ -14,8 +14,10 @@ dependencies:
   # Package dependencies
   - pytask >= 0.0.6
   - cloudpickle
+  - loky
 
   # Misc
+  - black
   - bump2version
   - jupyterlab
   - matplotlib

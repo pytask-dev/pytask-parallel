@@ -1,6 +1,8 @@
 """Extend the build command."""
 import click
 from _pytask.config import hookimpl
+from pytask_parallel.backends import PARALLEL_BACKENDS
+from pytask_parallel.backends import PARALLEL_BACKENDS_DEFAULT
 
 
 @hookimpl
@@ -18,8 +20,11 @@ def pytask_extend_command_line_interface(cli):
         ),
         click.Option(
             ["--parallel-backend"],
-            type=click.Choice(["processes", "threads"]),
-            help="Backend for the parallelization.  [default: processes]",
+            type=click.Choice(PARALLEL_BACKENDS),
+            help=(
+                "Backend for the parallelization.  "
+                f"[default: {PARALLEL_BACKENDS_DEFAULT}]"
+            ),
             default=None,
         ),
         click.Option(

@@ -6,6 +6,12 @@ chronological order. Releases follow `semantic versioning <https://semver.org/>`
 all releases are available on `Anaconda.org <https://anaconda.org/pytask/pytask-parallel>`_.
 
 
+0.0.4 - 2020-xx-xx
+------------------
+
+- :gh:`4` implement an executor with ``loky``.
+
+
 0.0.3 - 2020-09-12
 ------------------
 

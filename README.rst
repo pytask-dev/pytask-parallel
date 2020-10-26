@@ -61,10 +61,9 @@ To parallelize your tasks across many workers, pass an integer greater than 1 or
     $ pytask -n auto
 
 
-By default, processes are used to parallelize the execution of tasks. This is useful for
-CPU bound tasks such as numerical computations. (`Here
-<https://stackoverflow.com/a/868577/7523785>`_ is an explanation on what CPU or IO bound
-means.)
+Using processes to parallelize the execution of tasks is useful for CPU bound tasks such
+as numerical computations. (`Here <https://stackoverflow.com/a/868577/7523785>`_ is an
+explanation on what CPU or IO bound means.)
 
 For IO bound tasks, tasks where the limiting factor are network responses, accesses to
 files, you can parallelize via threads.
@@ -82,7 +81,7 @@ You can also set the options in one of the configuration files (``pytask.ini``,
 
     [pytask]
     n_processes = 1
-    parallel_backend = processes
+    parallel_backend = processes  # or loky if installed.
 
 
 Changes

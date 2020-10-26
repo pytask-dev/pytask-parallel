@@ -26,6 +26,7 @@ requirements:
 test:
   requires:
     - pytest
+    - loky
   source_files:
     - tox.ini
     - tests
@@ -41,4 +42,4 @@ about:
   home: https://github.com/pytask-dev/pytask-parallel
   license: none
   summary: Parallelize the execution of tasks.
-  dev_url: https://github.com/pytask-dev/pytask-parallel/
+  dev_url: https://github.com/pytask-dev/pytask-parallel

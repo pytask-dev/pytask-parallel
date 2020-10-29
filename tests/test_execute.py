@@ -100,6 +100,7 @@ def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
     end = time()
 
     assert result.exit_code == 0
+    assert "Started 2 workers." in result.output
     assert end - start < 10
 
 

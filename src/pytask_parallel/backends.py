@@ -1,3 +1,4 @@
+"""This module configures the available backends."""
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 

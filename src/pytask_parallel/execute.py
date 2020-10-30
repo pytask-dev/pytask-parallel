@@ -1,18 +1,13 @@
+"""Contains code relevant to the execution."""
 import sys
 import time
-from concurrent.futures import ProcessPoolExecutor
-from concurrent.futures import ThreadPoolExecutor
 
 import cloudpickle
 import networkx as nx
 from _pytask.config import hookimpl
 from _pytask.report import ExecutionReport
+from pytask_parallel.backends import PARALLEL_BACKENDS
 from pytask_parallel.scheduler import TopologicalSorter
-
-PARALLEL_BACKEND = {
-    "processes": ProcessPoolExecutor,
-    "threads": ThreadPoolExecutor,
-}
 
 
 @hookimpl
@@ -20,8 +15,8 @@ def pytask_post_parse(config):
     """Register the parallel backend."""
     if config["parallel_backend"] == "processes":
         config["pm"].register(ProcessesNameSpace)
-    elif config["parallel_backend"] == "threads":
-        config["pm"].register(ThreadsNameSpace)
+    elif config["parallel_backend"] in ["threads", "loky"]:
+        config["pm"].register(DefaultBackendNameSpace)
 
 
 @hookimpl(tryfirst=True)
@@ -57,7 +52,7 @@ def pytask_execute_build(session):
         reports = []
         running_tasks = {}
 
-        parallel_backend = PARALLEL_BACKEND[session.config["parallel_backend"]]
+        parallel_backend = PARALLEL_BACKENDS[session.config["parallel_backend"]]
 
         with parallel_backend(max_workers=session.config["n_workers"]) as executor:
 
@@ -149,20 +144,20 @@ class ProcessesNameSpace:
 def unserialize_and_execute_task(bytes_):
     """Unserialize and execute task.
 
-    This function receives bytes and unpickles them to a task which is them execute in a
-    spawned process or thread.
+    This function receives bytes and unpickles them to a task which is them execute
+    in a spawned process or thread.
 
     """
     task = cloudpickle.loads(bytes_)
     task.execute()
 
 
-class ThreadsNameSpace:
+class DefaultBackendNameSpace:
     @hookimpl(tryfirst=True)
     def pytask_execute_task(session, task):  # noqa: N805
         """Execute a task.
 
-        Since threads share their memory, it is not necessary to pickle and unpickle the
+        Since threads have shared memory, it is not necessary to pickle and unpickle the
         task.
 
         """

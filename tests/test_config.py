@@ -3,6 +3,7 @@ import textwrap
 
 import pytest
 from pytask import main
+from pytask_parallel.backends import PARALLEL_BACKENDS
 
 
 @pytest.mark.end_to_end
@@ -24,22 +25,26 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
 @pytest.mark.end_to_end
 @pytest.mark.parametrize("config_file", ["pytask.ini", "tox.ini", "setup.cfg"])
 @pytest.mark.parametrize(
-    "name, value, exit_code",
+    "configuration_option, value, exit_code",
     [
         ("n_workers", "auto", 0),
         ("n_workers", 1, 0),
         ("n_workers", 2, 0),
         ("delay", 0.1, 0),
         ("delay", 1, 0),
-        ("parallel_backend", "threads", 0),
-        ("parallel_backend", "processes", 0),
         ("parallel_backend", "unknown_backend", 2),
+    ]
+    + [
+        ("parallel_backend", parallel_backend, 0)
+        for parallel_backend in PARALLEL_BACKENDS
     ],
 )
-def test_reading_values_from_config_file(tmp_path, config_file, name, value, exit_code):
+def test_reading_values_from_config_file(
+    tmp_path, config_file, configuration_option, value, exit_code
+):
     config = f"""
     [pytask]
-    {name} = {value}
+    {configuration_option} = {value}
     """
     tmp_path.joinpath(config_file).write_text(textwrap.dedent(config))
 
@@ -49,4 +54,4 @@ def test_reading_values_from_config_file(tmp_path, config_file, name, value, exi
     if value == "auto":
         value = os.cpu_count() - 1
     if session.exit_code == 0:
-        assert session.config[name] == value
+        assert session.config[configuration_option] == value

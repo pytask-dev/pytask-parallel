@@ -1,14 +1,13 @@
 import pickle
 import textwrap
-from concurrent.futures import ProcessPoolExecutor
-from concurrent.futures import ThreadPoolExecutor
 from time import time
 
 import pytest
 from pytask import cli
 from pytask import main
+from pytask_parallel.backends import PARALLEL_BACKENDS
+from pytask_parallel.execute import DefaultBackendNameSpace
 from pytask_parallel.execute import ProcessesNameSpace
-from pytask_parallel.execute import ThreadsNameSpace
 
 
 class DummyTask:
@@ -24,7 +23,7 @@ class Session:
 
 
 @pytest.mark.end_to_end
-@pytest.mark.parametrize("parallel_backend", ["processes", "threads"])
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_parallel_execution_speedup(tmp_path, parallel_backend):
     source = """
     import pytask
@@ -59,7 +58,7 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
 
 
 @pytest.mark.end_to_end
-@pytest.mark.parametrize("parallel_backend", ["processes", "threads"])
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
     source = """
     import pytask
@@ -101,11 +100,13 @@ def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
     end = time()
 
     assert result.exit_code == 0
+    assert "Started 2 workers." in result.output
     assert end - start < 10
 
 
 @pytest.mark.integration
-def test_pytask_execute_task_w_processes():
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+def test_pytask_execute_task_w_processes(parallel_backend):
     # Local function which cannot be used with multiprocessing.
     def myfunc():
         return 1
@@ -117,37 +118,27 @@ def test_pytask_execute_task_w_processes():
     task = DummyTask(myfunc)
 
     session = Session()
-    session.config = {"n_workers": 2, "parallel_backend": "processes"}
+    session.config = {"n_workers": 2, "parallel_backend": parallel_backend}
 
-    with ProcessPoolExecutor(max_workers=session.config["n_workers"]) as executor:
+    with PARALLEL_BACKENDS[parallel_backend](
+        max_workers=session.config["n_workers"]
+    ) as executor:
         session.executor = executor
-        future = ProcessesNameSpace.pytask_execute_task(session, task)
-        executor.shutdown()
 
-    assert future.result() is None
+        backend_name_space = {
+            "processes": ProcessesNameSpace,
+            "threads": DefaultBackendNameSpace,
+            "loky": DefaultBackendNameSpace,
+        }[parallel_backend]
 
-
-@pytest.mark.integration
-def test_pytask_execute_task_w_threads():
-    def myfunc():
-        return 1
-
-    task = DummyTask(myfunc)
-
-    session = Session()
-    session.config = {"n_workers": 2, "parallel_backend": "threads"}
-
-    with ThreadPoolExecutor(max_workers=session.config["n_workers"]) as executor:
-        session.executor = executor
-        future = ThreadsNameSpace.pytask_execute_task(session, task)
-
+        future = backend_name_space.pytask_execute_task(session, task)
         executor.shutdown()
 
     assert future.result() is None
 
 
 @pytest.mark.end_to_end
-@pytest.mark.parametrize("parallel_backend", ["processes", "threads"])
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_parallel_execution_delay(tmp_path, parallel_backend):
     source = """
     import pytask

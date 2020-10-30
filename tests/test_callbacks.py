@@ -1,6 +1,7 @@
 from contextlib import ExitStack as does_not_raise  # noqa: N813
 
 import pytest
+from pytask_parallel.backends import PARALLEL_BACKENDS
 from pytask_parallel.callbacks import delay_callback
 from pytask_parallel.callbacks import n_workers_callback
 from pytask_parallel.callbacks import parallel_backend_callback
@@ -17,6 +18,7 @@ from pytask_parallel.callbacks import parallel_backend_callback
         ("asdad", pytest.raises(ValueError)),
         (None, does_not_raise()),
         ("None", does_not_raise()),
+        ("none", does_not_raise()),
         ("1", does_not_raise()),
         ("1.1", pytest.raises(ValueError)),
     ],
@@ -30,13 +32,13 @@ def test_n_workers_callback(value, expectation):
 @pytest.mark.parametrize(
     "value, expectation",
     [
-        ("threads", does_not_raise()),
-        ("processes", does_not_raise()),
         (1, pytest.raises(ValueError)),
         ("asdad", pytest.raises(ValueError)),
         (None, does_not_raise()),
         ("None", does_not_raise()),
-    ],
+        ("none", does_not_raise()),
+    ]
+    + [(i, does_not_raise()) for i in PARALLEL_BACKENDS],
 )
 def test_parallel_backend_callback(value, expectation):
     with expectation:
@@ -53,6 +55,7 @@ def test_parallel_backend_callback(value, expectation):
         ("asdad", pytest.raises(ValueError)),
         (None, does_not_raise()),
         ("None", does_not_raise()),
+        ("none", does_not_raise()),
     ],
 )
 def test_delay_callback(value, expectation):

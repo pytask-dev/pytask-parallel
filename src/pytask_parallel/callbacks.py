@@ -1,11 +1,12 @@
 """Validate command line inputs and configuration values."""
+from pytask_parallel.backends import PARALLEL_BACKENDS
 
 
 def n_workers_callback(value):
     """Validate the n-workers option."""
     if value == "auto":
         pass
-    elif value is None or value == "None":
+    elif value in [None, "None", "none"]:
         value = None
     elif isinstance(value, int) and 1 <= value:
         pass
@@ -19,16 +20,20 @@ def n_workers_callback(value):
 
 def parallel_backend_callback(value):
     """Validate the input for the parallel backend."""
-    if value == "None":
+    if value in [None, "None", "none"]:
         value = None
-    if value not in ["processes", "threads", None]:
-        raise ValueError("parallel_backend has to be 'processes' or 'threads'.")
+    elif value in PARALLEL_BACKENDS:
+        pass
+    else:
+        raise ValueError(
+            f"parallel_backend has to be one of {list(PARALLEL_BACKENDS)}."
+        )
     return value
 
 
 def delay_callback(value):
     """Validate the delay option."""
-    if value is None or value == "None":
+    if value in [None, "None", "none"]:
         value = None
     else:
         try:

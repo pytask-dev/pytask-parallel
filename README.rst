@@ -21,21 +21,38 @@ pytask-parallel
 Parallelize the execution of tasks with `pytask-parallel` which is a plugin for `pytask
 <https://github.com/pytask-dev/pytask>`_.
 
+
+Installation
+------------
+
 Install the plugin via ``conda`` with
 
-.. code-block:: bash
+.. code-block:: console
 
     $ conda config --add channels conda-forge --add channels pytask
     $ conda install pytask-parallel
 
 The plugin uses the ``ProcessPoolExecutor`` or ``ThreadPoolExecutor`` in the
 `concurrent.futures <https://docs.python.org/3/library/concurrent.futures.html>`_ module
-to execute tasks asynchronously.
+to execute tasks asynchronously. By default, processes are used for parallelization.
+
+It is also possible to install ``loky`` with
+
+.. code-block:: console
+
+    $ conda install -c conda-forge loky
+
+which is a more robust implementation of the ``ProcessPoolExecutor`` and the default
+backend if installed.
+
+
+Usage
+-----
 
 To parallelize your tasks across many workers, pass an integer greater than 1 or
 ``'auto'`` to the command-line interface.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pytask -n 2
     $ pytask --n-workers 2
@@ -44,15 +61,14 @@ To parallelize your tasks across many workers, pass an integer greater than 1 or
     $ pytask -n auto
 
 
-By default, processes are used to parallelize the execution of tasks. This is useful for
-CPU bound tasks such as numerical computations. (`Here
-<https://stackoverflow.com/a/868577/7523785>`_ is an explanation on what CPU or IO bound
-means.)
+Using processes to parallelize the execution of tasks is useful for CPU bound tasks such
+as numerical computations. (`Here <https://stackoverflow.com/a/868577/7523785>`_ is an
+explanation on what CPU or IO bound means.)
 
 For IO bound tasks, tasks where the limiting factor are network responses, accesses to
 files, you can parallelize via threads.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ pytask --parallel-backend threads
 
@@ -65,7 +81,7 @@ You can also set the options in one of the configuration files (``pytask.ini``,
 
     [pytask]
     n_processes = 1
-    parallel_backend = processes
+    parallel_backend = processes  # or loky if installed.
 
 
 Changes

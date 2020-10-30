@@ -1,3 +1,4 @@
+"""Contains code relevant to the execution."""
 import sys
 import time
 

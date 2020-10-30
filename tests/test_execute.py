@@ -23,7 +23,7 @@ class Session:
 
 
 @pytest.mark.end_to_end
-@pytest.mark.parametrize("parallel_backend", ["processes", "threads"])
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_parallel_execution_speedup(tmp_path, parallel_backend):
     source = """
     import pytask
@@ -58,7 +58,7 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
 
 
 @pytest.mark.end_to_end
-@pytest.mark.parametrize("parallel_backend", ["processes", "threads"])
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
     source = """
     import pytask
@@ -118,7 +118,7 @@ def test_pytask_execute_task_w_processes(parallel_backend):
     task = DummyTask(myfunc)
 
     session = Session()
-    session.config = {"n_workers": 2, "parallel_backend": "processes"}
+    session.config = {"n_workers": 2, "parallel_backend": parallel_backend}
 
     with PARALLEL_BACKENDS[parallel_backend](
         max_workers=session.config["n_workers"]

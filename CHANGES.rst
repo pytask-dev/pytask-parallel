@@ -7,6 +7,12 @@ all releases are available on `Anaconda.org
 <https://anaconda.org/pytask/pytask-parallel>`_.
 
 
+0.0.5 - 2020-xx-xx
+------------------
+
+- :gh:`5` fixes the CI and other smaller issues.
+
+
 0.0.4 - 2020-10-30
 ------------------
 

@@ -3,11 +3,9 @@ import sys
 import time
 
 import cloudpickle
-import networkx as nx
 from _pytask.config import hookimpl
 from _pytask.report import ExecutionReport
 from pytask_parallel.backends import PARALLEL_BACKENDS
-from pytask_parallel.scheduler import TopologicalSorter
 
 
 @hookimpl
@@ -17,23 +15,6 @@ def pytask_post_parse(config):
         config["pm"].register(ProcessesNameSpace)
     elif config["parallel_backend"] in ["threads", "loky"]:
         config["pm"].register(DefaultBackendNameSpace)
-
-
-@hookimpl(tryfirst=True)
-def pytask_execute_create_scheduler(session):
-    """Create the scheduler."""
-    if session.config["n_workers"] > 1:
-        task_names = {task.name for task in session.tasks}
-        task_dict = {
-            name: nx.ancestors(session.dag, name) & task_names for name in task_names
-        }
-        scheduler = TopologicalSorter(task_dict)
-
-        # Forbid to add further nodes and check for cycles. The latter should have been
-        # taken care of while setting up the DAG.
-        scheduler.prepare()
-
-        return scheduler
 
 
 @hookimpl(tryfirst=True)
@@ -61,7 +42,12 @@ def pytask_execute_build(session):
             while session.scheduler.is_active():
 
                 newly_collected_reports = []
-                ready_tasks = list(session.scheduler.get_ready())
+                n_new_tasks = session.config["n_workers"] - len(running_tasks)
+
+                if n_new_tasks >= 1:
+                    ready_tasks = list(session.scheduler.get_ready(n_new_tasks))
+                else:
+                    ready_tasks = []
 
                 for task_name in ready_tasks:
                     task = session.dag.nodes[task_name]["task"]

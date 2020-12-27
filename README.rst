@@ -18,8 +18,8 @@
 pytask-parallel
 ===============
 
-Parallelize the execution of tasks with `pytask-parallel` which is a plugin for `pytask
-<https://github.com/pytask-dev/pytask>`_.
+Parallelize the execution of tasks with ``pytask-parallel`` which is a plugin for
+`pytask <https://github.com/pytask-dev/pytask>`_.
 
 
 Installation

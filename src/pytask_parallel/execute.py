@@ -118,6 +118,8 @@ def pytask_execute_build(session):
 
 
 class ProcessesNameSpace:
+    """The name space for hooks related to processes."""
+
     @hookimpl(tryfirst=True)
     def pytask_execute_task(session, task):  # noqa: N805
         """Execute a task.
@@ -142,6 +144,8 @@ def unserialize_and_execute_task(bytes_):
 
 
 class DefaultBackendNameSpace:
+    """The name space for hooks related to threads."""
+
     @hookimpl(tryfirst=True)
     def pytask_execute_task(session, task):  # noqa: N805
         """Execute a task.

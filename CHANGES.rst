@@ -11,6 +11,7 @@ all releases are available on `Anaconda.org
 ------------------
 
 - :gh:`5` fixes the CI and other smaller issues.
+- :gh:`8` aligns pytask-parallel with task priorities in pytask v0.0.11.
 - :gh:`9` enables --max-failures. Closes :gh:`7`.
 
 

@@ -163,3 +163,28 @@ def test_parallel_execution_delay(tmp_path, parallel_backend):
     )
 
     assert 3 < session.execution_end - session.execution_start < 10
+
+
+@pytest.mark.end_to_end
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend):
+    source = """
+    import time
+
+    def task_3(): raise NotImplmentedError
+    def task_2(): time.sleep(2); raise NotImplementedError
+    def task_1(): pass
+    """
+    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+
+    session = main(
+        {
+            "paths": tmp_path,
+            "n_workers": 2,
+            "parallel_backend": parallel_backend,
+            "max_failures": 1,
+        }
+    )
+
+    assert len(session.tasks) == 3
+    assert len(session.execution_reports) == 2

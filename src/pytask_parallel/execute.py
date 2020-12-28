@@ -30,7 +30,7 @@ def pytask_execute_build(session):
 
     """
     if session.config["n_workers"] > 1:
-        reports = []
+        reports = session.execution_reports
         running_tasks = {}
 
         parallel_backend = PARALLEL_BACKENDS[session.config["parallel_backend"]]
@@ -109,9 +109,12 @@ def pytask_execute_build(session):
                     )
                     reports.append(report)
 
-                time.sleep(session.config["delay"])
+                if session.should_stop:
+                    break
+                else:
+                    time.sleep(session.config["delay"])
 
-        return reports
+        return True
 
 
 class ProcessesNameSpace:

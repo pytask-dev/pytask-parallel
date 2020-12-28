@@ -2,6 +2,7 @@ import pickle
 import textwrap
 from time import time
 
+import attr
 import pytest
 from pytask import cli
 from pytask import main
@@ -10,9 +11,9 @@ from pytask_parallel.execute import DefaultBackendNameSpace
 from pytask_parallel.execute import ProcessesNameSpace
 
 
+@attr.s
 class DummyTask:
-    def __init__(self, function):
-        self.function = function
+    function = attr.ib()
 
     def execute(self):
         self.function()
@@ -170,10 +171,14 @@ def test_parallel_execution_delay(tmp_path, parallel_backend):
 def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend):
     source = """
     import time
+    import pytask
 
-    def task_3(): raise NotImplmentedError
+    def task_1(): time.sleep(1)
     def task_2(): time.sleep(2); raise NotImplementedError
-    def task_1(): pass
+
+    @pytask.mark.try_last
+    def task_3():
+        time.sleep(3)
     """
     tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
 
@@ -188,3 +193,45 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
 
     assert len(session.tasks) == 3
     assert len(session.execution_reports) == 2
+
+
+@pytest.mark.end_to_end
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+def test_task_priorities(tmp_path, parallel_backend):
+    source = """
+    import pytask
+    import time
+
+    @pytask.mark.try_first
+    def task_0():
+        time.sleep(1)
+
+    def task_1():
+        time.sleep(1)
+
+    @pytask.mark.try_last
+    def task_2():
+        time.sleep(1)
+
+    @pytask.mark.try_first
+    def task_3():
+        time.sleep(1)
+
+    def task_4():
+        time.sleep(1)
+
+    @pytask.mark.try_last
+    def task_5():
+        time.sleep(1)
+    """
+    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+
+    session = main(
+        {"paths": tmp_path, "parallel_backend": parallel_backend, "n_workers": 2}
+    )
+
+    assert session.exit_code == 0
+    first_task_name = session.execution_reports[0].task.name
+    assert first_task_name.endswith("task_0") or first_task_name.endswith("task_3")
+    last_task_name = session.execution_reports[-1].task.name
+    assert last_task_name.endswith("task_2") or last_task_name.endswith("task_5")

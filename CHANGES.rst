@@ -7,12 +7,13 @@ all releases are available on `Anaconda.org
 <https://anaconda.org/pytask/pytask-parallel>`_.
 
 
-0.0.5 - 2020-xx-xx
+0.0.5 - 2020-12-28
 ------------------
 
 - :gh:`5` fixes the CI and other smaller issues.
 - :gh:`8` aligns pytask-parallel with task priorities in pytask v0.0.11.
 - :gh:`9` enables --max-failures. Closes :gh:`7`.
+- :gh:`10` releases v0.0.5.
 
 
 0.0.4 - 2020-10-30

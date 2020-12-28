@@ -209,10 +209,15 @@ def test_task_priorities(tmp_path, parallel_backend):
     def task_2():
         time.sleep(1)
 
+    @pytask.mark.try_first
     def task_3():
         time.sleep(1)
 
     def task_4():
+        time.sleep(1)
+
+    @pytask.mark.try_last
+    def task_5():
         time.sleep(1)
     """
     tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
@@ -222,5 +227,7 @@ def test_task_priorities(tmp_path, parallel_backend):
     )
 
     assert session.exit_code == 0
-    assert session.execution_reports[0].task.name.endswith("task_0")
-    assert session.execution_reports[-1].task.name.endswith("task_2")
+    first_task_name = session.execution_reports[0].task.name
+    assert first_task_name.endswith("task_0") or first_task_name.endswith("task_3")
+    last_task_name = session.execution_reports[-1].task.name
+    assert last_task_name.endswith("task_2") or last_task_name.endswith("task_5")

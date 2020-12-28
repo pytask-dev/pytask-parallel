@@ -11,6 +11,7 @@ all releases are available on `Anaconda.org
 ------------------
 
 - :gh:`5` fixes the CI and other smaller issues.
+- :gh:`9` enables --max-failures. Closes :gh:`7`.
 
 
 0.0.4 - 2020-10-30

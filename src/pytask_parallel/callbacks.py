@@ -13,7 +13,7 @@ def n_workers_callback(value):
     elif isinstance(value, str) and value.isdigit():
         value = int(value)
     else:
-        raise ValueError("n_processes can either be an integer >= 1, 'auto' or None.")
+        raise ValueError("n_workers can either be an integer >= 1, 'auto' or None.")
 
     return value
 

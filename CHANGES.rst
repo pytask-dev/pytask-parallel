@@ -7,6 +7,12 @@ all releases are available on `Anaconda.org
 <https://anaconda.org/pytask/pytask-parallel>`_.
 
 
+0.0.6 - 2021-xx-xx
+------------------
+
+- :gh:`12` replaces all occurrences of ``n_processes`` with ``n_workers``.
+
+
 0.0.5 - 2020-12-28
 ------------------
 

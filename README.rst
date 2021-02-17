@@ -80,7 +80,7 @@ You can also set the options in one of the configuration files (``pytask.ini``,
     # This is the default configuration. Note that, parallelization is turned off.
 
     [pytask]
-    n_processes = 1
+    n_workers = 1
     parallel_backend = processes  # or loky if installed.
 
 

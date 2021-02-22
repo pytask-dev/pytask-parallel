@@ -11,6 +11,7 @@ all releases are available on `Anaconda.org
 ------------------
 
 - :gh:`12` replaces all occurrences of ``n_processes`` with ``n_workers``.
+- :gh:`13` adds a license, versioneer, and allows publishing on PyPI.
 
 
 0.0.5 - 2020-12-28

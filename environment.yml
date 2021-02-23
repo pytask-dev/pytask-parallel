@@ -24,6 +24,7 @@ dependencies:
   - pdbpp
   - pre-commit
   - pytest-cov
+  - versioneer
 
   # Documentation
   - numpydoc

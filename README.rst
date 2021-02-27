@@ -1,14 +1,29 @@
+.. image:: https://img.shields.io/pypi/v/pytask-parallel?color=blue
+    :alt: PyPI
+    :target: https://pypi.org/project/pytask-parallel
+
+.. image:: https://img.shields.io/pypi/pyversions/pytask-parallel
+    :alt: PyPI - Python Version
+    :target: https://pypi.org/project/pytask-parallel
+
 .. image:: https://anaconda.org/pytask/pytask-parallel/badges/version.svg
     :target: https://anaconda.org/pytask/pytask-parallel
 
 .. image:: https://anaconda.org/pytask/pytask-parallel/badges/platforms.svg
     :target: https://anaconda.org/pytask/pytask-parallel
 
+.. image:: https://img.shields.io/pypi/l/pytask-parallel
+    :alt: PyPI - License
+
 .. image:: https://github.com/pytask-dev/pytask-parallel/workflows/Continuous%20Integration%20Workflow/badge.svg?branch=main
     :target: https://github.com/pytask-dev/pytask/actions?query=branch%3Amain
 
 .. image:: https://codecov.io/gh/pytask-dev/pytask-parallel/branch/main/graph/badge.svg
     :target: https://codecov.io/gh/pytask-dev/pytask-parallel
+
+.. image:: https://results.pre-commit.ci/badge/github/pytask-dev/pytask-parallel/main.svg
+    :target: https://results.pre-commit.ci/latest/github/pytask-dev/pytask-parallel/main
+    :alt: pre-commit.ci status
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
@@ -25,9 +40,14 @@ Parallelize the execution of tasks with ``pytask-parallel`` which is a plugin fo
 Installation
 ------------
 
-Install the plugin via ``conda`` with
+pytask-parallel is available on `PyPI <https://pypi.org/project/pytask-parallel>`_ and
+`Anaconda.org <https://anaconda.org/pytask/pytask-parallel>`_. Install it with
 
 .. code-block:: console
+
+    $ pip install pytask-parallel
+
+    # or
 
     $ conda config --add channels conda-forge --add channels pytask
     $ conda install pytask-parallel

@@ -3,14 +3,15 @@ Changes
 
 This is a record of all past pytask-parallel releases and what went into them in reverse
 chronological order. Releases follow `semantic versioning <https://semver.org/>`_ and
-all releases are available on `Anaconda.org
-<https://anaconda.org/pytask/pytask-parallel>`_.
+all releases are available on `PyPI <https://pypi.org/project/pytask-parallel>`_ and
+`Anaconda.org <https://anaconda.org/pytask/pytask-parallel>`_.
 
 
-0.0.6 - 2021-xx-xx
+0.0.6 - 2021-02-27
 ------------------
 
 - :gh:`12` replaces all occurrences of ``n_processes`` with ``n_workers``.
+- :gh:`13` adds a license, versioneer, and allows publishing on PyPI.
 
 
 0.0.5 - 2020-12-28

@@ -9,10 +9,10 @@ import versioneer
 README = Path("README.rst").read_text()
 
 PROJECT_URLS = {
-    "Documentation": "https://github.com/pytask-dev/pytask-latex",
-    "Github": "https://github.com/pytask-dev/pytask-latex",
-    "Tracker": "https://github.com/pytask-dev/pytask-latex/issues",
-    "Changelog": "https://github.com/pytask-dev/pytask-latex/blob/main/CHANGES.rst",
+    "Documentation": "https://github.com/pytask-dev/pytask-parallel",
+    "Github": "https://github.com/pytask-dev/pytask-parallel",
+    "Tracker": "https://github.com/pytask-dev/pytask-parallel/issues",
+    "Changelog": "https://github.com/pytask-dev/pytask-parallel/blob/main/CHANGES.rst",
 }
 
 

@@ -7,10 +7,11 @@ all releases are available on `PyPI <https://pypi.org/project/pytask-parallel>`_
 `Anaconda.org <https://anaconda.org/pytask/pytask-parallel>`_.
 
 
-0.0.7 - 2021-xx-xx
+0.0.7 - 2021-03-04
 ------------------
 
 - :gh:`14` fixes some post-release issues.
+- :gh:`16` add dependencies to ``setup.py`` and changes the default backend to ``loky``.
 
 
 0.0.6 - 2021-02-27

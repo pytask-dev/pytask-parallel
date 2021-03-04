@@ -52,18 +52,12 @@ pytask-parallel is available on `PyPI <https://pypi.org/project/pytask-parallel>
     $ conda config --add channels conda-forge --add channels pytask
     $ conda install pytask-parallel
 
-The plugin uses the ``ProcessPoolExecutor`` or ``ThreadPoolExecutor`` in the
-`concurrent.futures <https://docs.python.org/3/library/concurrent.futures.html>`_ module
-to execute tasks asynchronously. By default, processes are used for parallelization.
+By default, the plugin uses a robust implementation of the ``ProcessPoolExecutor`` from
+``loky``.
 
-It is also possible to install ``loky`` with
-
-.. code-block:: console
-
-    $ conda install -c conda-forge loky
-
-which is a more robust implementation of the ``ProcessPoolExecutor`` and the default
-backend if installed.
+It is also possible to select the ``ProcessPoolExecutor`` or ``ThreadPoolExecutor`` in
+the `concurrent.futures <https://docs.python.org/3/library/concurrent.futures.html>`_
+module as backends to execute tasks asynchronously.
 
 
 Usage
@@ -101,7 +95,7 @@ You can also set the options in one of the configuration files (``pytask.ini``,
 
     [pytask]
     n_workers = 1
-    parallel_backend = processes  # or loky if installed.
+    parallel_backend = loky  # or processes or threads
 
 
 Changes

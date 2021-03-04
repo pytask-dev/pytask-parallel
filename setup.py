@@ -39,9 +39,15 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
     ],
+    install_requires=[
+        "pytask >= 0.0.11",
+        "cloudpickle",
+        "loky",
+    ],
     platforms="any",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     entry_points={"pytask": ["pytask_parallel = pytask_parallel.plugin"]},
+    include_package_data=True,
     zip_safe=False,
 )

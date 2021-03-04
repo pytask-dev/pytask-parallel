@@ -38,7 +38,7 @@ def get_config():
     cfg.VCS = "git"
     cfg.style = "pep440"
     cfg.tag_prefix = "v"
-    cfg.parentdir_prefix = "pytask_parallel-"
+    cfg.parentdir_prefix = "pytask-parallel-"
     cfg.versionfile_source = "src/pytask_parallel/_version.py"
     cfg.verbose = False
     return cfg

@@ -19,7 +19,7 @@ PROJECT_URLS = {
 setup(
     name="pytask-parallel",
     version=versioneer.get_version(),
-    cmd_class=versioneer.get_cmdclass(),
+    cmdclass=versioneer.get_cmdclass(),
     description="Parallelize the execution of pytask.",
     long_description=README,
     long_description_content_type="text/x-rst",

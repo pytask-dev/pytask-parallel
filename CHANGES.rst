@@ -7,6 +7,12 @@ all releases are available on `PyPI <https://pypi.org/project/pytask-parallel>`_
 `Anaconda.org <https://anaconda.org/pytask/pytask-parallel>`_.
 
 
+0.0.8 - 2021-03-05
+------------------
+
+- :gh:`17` fixes the unidentifiable version.
+
+
 0.0.7 - 2021-03-04
 ------------------
 

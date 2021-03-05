@@ -43,7 +43,7 @@ Installation
 ------------
 
 pytask-parallel is available on `PyPI <https://pypi.org/project/pytask-parallel>`_ and
-`Anaconda.org <https://anaconda.org/pytask/pytask-parallel>`_. Install it with
+`Anaconda.org <https://anaconda.org/conda-forge/pytask-parallel>`_. Install it with
 
 .. code-block:: console
 

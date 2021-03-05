@@ -40,9 +40,10 @@ setup(
         "Programming Language :: Python :: 3.9",
     ],
     install_requires=[
-        "pytask >= 0.0.11",
+        "click",
         "cloudpickle",
         "loky",
+        "pytask >= 0.0.11",
     ],
     platforms="any",
     packages=find_packages(where="src"),

@@ -7,6 +7,12 @@ all releases are available on `PyPI <https://pypi.org/project/pytask-parallel>`_
 `Anaconda.org <https://anaconda.org/pytask/pytask-parallel>`_.
 
 
+0.0.9 - 2021-xx-xx
+------------------
+
+- :gh:`19` adds ``conda-forge`` to the ``README.rst``.
+
+
 0.0.8 - 2021-03-05
 ------------------
 

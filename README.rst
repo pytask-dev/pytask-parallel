@@ -53,10 +53,10 @@ pytask-parallel is available on `PyPI <https://pypi.org/project/pytask-parallel>
 
     $ conda install -c conda-forge pytask-parallel
 
-By default, the plugin uses a robust implementation of the ``ProcessPoolExecutor`` from
-``loky``.
+By default, the plugin uses ``loky``'s robust implementation of the
+``ProcessPoolExecutor``.
 
-It is also possible to select the ``ProcessPoolExecutor`` or ``ThreadPoolExecutor`` in
+It is also possible to select the ``ProcessPoolExecutor`` or ``ThreadPoolExecutor`` from
 the `concurrent.futures <https://docs.python.org/3/library/concurrent.futures.html>`_
 module as backends to execute tasks asynchronously.
 
@@ -80,7 +80,7 @@ Using processes to parallelize the execution of tasks is useful for CPU bound ta
 as numerical computations. (`Here <https://stackoverflow.com/a/868577/7523785>`_ is an
 explanation on what CPU or IO bound means.)
 
-For IO bound tasks, tasks where the limiting factor are network responses, accesses to
+For IO bound tasks, tasks where the limiting factor are network responses, access to
 files, you can parallelize via threads.
 
 .. code-block:: console

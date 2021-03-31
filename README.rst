@@ -98,6 +98,15 @@ You can also set the options in one of the configuration files (``pytask.ini``,
     n_workers = 1
     parallel_backend = loky  # or processes or threads
 
+.. warning::
+
+    It is not possible to combine parallelization with debugging. That is why ``--pdb``
+    or ``--trace`` deactivate parallelization.
+
+    If you parallelize the execution of your tasks using two or more workers, do not use
+    ``breakpoint()`` or ``import pdb; pdb.set_trace()`` since both will cause
+    exceptions.
+
 
 Changes
 -------

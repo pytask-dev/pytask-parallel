@@ -1,19 +1,24 @@
 """Contains code relevant to the execution."""
 import sys
 import time
+from typing import Any
+from typing import Tuple
 
 import cloudpickle
 from _pytask.config import hookimpl
+from _pytask.console import console
 from _pytask.report import ExecutionReport
+from _pytask.traceback import remove_internal_traceback_frames_from_exc_info
 from pytask_parallel.backends import PARALLEL_BACKENDS
+from rich.traceback import Traceback
 
 
 @hookimpl
 def pytask_post_parse(config):
     """Register the parallel backend."""
-    if config["parallel_backend"] == "processes":
+    if config["parallel_backend"] in ["loky", "processes"]:
         config["pm"].register(ProcessesNameSpace)
-    elif config["parallel_backend"] in ["threads", "loky"]:
+    elif config["parallel_backend"] in ["threads"]:
         config["pm"].register(DefaultBackendNameSpace)
 
 
@@ -72,13 +77,23 @@ def pytask_execute_build(session):
 
                     for task_name in list(running_tasks):
                         future = running_tasks[task_name]
-                        if future.done() and future.exception() is not None:
+                        if future.done() and (
+                            future.exception() is not None
+                            or future.result() is not None
+                        ):
                             task = session.dag.nodes[task_name]["task"]
-                            exception = future.exception()
-                            newly_collected_reports.append(
-                                ExecutionReport.from_task_and_exception(
-                                    task, (type(exception), exception, None)
+                            if future.exception() is not None:
+                                exception = future.exception()
+                                exc_info = (
+                                    type(exception),
+                                    exception,
+                                    exception.__traceback__,
                                 )
+                            else:
+                                exc_info = future.result()
+
+                            newly_collected_reports.append(
+                                ExecutionReport.from_task_and_exception(task, exc_info)
                             )
                             running_tasks.pop(task_name)
                             session.scheduler.done(task_name)
@@ -132,18 +147,38 @@ class ProcessesNameSpace:
         """
         if session.config["n_workers"] > 1:
             bytes_ = cloudpickle.dumps(task)
-            return session.executor.submit(unserialize_and_execute_task, bytes_)
+            return session.executor.submit(
+                _unserialize_and_execute_task,
+                bytes_=bytes_,
+                show_locals=session.config["show_locals"],
+            )
 
 
-def unserialize_and_execute_task(bytes_):
+def _unserialize_and_execute_task(bytes_, show_locals):
     """Unserialize and execute task.
 
     This function receives bytes and unpickles them to a task which is them execute
     in a spawned process or thread.
 
     """
+    __tracebackhide__ = True
+
     task = cloudpickle.loads(bytes_)
-    task.execute()
+
+    try:
+        task.execute()
+    except Exception:
+        exc_info = sys.exc_info()
+        processed_exc_info = _process_exception(exc_info, show_locals)
+        return processed_exc_info
+
+
+def _process_exception(exc_info: Tuple[Any], show_locals: bool) -> Tuple[Any]:
+    exc_info = remove_internal_traceback_frames_from_exc_info(exc_info)
+    traceback = Traceback.from_exception(*exc_info, show_locals=show_locals)
+    segments = console.render(traceback)
+    text = "".join(segment.text for segment in segments)
+    return *exc_info[:2], text
 
 
 class DefaultBackendNameSpace:

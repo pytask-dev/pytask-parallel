@@ -14,6 +14,7 @@ all releases are available on `PyPI <https://pypi.org/project/pytask-parallel>`_
 - :gh:`22` add note that the debugger cannot be used together with pytask-parallel.
 - :gh:`24` replaces versioneer with setuptools-scm.
 - :gh:`25` aborts build and prints reports on ``KeyboardInterrupt``.
+- :gh:`27` enables rich tracebacks from subprocesses.
 
 
 0.0.8 - 2021-03-05

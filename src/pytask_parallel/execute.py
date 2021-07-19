@@ -41,78 +41,81 @@ def pytask_execute_build(session):
 
             while session.scheduler.is_active():
 
-                newly_collected_reports = []
-                n_new_tasks = session.config["n_workers"] - len(running_tasks)
+                try:
+                    newly_collected_reports = []
+                    n_new_tasks = session.config["n_workers"] - len(running_tasks)
 
-                if n_new_tasks >= 1:
-                    ready_tasks = list(session.scheduler.get_ready(n_new_tasks))
-                else:
-                    ready_tasks = []
-
-                for task_name in ready_tasks:
-                    task = session.dag.nodes[task_name]["task"]
-                    session.hook.pytask_execute_task_log_start(
-                        session=session, task=task
-                    )
-                    try:
-                        session.hook.pytask_execute_task_setup(
-                            session=session, task=task
-                        )
-                    except Exception:
-                        report = ExecutionReport.from_task_and_exception(
-                            task, sys.exc_info()
-                        )
-                        newly_collected_reports.append(report)
-                        session.scheduler.done(task_name)
+                    if n_new_tasks >= 1:
+                        ready_tasks = list(session.scheduler.get_ready(n_new_tasks))
                     else:
-                        running_tasks[task_name] = session.hook.pytask_execute_task(
+                        ready_tasks = []
+
+                    for task_name in ready_tasks:
+                        task = session.dag.nodes[task_name]["task"]
+                        session.hook.pytask_execute_task_log_start(
                             session=session, task=task
                         )
-
-                for task_name in list(running_tasks):
-                    future = running_tasks[task_name]
-                    if future.done() and future.exception() is not None:
-                        task = session.dag.nodes[task_name]["task"]
-                        exception = future.exception()
-                        newly_collected_reports.append(
-                            ExecutionReport.from_task_and_exception(
-                                task, (type(exception), exception, None)
-                            )
-                        )
-                        running_tasks.pop(task_name)
-                        session.scheduler.done(task_name)
-                    elif future.done() and future.exception() is None:
-                        task = session.dag.nodes[task_name]["task"]
                         try:
-                            session.hook.pytask_execute_task_teardown(
+                            session.hook.pytask_execute_task_setup(
                                 session=session, task=task
                             )
                         except Exception:
                             report = ExecutionReport.from_task_and_exception(
                                 task, sys.exc_info()
                             )
+                            newly_collected_reports.append(report)
+                            session.scheduler.done(task_name)
                         else:
-                            report = ExecutionReport.from_task(task)
+                            running_tasks[task_name] = session.hook.pytask_execute_task(
+                                session=session, task=task
+                            )
 
-                        running_tasks.pop(task_name)
-                        newly_collected_reports.append(report)
-                        session.scheduler.done(task_name)
+                    for task_name in list(running_tasks):
+                        future = running_tasks[task_name]
+                        if future.done() and future.exception() is not None:
+                            task = session.dag.nodes[task_name]["task"]
+                            exception = future.exception()
+                            newly_collected_reports.append(
+                                ExecutionReport.from_task_and_exception(
+                                    task, (type(exception), exception, None)
+                                )
+                            )
+                            running_tasks.pop(task_name)
+                            session.scheduler.done(task_name)
+                        elif future.done() and future.exception() is None:
+                            task = session.dag.nodes[task_name]["task"]
+                            try:
+                                session.hook.pytask_execute_task_teardown(
+                                    session=session, task=task
+                                )
+                            except Exception:
+                                report = ExecutionReport.from_task_and_exception(
+                                    task, sys.exc_info()
+                                )
+                            else:
+                                report = ExecutionReport.from_task(task)
+
+                            running_tasks.pop(task_name)
+                            newly_collected_reports.append(report)
+                            session.scheduler.done(task_name)
+                        else:
+                            pass
+
+                    for report in newly_collected_reports:
+                        session.hook.pytask_execute_task_process_report(
+                            session=session, report=report
+                        )
+                        session.hook.pytask_execute_task_log_end(
+                            session=session, task=task, report=report
+                        )
+                        reports.append(report)
+
+                    if session.should_stop:
+                        break
                     else:
-                        pass
-
-                for report in newly_collected_reports:
-                    session.hook.pytask_execute_task_process_report(
-                        session=session, report=report
-                    )
-                    session.hook.pytask_execute_task_log_end(
-                        session=session, task=task, report=report
-                    )
-                    reports.append(report)
-
-                if session.should_stop:
+                        time.sleep(session.config["delay"])
+                except KeyboardInterrupt:
                     break
-                else:
-                    time.sleep(session.config["delay"])
 
         return True
 

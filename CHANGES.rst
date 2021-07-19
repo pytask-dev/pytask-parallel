@@ -13,6 +13,7 @@ all releases are available on `PyPI <https://pypi.org/project/pytask-parallel>`_
 - :gh:`19` adds ``conda-forge`` to the ``README.rst``.
 - :gh:`22` add note that the debugger cannot be used together with pytask-parallel.
 - :gh:`24` replaces versioneer with setuptools-scm.
+- :gh:`25` aborts build and prints reports on ``KeyboardInterrupt``.
 
 
 0.0.8 - 2021-03-05

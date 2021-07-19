@@ -5,7 +5,7 @@ channels:
   - nodefaults
 
 dependencies:
-  - python
+  - python=3.6
   - pip
   - setuptools_scm
   - toml
@@ -37,7 +37,6 @@ dependencies:
   - pdbpp
   - pre-commit
   - pytest-cov
-  - versioneer
 
   # Documentation
   - numpydoc

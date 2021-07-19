@@ -10,6 +10,7 @@ from _pytask.console import console
 from _pytask.report import ExecutionReport
 from _pytask.traceback import remove_internal_traceback_frames_from_exc_info
 from pytask_parallel.backends import PARALLEL_BACKENDS
+from rich.console import ConsoleOptions
 from rich.traceback import Traceback
 
 
@@ -151,10 +152,11 @@ class ProcessesNameSpace:
                 _unserialize_and_execute_task,
                 bytes_=bytes_,
                 show_locals=session.config["show_locals"],
+                console_options=console.options,
             )
 
 
-def _unserialize_and_execute_task(bytes_, show_locals):
+def _unserialize_and_execute_task(bytes_, show_locals, console_options):
     """Unserialize and execute task.
 
     This function receives bytes and unpickles them to a task which is them execute
@@ -169,14 +171,16 @@ def _unserialize_and_execute_task(bytes_, show_locals):
         task.execute()
     except Exception:
         exc_info = sys.exc_info()
-        processed_exc_info = _process_exception(exc_info, show_locals)
+        processed_exc_info = _process_exception(exc_info, show_locals, console_options)
         return processed_exc_info
 
 
-def _process_exception(exc_info: Tuple[Any], show_locals: bool) -> Tuple[Any]:
+def _process_exception(
+    exc_info: Tuple[Any], show_locals: bool, console_options: ConsoleOptions
+) -> Tuple[Any]:
     exc_info = remove_internal_traceback_frames_from_exc_info(exc_info)
     traceback = Traceback.from_exception(*exc_info, show_locals=show_locals)
-    segments = console.render(traceback)
+    segments = console.render(traceback, options=console_options)
     text = "".join(segment.text for segment in segments)
     return *exc_info[:2], text
 

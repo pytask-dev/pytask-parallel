@@ -182,7 +182,7 @@ def _process_exception(
     traceback = Traceback.from_exception(*exc_info, show_locals=show_locals)
     segments = console.render(traceback, options=console_options)
     text = "".join(segment.text for segment in segments)
-    return *exc_info[:2], text
+    return (*exc_info[:2], text)
 
 
 class DefaultBackendNameSpace:

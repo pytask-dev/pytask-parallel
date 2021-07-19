@@ -119,7 +119,11 @@ def test_pytask_execute_task_w_processes(parallel_backend):
     task = DummyTask(myfunc)
 
     session = Session()
-    session.config = {"n_workers": 2, "parallel_backend": parallel_backend}
+    session.config = {
+        "n_workers": 2,
+        "parallel_backend": parallel_backend,
+        "show_locals": False,
+    }
 
     with PARALLEL_BACKENDS[parallel_backend](
         max_workers=session.config["n_workers"]
@@ -235,3 +239,29 @@ def test_task_priorities(tmp_path, parallel_backend):
     assert first_task_name.endswith("task_0") or first_task_name.endswith("task_3")
     last_task_name = session.execution_reports[-1].task.name
     assert last_task_name.endswith("task_2") or last_task_name.endswith("task_5")
+
+
+@pytest.mark.end_to_end
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("show_locals", [True, False])
+def test_rendering_of_tracebacks_with_rich(
+    runner, tmp_path, parallel_backend, show_locals
+):
+    source = """
+    import pytask
+
+    def task_raising_error():
+        a = list(range(5))
+        raise Exception
+    """
+    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+
+    args = [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend]
+    if show_locals:
+        args.append("--show-locals")
+    result = runner.invoke(cli, args)
+
+    assert result.exit_code == 1
+    assert "───── Traceback" in result.output
+    assert ("───── locals" in result.output) is show_locals
+    assert ("[0, 1, 2, 3, 4]" in result.output) is show_locals

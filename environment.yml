@@ -16,7 +16,7 @@ dependencies:
   - conda-verify
 
   # Package dependencies
-  - pytask >= 0.0.11
+  - pytask >= 0.1.0
   - cloudpickle
   - loky
 

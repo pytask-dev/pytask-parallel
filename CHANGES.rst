@@ -7,6 +7,12 @@ all releases are available on `PyPI <https://pypi.org/project/pytask-parallel>`_
 `Anaconda.org <https://anaconda.org/conda-forge/pytask-parallel>`_.
 
 
+0.1.1 - 2022-xx-xx
+------------------
+
+- :gh:`30` removes unnecessary content from ``tox.ini``.
+
+
 0.1.0 - 2021-07-20
 ------------------
 

@@ -11,6 +11,7 @@ all releases are available on `PyPI <https://pypi.org/project/pytask-parallel>`_
 ------------------
 
 - :gh:`30` removes unnecessary content from ``tox.ini``.
+- :gh:`31` adds types to the package.
 
 
 0.1.0 - 2021-07-20

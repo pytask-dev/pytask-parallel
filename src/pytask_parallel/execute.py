@@ -1,21 +1,28 @@
 """Contains code relevant to the execution."""
 import sys
 import time
+from concurrent.futures import Future
+from types import TracebackType
 from typing import Any
+from typing import Dict
+from typing import Optional
 from typing import Tuple
+from typing import Type
 
 import cloudpickle
 from _pytask.config import hookimpl
 from _pytask.console import console
 from _pytask.report import ExecutionReport
 from _pytask.traceback import remove_internal_traceback_frames_from_exc_info
+from pytask import MetaTask
+from pytask import Session
 from pytask_parallel.backends import PARALLEL_BACKENDS
 from rich.console import ConsoleOptions
 from rich.traceback import Traceback
 
 
 @hookimpl
-def pytask_post_parse(config):
+def pytask_post_parse(config: Dict[str, Any]) -> None:
     """Register the parallel backend."""
     if config["parallel_backend"] in ["loky", "processes"]:
         config["pm"].register(ProcessesNameSpace)
@@ -24,7 +31,7 @@ def pytask_post_parse(config):
 
 
 @hookimpl(tryfirst=True)
-def pytask_execute_build(session):
+def pytask_execute_build(session: Session) -> Optional[bool]:
     """Execute tasks with a parallel backend.
 
     There are three phases while the scheduler has tasks which need to be executed.
@@ -37,7 +44,7 @@ def pytask_execute_build(session):
     """
     if session.config["n_workers"] > 1:
         reports = session.execution_reports
-        running_tasks = {}
+        running_tasks: Dict[str, Future[Any]] = {}
 
         parallel_backend = PARALLEL_BACKENDS[session.config["parallel_backend"]]
 
@@ -134,13 +141,15 @@ def pytask_execute_build(session):
                     break
 
         return True
+    return None
 
 
 class ProcessesNameSpace:
     """The name space for hooks related to processes."""
 
+    @staticmethod
     @hookimpl(tryfirst=True)
-    def pytask_execute_task(session, task):  # noqa: N805
+    def pytask_execute_task(session: Session, task: MetaTask) -> Optional[Future[Any]]:
         """Execute a task.
 
         Take a task, pickle it and send the bytes over to another process.
@@ -154,9 +163,12 @@ class ProcessesNameSpace:
                 show_locals=session.config["show_locals"],
                 console_options=console.options,
             )
+        return None
 
 
-def _unserialize_and_execute_task(bytes_, show_locals, console_options):
+def _unserialize_and_execute_task(
+    bytes_: bytes, show_locals: bool, console_options: ConsoleOptions
+) -> Optional[Tuple[Type[BaseException], BaseException, str]]:
     """Unserialize and execute task.
 
     This function receives bytes and unpickles them to a task which is them execute
@@ -173,11 +185,14 @@ def _unserialize_and_execute_task(bytes_, show_locals, console_options):
         exc_info = sys.exc_info()
         processed_exc_info = _process_exception(exc_info, show_locals, console_options)
         return processed_exc_info
+    return None
 
 
 def _process_exception(
-    exc_info: Tuple[Any], show_locals: bool, console_options: ConsoleOptions
-) -> Tuple[Any]:
+    exc_info: Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
+    show_locals: bool,
+    console_options: ConsoleOptions,
+) -> Tuple[Type[BaseException], BaseException, str]:
     exc_info = remove_internal_traceback_frames_from_exc_info(exc_info)
     traceback = Traceback.from_exception(*exc_info, show_locals=show_locals)
     segments = console.render(traceback, options=console_options)
@@ -188,8 +203,9 @@ def _process_exception(
 class DefaultBackendNameSpace:
     """The name space for hooks related to threads."""
 
+    @staticmethod
     @hookimpl(tryfirst=True)
-    def pytask_execute_task(session, task):  # noqa: N805
+    def pytask_execute_task(session: Session, task: MetaTask) -> Optional[Future[Any]]:
         """Execute a task.
 
         Since threads have shared memory, it is not necessary to pickle and unpickle the
@@ -198,3 +214,4 @@ class DefaultBackendNameSpace:
         """
         if session.config["n_workers"] > 1:
             return session.executor.submit(task.execute)
+        return None

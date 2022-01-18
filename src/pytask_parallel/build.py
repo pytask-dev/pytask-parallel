@@ -6,7 +6,7 @@ from pytask_parallel.backends import PARALLEL_BACKENDS_DEFAULT
 
 
 @hookimpl
-def pytask_extend_command_line_interface(cli):
+def pytask_extend_command_line_interface(cli: click.Group) -> None:
     """Extend the command line interface."""
     additional_parameters = [
         click.Option(

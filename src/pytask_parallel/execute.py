@@ -1,4 +1,6 @@
 """Contains code relevant to the execution."""
+from __future__ import annotations
+
 import sys
 import time
 from typing import Any

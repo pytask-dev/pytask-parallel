@@ -1,4 +1,6 @@
 """Configure pytask."""
+from __future__ import annotations
+
 import os
 
 from _pytask.config import hookimpl

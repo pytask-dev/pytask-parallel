@@ -1,4 +1,6 @@
 """Validate command line inputs and configuration values."""
+from __future__ import annotations
+
 from pytask_parallel.backends import PARALLEL_BACKENDS
 
 

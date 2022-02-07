@@ -1,4 +1,6 @@
 """Extend the build command."""
+from __future__ import annotations
+
 import click
 from _pytask.config import hookimpl
 from pytask_parallel.backends import PARALLEL_BACKENDS

@@ -1,4 +1,6 @@
 """Entry-point for the plugin."""
+from __future__ import annotations
+
 from _pytask.config import hookimpl
 from pytask_parallel import build
 from pytask_parallel import config

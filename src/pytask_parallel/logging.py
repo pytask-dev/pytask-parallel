@@ -1,4 +1,6 @@
 """Contains code relevant to logging."""
+from __future__ import annotations
+
 from _pytask.config import hookimpl
 from _pytask.console import console
 

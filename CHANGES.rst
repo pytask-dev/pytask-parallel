@@ -11,6 +11,7 @@ all releases are available on `PyPI <https://pypi.org/project/pytask-parallel>`_
 ------------------
 
 - :gh:`30` removes unnecessary content from ``tox.ini``.
+- :gh:`33` skips concurrent CI builds.
 - :gh:`34` deprecates Python 3.6 and adds support for Python 3.10.
 
 

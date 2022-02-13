@@ -179,6 +179,7 @@ def _unserialize_and_execute_task(bytes_, show_locals, console_options):
 def _process_exception(
     exc_info: tuple[Any], show_locals: bool, console_options: ConsoleOptions
 ) -> tuple[Any]:
+    """Process the exception and convert the traceback to a string."""
     exc_info = remove_internal_traceback_frames_from_exc_info(exc_info)
     traceback = Traceback.from_exception(*exc_info, show_locals=show_locals)
     segments = console.render(traceback, options=console_options)

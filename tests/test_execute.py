@@ -267,3 +267,28 @@ def test_rendering_of_tracebacks_with_rich(
     assert "───── Traceback" in result.output
     assert ("───── locals" in result.output) is show_locals
     assert ("[0, 1, 2, 3, 4]" in result.output) is show_locals
+
+
+@pytest.mark.end_to_end
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+def test_generators_are_removed_from_depends_on_produces(tmp_path, parallel_backend):
+    source = """
+    from pathlib import Path
+    import pytask
+
+    @pytask.mark.parametrize("produces", [
+        ((x for x in ["out.txt", "out_2.txt"]),),
+        ["in.txt"],
+    ])
+    def task_example(produces):
+        produces = {0: produces} if isinstance(produces, Path) else produces
+        for p in produces.values():
+            p.write_text("hihi")
+    """
+    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+
+    session = main(
+        {"paths": tmp_path, "parallel_backend": parallel_backend, "n_workers": 2}
+    )
+
+    assert session.exit_code == 0

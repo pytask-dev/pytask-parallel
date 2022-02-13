@@ -6,6 +6,11 @@ chronological order. Releases follow `semantic versioning <https://semver.org/>`
 all releases are available on `PyPI <https://pypi.org/project/pytask-parallel>`_ and
 `Anaconda.org <https://anaconda.org/conda-forge/pytask-parallel>`_.
 
+0.1.2 - 2022-xx-xx
+------------------
+
+- :gh:`36` adds a test for https://github.com/pytask-dev/pytask/issues/216.
+
 
 0.1.1 - 2022-02-08
 ------------------

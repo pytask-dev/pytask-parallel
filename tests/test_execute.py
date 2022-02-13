@@ -272,6 +272,7 @@ def test_rendering_of_tracebacks_with_rich(
 @pytest.mark.end_to_end
 @pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_generators_are_removed_from_depends_on_produces(tmp_path, parallel_backend):
+    """Only works with pytask >=0.1.9."""
     source = """
     from pathlib import Path
     import pytask

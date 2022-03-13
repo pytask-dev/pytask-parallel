@@ -1,6 +1,7 @@
 """Validate command line inputs and configuration values."""
+from __future__ import annotations
+
 from typing import Any
-from typing import Optional
 
 from pytask_parallel.backends import PARALLEL_BACKENDS
 
@@ -21,7 +22,7 @@ def n_workers_callback(value: Any) -> int:
     return value
 
 
-def parallel_backend_callback(value: Any) -> Optional[str]:
+def parallel_backend_callback(value: Any) -> str | None:
     """Validate the input for the parallel backend."""
     if value in [None, "None", "none"]:
         value = None
@@ -34,7 +35,7 @@ def parallel_backend_callback(value: Any) -> Optional[str]:
     return value
 
 
-def delay_callback(value: Any) -> Optional[float]:
+def delay_callback(value: Any) -> float | None:
     """Validate the delay option."""
     if value in [None, "None", "none"]:
         value = None

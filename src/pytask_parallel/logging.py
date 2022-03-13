@@ -1,6 +1,8 @@
 """Contains code relevant to logging."""
-from _pytask.config import hookimpl
-from _pytask.console import console
+from __future__ import annotations
+
+from pytask import console
+from pytask import hookimpl
 from pytask import Session
 
 

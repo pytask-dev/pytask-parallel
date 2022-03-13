@@ -1,28 +1,28 @@
 """Contains code relevant to the execution."""
+from __future__ import annotations
+
+import inspect
 import sys
 import time
 from concurrent.futures import Future
 from types import TracebackType
 from typing import Any
-from typing import Dict
-from typing import Optional
-from typing import Tuple
-from typing import Type
 
 import cloudpickle
-from _pytask.config import hookimpl
-from _pytask.console import console
-from _pytask.report import ExecutionReport
-from _pytask.traceback import remove_internal_traceback_frames_from_exc_info
-from pytask import MetaTask
+from pybaum.tree_util import tree_map
+from pytask import console
+from pytask import ExecutionReport
+from pytask import hookimpl
+from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask import Session
+from pytask import Task
 from pytask_parallel.backends import PARALLEL_BACKENDS
 from rich.console import ConsoleOptions
 from rich.traceback import Traceback
 
 
 @hookimpl
-def pytask_post_parse(config: Dict[str, Any]) -> None:
+def pytask_post_parse(config: dict[str, Any]) -> None:
     """Register the parallel backend."""
     if config["parallel_backend"] in ["loky", "processes"]:
         config["pm"].register(ProcessesNameSpace)
@@ -31,7 +31,7 @@ def pytask_post_parse(config: Dict[str, Any]) -> None:
 
 
 @hookimpl(tryfirst=True)
-def pytask_execute_build(session: Session) -> Optional[bool]:
+def pytask_execute_build(session: Session) -> bool | None:
     """Execute tasks with a parallel backend.
 
     There are three phases while the scheduler has tasks which need to be executed.
@@ -44,7 +44,7 @@ def pytask_execute_build(session: Session) -> Optional[bool]:
     """
     if session.config["n_workers"] > 1:
         reports = session.execution_reports
-        running_tasks: Dict[str, Future[Any]] = {}
+        running_tasks: dict[str, Future[Any]] = {}
 
         parallel_backend = PARALLEL_BACKENDS[session.config["parallel_backend"]]
 
@@ -149,17 +149,22 @@ class ProcessesNameSpace:
 
     @staticmethod
     @hookimpl(tryfirst=True)
-    def pytask_execute_task(session: Session, task: MetaTask) -> Optional[Future[Any]]:
+    def pytask_execute_task(session: Session, task: Task) -> Future[Any] | None:
         """Execute a task.
 
         Take a task, pickle it and send the bytes over to another process.
 
         """
         if session.config["n_workers"] > 1:
-            bytes_ = cloudpickle.dumps(task)
+            kwargs = _create_kwargs_for_task(task)
+
+            bytes_function = cloudpickle.dumps(task)
+            bytes_kwargs = cloudpickle.dumps(kwargs)
+
             return session.executor.submit(
                 _unserialize_and_execute_task,
-                bytes_=bytes_,
+                bytes_function=bytes_function,
+                bytes_kwargs=bytes_kwargs,
                 show_locals=session.config["show_locals"],
                 console_options=console.options,
             )
@@ -167,8 +172,11 @@ class ProcessesNameSpace:
 
 
 def _unserialize_and_execute_task(
-    bytes_: bytes, show_locals: bool, console_options: ConsoleOptions
-) -> Optional[Tuple[Type[BaseException], BaseException, str]]:
+    bytes_function: bytes,
+    bytes_kwargs: bytes,
+    show_locals: bool,
+    console_options: ConsoleOptions,
+) -> tuple[type[BaseException], BaseException, str] | None:
     """Unserialize and execute task.
 
     This function receives bytes and unpickles them to a task which is them execute
@@ -177,10 +185,11 @@ def _unserialize_and_execute_task(
     """
     __tracebackhide__ = True
 
-    task = cloudpickle.loads(bytes_)
+    task = cloudpickle.loads(bytes_function)
+    kwargs = cloudpickle.loads(bytes_kwargs)
 
     try:
-        task.execute()
+        task.execute(**kwargs)
     except Exception:
         exc_info = sys.exc_info()
         processed_exc_info = _process_exception(exc_info, show_locals, console_options)
@@ -189,10 +198,11 @@ def _unserialize_and_execute_task(
 
 
 def _process_exception(
-    exc_info: Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
+    exc_info: tuple[type[BaseException], BaseException, TracebackType | None],
     show_locals: bool,
     console_options: ConsoleOptions,
-) -> Tuple[Type[BaseException], BaseException, str]:
+) -> tuple[type[BaseException], BaseException, str]:
+    """Process the exception and convert the traceback to a string."""
     exc_info = remove_internal_traceback_frames_from_exc_info(exc_info)
     traceback = Traceback.from_exception(*exc_info, show_locals=show_locals)
     segments = console.render(traceback, options=console_options)
@@ -205,7 +215,7 @@ class DefaultBackendNameSpace:
 
     @staticmethod
     @hookimpl(tryfirst=True)
-    def pytask_execute_task(session: Session, task: MetaTask) -> Optional[Future[Any]]:
+    def pytask_execute_task(session: Session, task: Task) -> Future[Any] | None:
         """Execute a task.
 
         Since threads have shared memory, it is not necessary to pickle and unpickle the
@@ -213,5 +223,20 @@ class DefaultBackendNameSpace:
 
         """
         if session.config["n_workers"] > 1:
-            return session.executor.submit(task.execute)
-        return None
+            kwargs = _create_kwargs_for_task(task)
+            return session.executor.submit(task.execute, **kwargs)
+        else:
+            return None
+
+
+def _create_kwargs_for_task(task: Task) -> dict[Any, Any]:
+    """Create kwargs for task function."""
+    kwargs = {**task.kwargs}
+
+    func_arg_names = set(inspect.signature(task.function).parameters)
+    for arg_name in ("depends_on", "produces"):
+        if arg_name in func_arg_names:
+            attribute = getattr(task, arg_name)
+            kwargs[arg_name] = tree_map(lambda x: x.value, attribute)
+
+    return kwargs

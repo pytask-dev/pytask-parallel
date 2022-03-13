@@ -1,4 +1,3 @@
-prune .conda
 prune tests
 
 exclude *.rst

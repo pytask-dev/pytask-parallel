@@ -6,7 +6,6 @@ repos:
         args: ['--maxkb=100']
     -   id: check-merge-conflict
     -   id: check-yaml
-        exclude: meta.yaml
     -   id: debug-statements
     -   id: end-of-file-fixer
 -   repo: https://github.com/pre-commit/pygrep-hooks
@@ -83,6 +82,8 @@ repos:
     rev: "0.47"
     hooks:
     -   id: check-manifest
+        args: [--no-build-isolation]
+        additional_dependencies: [setuptools-scm, toml]
 -   repo: meta
     hooks:
     -   id: check-hooks-apply

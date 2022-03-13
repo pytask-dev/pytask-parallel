@@ -1,8 +1,8 @@
 """Contains code relevant to logging."""
 from __future__ import annotations
 
-from _pytask.config import hookimpl
-from _pytask.console import console
+from pytask import console
+from pytask import hookimpl
 
 
 @hookimpl(trylast=True)

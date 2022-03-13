@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import os
 
-from _pytask.config import hookimpl
-from _pytask.shared import get_first_non_none_value
+from pytask import get_first_non_none_value
+from pytask import hookimpl
 from pytask_parallel.backends import PARALLEL_BACKENDS_DEFAULT
 from pytask_parallel.callbacks import delay_callback
 from pytask_parallel.callbacks import n_workers_callback

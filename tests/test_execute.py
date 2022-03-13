@@ -2,23 +2,16 @@ from __future__ import annotations
 
 import pickle
 import textwrap
+from pathlib import Path
 from time import time
 
-import attr
 import pytest
 from pytask import cli
 from pytask import main
+from pytask import Task
 from pytask_parallel.backends import PARALLEL_BACKENDS
 from pytask_parallel.execute import DefaultBackendNameSpace
 from pytask_parallel.execute import ProcessesNameSpace
-
-
-@attr.s
-class DummyTask:
-    function = attr.ib()
-
-    def execute(self):
-        self.function()
 
 
 class Session:
@@ -118,7 +111,7 @@ def test_pytask_execute_task_w_processes(parallel_backend):
     with pytest.raises(AttributeError):
         pickle.dumps(myfunc)
 
-    task = DummyTask(myfunc)
+    task = Task(base_name="task_example", path=Path(), function=myfunc)
 
     session = Session()
     session.config = {

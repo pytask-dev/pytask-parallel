@@ -16,30 +16,15 @@ dependencies:
   - conda-verify
 
   # Package dependencies
-  - pytask >= 0.1.0
+  - pytask >=0.2.0
   - cloudpickle
   - loky
-
-  # pytask package dependencies
-  - attrs >=17.4.0
-  - click
-  - click-default-group
-  - networkx >=2.4
-  - pluggy
-  - pony >=0.7.13
-  - rich
+  - pybaum >=0.1.1
 
   # Misc
   - black
-  - bump2version
-  - jupyterlab
-  - matplotlib
-  - pdbpp
   - pre-commit
   - pytest-cov
 
-  # Documentation
-  - numpydoc
-  - pydata-sphinx-theme
-  - sphinx
-  - sphinx-copybutton
+  - pip:
+    - -e .

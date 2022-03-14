@@ -5,6 +5,7 @@ from time import time
 
 import pytest
 from pytask import cli
+from pytask import ExitCode
 
 
 @pytest.mark.end_to_end
@@ -22,5 +23,5 @@ def test_delay_via_cli(runner, tmp_path):
     result = runner.invoke(cli, [tmp_path.as_posix(), "-n", "2", "--delay", "5"])
     end = time()
 
-    assert result.exit_code == 0
+    assert result.exit_code == ExitCode.OK
     assert end - start > 5

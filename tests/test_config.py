@@ -4,6 +4,7 @@ import os
 import textwrap
 
 import pytest
+from pytask import ExitCode
 from pytask import main
 from pytask_parallel.backends import PARALLEL_BACKENDS
 
@@ -29,15 +30,15 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
 @pytest.mark.parametrize(
     "configuration_option, value, exit_code",
     [
-        ("n_workers", "auto", 0),
-        ("n_workers", 1, 0),
-        ("n_workers", 2, 0),
-        ("delay", 0.1, 0),
-        ("delay", 1, 0),
-        ("parallel_backend", "unknown_backend", 2),
+        ("n_workers", "auto", ExitCode.OK),
+        ("n_workers", 1, ExitCode.OK),
+        ("n_workers", 2, ExitCode.OK),
+        ("delay", 0.1, ExitCode.OK),
+        ("delay", 1, ExitCode.OK),
+        ("parallel_backend", "unknown_backend", ExitCode.CONFIGURATION_FAILED),
     ]
     + [
-        ("parallel_backend", parallel_backend, 0)
+        ("parallel_backend", parallel_backend, ExitCode.OK)
         for parallel_backend in PARALLEL_BACKENDS
     ],
 )
@@ -55,5 +56,5 @@ def test_reading_values_from_config_file(
     assert session.exit_code == exit_code
     if value == "auto":
         value = os.cpu_count() - 1
-    if session.exit_code == 0:
+    if session.exit_code == ExitCode.OK:
         assert session.config[configuration_option] == value

@@ -7,6 +7,7 @@ from time import time
 
 import pytest
 from pytask import cli
+from pytask import ExitCode
 from pytask import main
 from pytask import Task
 from pytask_parallel.backends import PARALLEL_BACKENDS
@@ -39,7 +40,7 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
 
     session = main({"paths": tmp_path})
 
-    assert session.exit_code == 0
+    assert session.exit_code == ExitCode.OK
     assert session.execution_end - session.execution_start > 10
 
     tmp_path.joinpath("out_1.txt").unlink()
@@ -49,7 +50,7 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
         {"paths": tmp_path, "n_workers": 2, "parallel_backend": parallel_backend}
     )
 
-    assert session.exit_code == 0
+    assert session.exit_code == ExitCode.OK
     assert session.execution_end - session.execution_start < 10
 
 
@@ -76,7 +77,7 @@ def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
     result = runner.invoke(cli, [tmp_path.as_posix()])
     end = time()
 
-    assert result.exit_code == 0
+    assert result.exit_code == ExitCode.OK
     assert end - start > 10
 
     tmp_path.joinpath("out_1.txt").unlink()
@@ -95,7 +96,7 @@ def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
     )
     end = time()
 
-    assert result.exit_code == 0
+    assert result.exit_code == ExitCode.OK
     assert "Started 2 workers." in result.output
     assert end - start < 10
 
@@ -162,6 +163,7 @@ def test_parallel_execution_delay(tmp_path, parallel_backend):
         }
     )
 
+    assert session.exit_code == ExitCode.OK
     assert 3 < session.execution_end - session.execution_start < 10
 
 
@@ -190,6 +192,7 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
         }
     )
 
+    assert session.exit_code == ExitCode.OK
     assert len(session.tasks) == 3
     assert len(session.execution_reports) == 2
 
@@ -229,7 +232,7 @@ def test_task_priorities(tmp_path, parallel_backend):
         {"paths": tmp_path, "parallel_backend": parallel_backend, "n_workers": 2}
     )
 
-    assert session.exit_code == 0
+    assert session.exit_code == ExitCode.OK
     first_task_name = session.execution_reports[0].task.name
     assert first_task_name.endswith("task_0") or first_task_name.endswith("task_3")
     last_task_name = session.execution_reports[-1].task.name
@@ -256,7 +259,7 @@ def test_rendering_of_tracebacks_with_rich(
         args.append("--show-locals")
     result = runner.invoke(cli, args)
 
-    assert result.exit_code == 1
+    assert result.exit_code == ExitCode.FAILED
     assert "───── Traceback" in result.output
     assert ("───── locals" in result.output) is show_locals
     assert ("[0, 1, 2, 3, 4]" in result.output) is show_locals
@@ -285,4 +288,4 @@ def test_generators_are_removed_from_depends_on_produces(tmp_path, parallel_back
         {"paths": tmp_path, "parallel_backend": parallel_backend, "n_workers": 2}
     )
 
-    assert session.exit_code == 0
+    assert session.exit_code == ExitCode.OK

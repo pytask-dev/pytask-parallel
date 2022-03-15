@@ -192,7 +192,7 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
         }
     )
 
-    assert session.exit_code == ExitCode.OK
+    assert session.exit_code == ExitCode.FAILED
     assert len(session.tasks) == 3
     assert len(session.execution_reports) == 2
 

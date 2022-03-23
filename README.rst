@@ -1,3 +1,6 @@
+pytask-parallel
+===============
+
 .. image:: https://img.shields.io/pypi/v/pytask-parallel?color=blue
     :alt: PyPI
     :target: https://pypi.org/project/pytask-parallel
@@ -29,11 +32,7 @@
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
 
-
 ------
-
-pytask-parallel
-===============
 
 Parallelize the execution of tasks with ``pytask-parallel`` which is a plugin for
 `pytask <https://github.com/pytask-dev/pytask>`_.

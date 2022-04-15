@@ -58,8 +58,7 @@ files, you can parallelize via threads.
 $ pytask --parallel-backend threads
 ```
 
-You can also set the options in one of the configuration files (`pytask.ini`, `tox.ini`,
-or `setup.cfg`).
+You can also set the options in a `pyproject.toml`.
 
 ```toml
 # This is the default configuration. Note that, parallelization is turned off.

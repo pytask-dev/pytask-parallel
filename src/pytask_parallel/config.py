@@ -13,7 +13,11 @@ from pytask_parallel.callbacks import parallel_backend_callback
 
 
 @hookimpl
-def pytask_parse_config(config, config_from_cli, config_from_file):
+def pytask_parse_config(
+    config: dict[str, Any],
+    config_from_cli: dict[str, Any],
+    config_from_file: dict[str, Any],
+) -> None:
     """Parse the configuration."""
     config["n_workers"] = _get_first_non_none_value(
         config_from_cli,
@@ -43,7 +47,7 @@ def pytask_parse_config(config, config_from_cli, config_from_file):
 
 
 @hookimpl
-def pytask_post_parse(config):
+def pytask_post_parse(config: dict[str, Any]) -> None:
     """Disable parallelization if debugging is enabled."""
     if config["pdb"] or config["trace"]:
         config["n_workers"] = 1

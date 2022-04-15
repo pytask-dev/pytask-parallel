@@ -5,9 +5,11 @@ chronological order. Releases follow [semantic versioning](https://semver.org/) 
 releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel).
 
-## 0.1.2 - 2022-xx-xx
+## 0.2.0 - 2022-xx-xx
 
+- {pull}`31` adds types to the package.
 - {pull}`36` adds a test for <https://github.com/pytask-dev/pytask/issues/216>.
+- {pull}`37` aligns pytask-parallel with pytask v0.2.
 
 ## 0.1.1 - 2022-02-08
 

@@ -4,6 +4,8 @@ from __future__ import annotations
 import inspect
 import sys
 import time
+from concurrent.futures import Future
+from types import TracebackType
 from typing import Any
 
 import cloudpickle
@@ -12,13 +14,15 @@ from pytask import console
 from pytask import ExecutionReport
 from pytask import hookimpl
 from pytask import remove_internal_traceback_frames_from_exc_info
+from pytask import Session
+from pytask import Task
 from pytask_parallel.backends import PARALLEL_BACKENDS
 from rich.console import ConsoleOptions
 from rich.traceback import Traceback
 
 
 @hookimpl
-def pytask_post_parse(config):
+def pytask_post_parse(config: dict[str, Any]) -> None:
     """Register the parallel backend."""
     if config["parallel_backend"] in ("loky", "processes"):
         config["pm"].register(ProcessesNameSpace)
@@ -27,7 +31,7 @@ def pytask_post_parse(config):
 
 
 @hookimpl(tryfirst=True)
-def pytask_execute_build(session):
+def pytask_execute_build(session: Session) -> bool | None:
     """Execute tasks with a parallel backend.
 
     There are three phases while the scheduler has tasks which need to be executed.
@@ -40,7 +44,7 @@ def pytask_execute_build(session):
     """
     if session.config["n_workers"] > 1:
         reports = session.execution_reports
-        running_tasks = {}
+        running_tasks: dict[str, Future[Any]] = {}
 
         parallel_backend = PARALLEL_BACKENDS[session.config["parallel_backend"]]
 
@@ -137,13 +141,15 @@ def pytask_execute_build(session):
                     break
 
         return True
+    return None
 
 
 class ProcessesNameSpace:
     """The name space for hooks related to processes."""
 
+    @staticmethod
     @hookimpl(tryfirst=True)
-    def pytask_execute_task(session, task):  # noqa: N805
+    def pytask_execute_task(session: Session, task: Task) -> Future[Any] | None:
         """Execute a task.
 
         Take a task, pickle it and send the bytes over to another process.
@@ -162,11 +168,15 @@ class ProcessesNameSpace:
                 show_locals=session.config["show_locals"],
                 console_options=console.options,
             )
+        return None
 
 
 def _unserialize_and_execute_task(
-    bytes_function, bytes_kwargs, show_locals, console_options
-):
+    bytes_function: bytes,
+    bytes_kwargs: bytes,
+    show_locals: bool,
+    console_options: ConsoleOptions,
+) -> tuple[type[BaseException], BaseException, str] | None:
     """Unserialize and execute task.
 
     This function receives bytes and unpickles them to a task which is them execute
@@ -184,11 +194,14 @@ def _unserialize_and_execute_task(
         exc_info = sys.exc_info()
         processed_exc_info = _process_exception(exc_info, show_locals, console_options)
         return processed_exc_info
+    return None
 
 
 def _process_exception(
-    exc_info: tuple[Any], show_locals: bool, console_options: ConsoleOptions
-) -> tuple[Any]:
+    exc_info: tuple[type[BaseException], BaseException, TracebackType | None],
+    show_locals: bool,
+    console_options: ConsoleOptions,
+) -> tuple[type[BaseException], BaseException, str]:
     """Process the exception and convert the traceback to a string."""
     exc_info = remove_internal_traceback_frames_from_exc_info(exc_info)
     traceback = Traceback.from_exception(*exc_info, show_locals=show_locals)
@@ -200,8 +213,9 @@ def _process_exception(
 class DefaultBackendNameSpace:
     """The name space for hooks related to threads."""
 
+    @staticmethod
     @hookimpl(tryfirst=True)
-    def pytask_execute_task(session, task):  # noqa: N805
+    def pytask_execute_task(session: Session, task: Task) -> Future[Any] | None:
         """Execute a task.
 
         Since threads have shared memory, it is not necessary to pickle and unpickle the
@@ -211,9 +225,11 @@ class DefaultBackendNameSpace:
         if session.config["n_workers"] > 1:
             kwargs = _create_kwargs_for_task(task)
             return session.executor.submit(task.execute, **kwargs)
+        else:
+            return None
 
 
-def _create_kwargs_for_task(task):
+def _create_kwargs_for_task(task: Task) -> dict[Any, Any]:
     """Create kwargs for task function."""
     kwargs = {**task.kwargs}
 

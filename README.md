@@ -65,7 +65,7 @@ You can also set the options in a `pyproject.toml`.
 
 [tool.pytask.ini_options]
 n_workers = 1
-parallel_backend = loky  # or processes or threads
+parallel_backend = "loky"  # or processes or threads
 ```
 
 ## Warning

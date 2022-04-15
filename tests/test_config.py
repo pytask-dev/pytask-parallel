@@ -4,6 +4,7 @@ import os
 import textwrap
 
 import pytest
+from pytask import ExitCode
 from pytask import main
 from pytask_parallel.backends import PARALLEL_BACKENDS
 
@@ -25,35 +26,48 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
 
 
 @pytest.mark.end_to_end
-@pytest.mark.parametrize("config_file", ["pytask.ini", "tox.ini", "setup.cfg"])
+@pytest.mark.parametrize(
+    "config_file", ["pytask.ini", "tox.ini", "setup.cfg", "pyproject.toml"]
+)
 @pytest.mark.parametrize(
     "configuration_option, value, exit_code",
     [
-        ("n_workers", "auto", 0),
-        ("n_workers", 1, 0),
-        ("n_workers", 2, 0),
-        ("delay", 0.1, 0),
-        ("delay", 1, 0),
-        ("parallel_backend", "unknown_backend", 2),
+        ("n_workers", "auto", ExitCode.OK),
+        ("n_workers", 1, ExitCode.OK),
+        ("n_workers", 2, ExitCode.OK),
+        ("delay", 0.1, ExitCode.OK),
+        ("delay", 1, ExitCode.OK),
+        ("parallel_backend", "unknown_backend", ExitCode.CONFIGURATION_FAILED),
     ]
     + [
-        ("parallel_backend", parallel_backend, 0)
+        ("parallel_backend", parallel_backend, ExitCode.OK)
         for parallel_backend in PARALLEL_BACKENDS
     ],
 )
 def test_reading_values_from_config_file(
-    tmp_path, config_file, configuration_option, value, exit_code
+    tmp_path, capsys, config_file, configuration_option, value, exit_code
 ):
-    config = f"""
-    [pytask]
-    {configuration_option} = {value}
-    """
+    if config_file == "pyproject.toml":
+        config = f"""
+        [tool.pytask.ini_options]
+        {configuration_option} = {value!r}
+        """
+    else:
+        config = f"""
+        [pytask]
+        {configuration_option} = {value}
+        """
     tmp_path.joinpath(config_file).write_text(textwrap.dedent(config))
 
     session = main({"paths": tmp_path})
+    captured = capsys.readouterr()
+    if config_file == "pyproject.toml":
+        assert "WARNING" not in captured.out
+    else:
+        assert "WARNING" in captured.out
 
     assert session.exit_code == exit_code
     if value == "auto":
         value = os.cpu_count() - 1
-    if session.exit_code == 0:
+    if session.exit_code == ExitCode.OK:
         assert session.config[configuration_option] == value

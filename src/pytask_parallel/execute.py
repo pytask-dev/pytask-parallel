@@ -1,15 +1,17 @@
 """Contains code relevant to the execution."""
 from __future__ import annotations
 
+import inspect
 import sys
 import time
 from typing import Any
 
 import cloudpickle
-from _pytask.config import hookimpl
-from _pytask.console import console
-from _pytask.report import ExecutionReport
-from _pytask.traceback import remove_internal_traceback_frames_from_exc_info
+from pybaum.tree_util import tree_map
+from pytask import console
+from pytask import ExecutionReport
+from pytask import hookimpl
+from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask_parallel.backends import PARALLEL_BACKENDS
 from rich.console import ConsoleOptions
 from rich.traceback import Traceback
@@ -18,9 +20,9 @@ from rich.traceback import Traceback
 @hookimpl
 def pytask_post_parse(config):
     """Register the parallel backend."""
-    if config["parallel_backend"] in ["loky", "processes"]:
+    if config["parallel_backend"] in ("loky", "processes"):
         config["pm"].register(ProcessesNameSpace)
-    elif config["parallel_backend"] in ["threads"]:
+    elif config["parallel_backend"] in ("threads",):
         config["pm"].register(DefaultBackendNameSpace)
 
 
@@ -148,16 +150,23 @@ class ProcessesNameSpace:
 
         """
         if session.config["n_workers"] > 1:
-            bytes_ = cloudpickle.dumps(task)
+            kwargs = _create_kwargs_for_task(task)
+
+            bytes_function = cloudpickle.dumps(task)
+            bytes_kwargs = cloudpickle.dumps(kwargs)
+
             return session.executor.submit(
                 _unserialize_and_execute_task,
-                bytes_=bytes_,
+                bytes_function=bytes_function,
+                bytes_kwargs=bytes_kwargs,
                 show_locals=session.config["show_locals"],
                 console_options=console.options,
             )
 
 
-def _unserialize_and_execute_task(bytes_, show_locals, console_options):
+def _unserialize_and_execute_task(
+    bytes_function, bytes_kwargs, show_locals, console_options
+):
     """Unserialize and execute task.
 
     This function receives bytes and unpickles them to a task which is them execute
@@ -166,10 +175,11 @@ def _unserialize_and_execute_task(bytes_, show_locals, console_options):
     """
     __tracebackhide__ = True
 
-    task = cloudpickle.loads(bytes_)
+    task = cloudpickle.loads(bytes_function)
+    kwargs = cloudpickle.loads(bytes_kwargs)
 
     try:
-        task.execute()
+        task.execute(**kwargs)
     except Exception:
         exc_info = sys.exc_info()
         processed_exc_info = _process_exception(exc_info, show_locals, console_options)
@@ -199,4 +209,18 @@ class DefaultBackendNameSpace:
 
         """
         if session.config["n_workers"] > 1:
-            return session.executor.submit(task.execute)
+            kwargs = _create_kwargs_for_task(task)
+            return session.executor.submit(task.execute, **kwargs)
+
+
+def _create_kwargs_for_task(task):
+    """Create kwargs for task function."""
+    kwargs = {**task.kwargs}
+
+    func_arg_names = set(inspect.signature(task.function).parameters)
+    for arg_name in ("depends_on", "produces"):
+        if arg_name in func_arg_names:
+            attribute = getattr(task, arg_name)
+            kwargs[arg_name] = tree_map(lambda x: x.value, attribute)
+
+    return kwargs

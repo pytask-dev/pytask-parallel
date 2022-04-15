@@ -1,12 +1,9 @@
-prune .conda
 prune tests
 
-exclude *.rst
+exclude *.md
 exclude *.yaml
 exclude *.yml
 exclude tox.ini
 
-include README.rst
+include README.md
 include LICENSE
-include versioneer.py
-include src/pytask_parallel/_version.py

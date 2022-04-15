@@ -61,10 +61,10 @@ $ pytask --parallel-backend threads
 You can also set the options in one of the configuration files (`pytask.ini`, `tox.ini`,
 or `setup.cfg`).
 
-```ini
+```toml
 # This is the default configuration. Note that, parallelization is turned off.
 
-[pytask]
+[tool.pytask.ini_options]
 n_workers = 1
 parallel_backend = loky  # or processes or threads
 ```

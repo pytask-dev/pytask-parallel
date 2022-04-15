@@ -174,11 +174,11 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
     import time
     import pytask
 
-    def task_1(): time.sleep(0.2)
-    def task_2(): time.sleep(0.1); raise NotImplementedError
+    def task_1(): time.sleep(1)
+    def task_2(): time.sleep(2); raise NotImplementedError
 
     @pytask.mark.try_last
-    def task_3(): ...
+    def task_3(): time.sleep(3)
     """
     tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
 

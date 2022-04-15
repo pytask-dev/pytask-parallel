@@ -178,8 +178,7 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
     def task_2(): time.sleep(2); raise NotImplementedError
 
     @pytask.mark.try_last
-    def task_3():
-        time.sleep(3)
+    def task_3(): time.sleep(3)
     """
     tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
 
@@ -206,25 +205,25 @@ def test_task_priorities(tmp_path, parallel_backend):
 
     @pytask.mark.try_first
     def task_0():
-        time.sleep(1)
+        time.sleep(0.1)
 
     def task_1():
-        time.sleep(1)
+        time.sleep(0.1)
 
     @pytask.mark.try_last
     def task_2():
-        time.sleep(1)
+        time.sleep(0.1)
 
     @pytask.mark.try_first
     def task_3():
-        time.sleep(1)
+        time.sleep(0.1)
 
     def task_4():
-        time.sleep(1)
+        time.sleep(0.1)
 
     @pytask.mark.try_last
     def task_5():
-        time.sleep(1)
+        time.sleep(0.1)
     """
     tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
 

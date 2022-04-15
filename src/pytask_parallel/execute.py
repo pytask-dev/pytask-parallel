@@ -24,9 +24,9 @@ from rich.traceback import Traceback
 @hookimpl
 def pytask_post_parse(config: dict[str, Any]) -> None:
     """Register the parallel backend."""
-    if config["parallel_backend"] in ["loky", "processes"]:
+    if config["parallel_backend"] in ("loky", "processes"):
         config["pm"].register(ProcessesNameSpace)
-    elif config["parallel_backend"] in ["threads"]:
+    elif config["parallel_backend"] in ("threads",):
         config["pm"].register(DefaultBackendNameSpace)
 
 

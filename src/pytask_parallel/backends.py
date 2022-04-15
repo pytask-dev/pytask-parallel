@@ -14,8 +14,8 @@ PARALLEL_BACKENDS_DEFAULT = "processes"
 
 try:
     from loky import get_reusable_executor
-
-    PARALLEL_BACKENDS["loky"] = get_reusable_executor
-    PARALLEL_BACKENDS_DEFAULT = "loky"
 except ImportError:
     pass
+else:
+    PARALLEL_BACKENDS["loky"] = get_reusable_executor
+    PARALLEL_BACKENDS_DEFAULT = "loky"

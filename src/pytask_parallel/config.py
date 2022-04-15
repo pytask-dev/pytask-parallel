@@ -64,17 +64,6 @@ def _get_first_non_none_value(
     This function allows to prioritize information from many configurations by changing
     the order of the inputs while also providing a default.
 
-    Examples
-    --------
-    >>> _get_first_non_none_value({"a": None}, {"a": 1}, key="a")
-    1
-    >>> _get_first_non_none_value({"a": None}, {"a": None}, key="a", default="default")
-    'default'
-    >>> _get_first_non_none_value({}, {}, key="a", default="default")
-    'default'
-    >>> _get_first_non_none_value({"a": None}, {"a": "b"}, key="a")
-    'b'
-
     """
     callback = (lambda x: x) if callback is None else callback  # noqa: E731
     processed_values = (callback(config.get(key)) for config in configs)

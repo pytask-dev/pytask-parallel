@@ -179,8 +179,8 @@ def _unserialize_and_execute_task(
 ) -> tuple[type[BaseException], BaseException, str] | None:
     """Unserialize and execute task.
 
-    This function receives bytes and unpickles them to a task which is them execute
-    in a spawned process or thread.
+    This function receives bytes and unpickles them to a task which is them execute in a
+    spawned process or thread.
 
     """
     __tracebackhide__ = True

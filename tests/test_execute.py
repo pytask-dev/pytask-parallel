@@ -306,7 +306,9 @@ def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_bac
     """
     tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
 
-    result = runner.invoke(cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend])
+    result = runner.invoke(
+        cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend]
+    )
 
     assert result.exit_code == ExitCode.OK
     assert "Warnings" in result.output

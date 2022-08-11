@@ -288,3 +288,25 @@ def test_generators_are_removed_from_depends_on_produces(tmp_path, parallel_back
     )
 
     assert session.exit_code == ExitCode.OK
+
+
+@pytest.mark.end_to_end
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_backend):
+    source = """
+    import pytask
+    import warnings
+
+    for i in range(2):
+
+        @pytask.mark.task(id=i, kwargs={"produces": f"{i}.txt"})
+        def task_example(produces):
+            warnings.warn("This is a warning.")
+            produces.touch()
+    """
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
+
+    result = runner.invoke(cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend])
+
+    assert result.exit_code == ExitCode.OK
+    assert "Warnings" in result.output

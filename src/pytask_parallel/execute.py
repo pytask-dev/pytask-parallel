@@ -93,21 +93,14 @@ def pytask_execute_build(session: Session) -> bool | None:
                     for task_name in list(running_tasks):
                         future = running_tasks[task_name]
                         if future.done():
-                            if (
-                                future.exception() is not None
-                                or future.result()[1] is not None
-                            ):
+                            warning_reports, task_exception = future.result()
+                            session.warnings.extend(warning_reports)
+                            exc_info = (
+                                _parse_future_exception(future.exception())
+                                or task_exception
+                            )
+                            if exc_info is not None:
                                 task = session.dag.nodes[task_name]["task"]
-                                if future.exception() is not None:
-                                    exception = future.exception()
-                                    exc_info = (
-                                        type(exception),
-                                        exception,
-                                        exception.__traceback__,
-                                    )
-                                else:
-                                    exc_info = future.result()[1]
-
                                 newly_collected_reports.append(
                                     ExecutionReport.from_task_and_exception(
                                         task, exc_info
@@ -115,7 +108,7 @@ def pytask_execute_build(session: Session) -> bool | None:
                                 )
                                 running_tasks.pop(task_name)
                                 session.scheduler.done(task_name)
-                            elif future.exception() is None:
+                            else:
                                 task = session.dag.nodes[task_name]["task"]
                                 try:
                                     session.hook.pytask_execute_task_teardown(
@@ -152,6 +145,17 @@ def pytask_execute_build(session: Session) -> bool | None:
 
         return True
     return None
+
+
+def _parse_future_exception(
+    exception: BaseException | None,
+) -> tuple[type[BaseException], BaseException, TracebackType] | None:
+    """Parse a future exception."""
+    return (
+        None
+        if exception is None
+        else (type(exception), exception, exception.__traceback__)
+    )
 
 
 class ProcessesNameSpace:

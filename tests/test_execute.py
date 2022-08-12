@@ -315,3 +315,9 @@ def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_bac
 
     assert result.exit_code == ExitCode.OK
     assert "Warnings" in result.output
+    assert "This is a warning." in result.output
+    assert "capture_warnings.html" in result.output
+
+    warnings_block = result.output.split("Warnings")[1]
+    assert "task_example.py::task_example[0]" in warnings_block
+    assert "task_example.py::task_example[1]" in warnings_block

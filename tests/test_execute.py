@@ -119,6 +119,7 @@ def test_pytask_execute_task_w_processes(parallel_backend):
         "n_workers": 2,
         "parallel_backend": parallel_backend,
         "show_locals": False,
+        "filterwarnings": [],
     }
 
     with PARALLEL_BACKENDS[parallel_backend](
@@ -135,7 +136,9 @@ def test_pytask_execute_task_w_processes(parallel_backend):
         future = backend_name_space.pytask_execute_task(session, task)
         executor.shutdown()
 
-    assert future.result() is None
+    warning_reports, exception = future.result()
+    assert warning_reports == []
+    assert exception is None
 
 
 @pytest.mark.end_to_end

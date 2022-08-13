@@ -68,13 +68,20 @@ n_workers = 1
 parallel_backend = "loky"  # or processes or threads
 ```
 
-## Warning
+## Some implementation details
+
+### Parallelization and Debugging
 
 It is not possible to combine parallelization with debugging. That is why `--pdb` or
 `--trace` deactivate parallelization.
 
 If you parallelize the execution of your tasks using two or more workers, do not use
 `breakpoint()` or `import pdb; pdb.set_trace()` since both will cause exceptions.
+
+### Threads and warnings
+
+Capturing warnings is not thread-safe. Therefore, warnings cannot be captured reliably
+when tasks are parallelized with `--parallel-backend threads`.
 
 ## Changes
 

@@ -280,7 +280,7 @@ class DefaultBackendNameSpace:
 
 def _mock_processes_for_threads(
     func: Callable[..., Any], **kwargs: Any
-) -> tuple[list[Any], None]:
+) -> tuple[list[Any], tuple[type[BaseException], BaseException, TracebackType] | None]:
     """Mock execution function such that it returns the same as for processes.
 
     The function for processes returns ``warning_reports`` and an ``exception``. With
@@ -289,8 +289,13 @@ def _mock_processes_for_threads(
 
     """
     __tracebackhide__ = True
-    func(**kwargs)
-    return [], None
+    try:
+        func(**kwargs)
+    except Exception:
+        exc_info = sys.exc_info()
+    else:
+        exc_info = None
+    return [], exc_info
 
 
 def _create_kwargs_for_task(task: Task) -> dict[Any, Any]:

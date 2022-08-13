@@ -294,7 +294,11 @@ def test_generators_are_removed_from_depends_on_produces(tmp_path, parallel_back
 
 
 @pytest.mark.end_to_end
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize(
+    "parallel_backend",
+    # Capturing warnings is not thread-safe.
+    [backend for backend in PARALLEL_BACKENDS if backend != "threads"],
+)
 def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_backend):
     source = """
     import pytask

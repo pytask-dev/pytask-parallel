@@ -11,9 +11,6 @@ from typing import Any
 from typing import Callable
 
 import cloudpickle
-from _pytask.warnings import parse_warning_filter
-from _pytask.warnings import warning_record_to_str
-from _pytask.warnings_utils import WarningReport
 from pybaum.tree_util import tree_map
 from pytask import console
 from pytask import ExecutionReport
@@ -26,6 +23,16 @@ from pytask import Task
 from pytask_parallel.backends import PARALLEL_BACKENDS
 from rich.console import ConsoleOptions
 from rich.traceback import Traceback
+
+# Can be removed if pinned to pytask >= 0.2.6.
+try:
+    from pytask import parse_warning_filter
+    from pytask import warning_record_to_str
+    from pytask import WarningReport
+except ImportError:
+    from _pytask.warnings import parse_warning_filter
+    from _pytask.warnings import warning_record_to_str
+    from _pytask.warnings_utils import WarningReport
 
 
 @hookimpl

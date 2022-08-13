@@ -119,6 +119,7 @@ def test_pytask_execute_task_w_processes(parallel_backend):
         "n_workers": 2,
         "parallel_backend": parallel_backend,
         "show_locals": False,
+        "filterwarnings": [],
     }
 
     with PARALLEL_BACKENDS[parallel_backend](
@@ -135,7 +136,9 @@ def test_pytask_execute_task_w_processes(parallel_backend):
         future = backend_name_space.pytask_execute_task(session, task)
         executor.shutdown()
 
-    assert future.result() is None
+    warning_reports, exception = future.result()
+    assert warning_reports == []
+    assert exception is None
 
 
 @pytest.mark.end_to_end
@@ -288,3 +291,37 @@ def test_generators_are_removed_from_depends_on_produces(tmp_path, parallel_back
     )
 
     assert session.exit_code == ExitCode.OK
+
+
+@pytest.mark.end_to_end
+@pytest.mark.parametrize(
+    "parallel_backend",
+    # Capturing warnings is not thread-safe.
+    [backend for backend in PARALLEL_BACKENDS if backend != "threads"],
+)
+def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_backend):
+    source = """
+    import pytask
+    import warnings
+
+    for i in range(2):
+
+        @pytask.mark.task(id=i, kwargs={"produces": f"{i}.txt"})
+        def task_example(produces):
+            warnings.warn("This is a warning.")
+            produces.touch()
+    """
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
+
+    result = runner.invoke(
+        cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend]
+    )
+
+    assert result.exit_code == ExitCode.OK
+    assert "Warnings" in result.output
+    assert "This is a warning." in result.output
+    assert "capture_warnings.html" in result.output
+
+    warnings_block = result.output.split("Warnings")[1]
+    assert "task_example.py::task_example[0]" in warnings_block
+    assert "task_example.py::task_example[1]" in warnings_block

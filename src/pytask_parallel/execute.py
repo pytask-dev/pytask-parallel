@@ -4,21 +4,35 @@ from __future__ import annotations
 import inspect
 import sys
 import time
+import warnings
 from concurrent.futures import Future
 from types import TracebackType
 from typing import Any
+from typing import Callable
 
 import cloudpickle
 from pybaum.tree_util import tree_map
 from pytask import console
 from pytask import ExecutionReport
+from pytask import get_marks
 from pytask import hookimpl
+from pytask import Mark
 from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask import Session
 from pytask import Task
 from pytask_parallel.backends import PARALLEL_BACKENDS
 from rich.console import ConsoleOptions
 from rich.traceback import Traceback
+
+# Can be removed if pinned to pytask >= 0.2.6.
+try:
+    from pytask import parse_warning_filter
+    from pytask import warning_record_to_str
+    from pytask import WarningReport
+except ImportError:
+    from _pytask.warnings import parse_warning_filter
+    from _pytask.warnings import warning_record_to_str
+    from _pytask.warnings_utils import WarningReport
 
 
 @hookimpl
@@ -85,42 +99,38 @@ def pytask_execute_build(session: Session) -> bool | None:
 
                     for task_name in list(running_tasks):
                         future = running_tasks[task_name]
-                        if future.done() and (
-                            future.exception() is not None
-                            or future.result() is not None
-                        ):
-                            task = session.dag.nodes[task_name]["task"]
-                            if future.exception() is not None:
-                                exception = future.exception()
-                                exc_info = (
-                                    type(exception),
-                                    exception,
-                                    exception.__traceback__,
-                                )
-                            else:
-                                exc_info = future.result()
-
-                            newly_collected_reports.append(
-                                ExecutionReport.from_task_and_exception(task, exc_info)
+                        if future.done():
+                            warning_reports, task_exception = future.result()
+                            session.warnings.extend(warning_reports)
+                            exc_info = (
+                                _parse_future_exception(future.exception())
+                                or task_exception
                             )
-                            running_tasks.pop(task_name)
-                            session.scheduler.done(task_name)
-                        elif future.done() and future.exception() is None:
-                            task = session.dag.nodes[task_name]["task"]
-                            try:
-                                session.hook.pytask_execute_task_teardown(
-                                    session=session, task=task
+                            if exc_info is not None:
+                                task = session.dag.nodes[task_name]["task"]
+                                newly_collected_reports.append(
+                                    ExecutionReport.from_task_and_exception(
+                                        task, exc_info
+                                    )
                                 )
-                            except Exception:
-                                report = ExecutionReport.from_task_and_exception(
-                                    task, sys.exc_info()
-                                )
+                                running_tasks.pop(task_name)
+                                session.scheduler.done(task_name)
                             else:
-                                report = ExecutionReport.from_task(task)
+                                task = session.dag.nodes[task_name]["task"]
+                                try:
+                                    session.hook.pytask_execute_task_teardown(
+                                        session=session, task=task
+                                    )
+                                except Exception:
+                                    report = ExecutionReport.from_task_and_exception(
+                                        task, sys.exc_info()
+                                    )
+                                else:
+                                    report = ExecutionReport.from_task(task)
 
-                            running_tasks.pop(task_name)
-                            newly_collected_reports.append(report)
-                            session.scheduler.done(task_name)
+                                running_tasks.pop(task_name)
+                                newly_collected_reports.append(report)
+                                session.scheduler.done(task_name)
                         else:
                             pass
 
@@ -142,6 +152,17 @@ def pytask_execute_build(session: Session) -> bool | None:
 
         return True
     return None
+
+
+def _parse_future_exception(
+    exception: BaseException | None,
+) -> tuple[type[BaseException], BaseException, TracebackType] | None:
+    """Parse a future exception."""
+    return (
+        None
+        if exception is None
+        else (type(exception), exception, exception.__traceback__)
+    )
 
 
 class ProcessesNameSpace:
@@ -167,6 +188,9 @@ class ProcessesNameSpace:
                 bytes_kwargs=bytes_kwargs,
                 show_locals=session.config["show_locals"],
                 console_options=console.options,
+                session_filterwarnings=session.config["filterwarnings"],
+                task_filterwarnings=get_marks(task, "filterwarnings"),
+                task_short_name=task.short_name,
             )
         return None
 
@@ -176,7 +200,10 @@ def _unserialize_and_execute_task(
     bytes_kwargs: bytes,
     show_locals: bool,
     console_options: ConsoleOptions,
-) -> tuple[type[BaseException], BaseException, str] | None:
+    session_filterwarnings: tuple[str, ...],
+    task_filterwarnings: tuple[Mark, ...],
+    task_short_name: str,
+) -> tuple[list[WarningReport], tuple[type[BaseException], BaseException, str] | None]:
     """Unserialize and execute task.
 
     This function receives bytes and unpickles them to a task which is them execute in a
@@ -188,13 +215,40 @@ def _unserialize_and_execute_task(
     task = cloudpickle.loads(bytes_function)
     kwargs = cloudpickle.loads(bytes_kwargs)
 
-    try:
-        task.execute(**kwargs)
-    except Exception:
-        exc_info = sys.exc_info()
-        processed_exc_info = _process_exception(exc_info, show_locals, console_options)
-        return processed_exc_info
-    return None
+    with warnings.catch_warnings(record=True) as log:
+        # mypy can't infer that record=True means log is not None; help it.
+        assert log is not None
+
+        for arg in session_filterwarnings:
+            warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
+
+        # apply filters from "filterwarnings" marks
+        for mark in task_filterwarnings:
+            for arg in mark.args:
+                warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
+
+        try:
+            task.execute(**kwargs)
+        except Exception:
+            exc_info = sys.exc_info()
+            processed_exc_info = _process_exception(
+                exc_info, show_locals, console_options
+            )
+        else:
+            processed_exc_info = None
+
+        warning_reports = []
+        for warning_message in log:
+            fs_location = warning_message.filename, warning_message.lineno
+            warning_reports.append(
+                WarningReport(
+                    message=warning_record_to_str(warning_message),
+                    fs_location=fs_location,
+                    id_=task_short_name,
+                )
+            )
+
+    return warning_reports, processed_exc_info
 
 
 def _process_exception(
@@ -224,9 +278,31 @@ class DefaultBackendNameSpace:
         """
         if session.config["n_workers"] > 1:
             kwargs = _create_kwargs_for_task(task)
-            return session.executor.submit(task.execute, **kwargs)
+            return session.executor.submit(
+                _mock_processes_for_threads, func=task.execute, **kwargs
+            )
         else:
             return None
+
+
+def _mock_processes_for_threads(
+    func: Callable[..., Any], **kwargs: Any
+) -> tuple[list[Any], tuple[type[BaseException], BaseException, TracebackType] | None]:
+    """Mock execution function such that it returns the same as for processes.
+
+    The function for processes returns ``warning_reports`` and an ``exception``. With
+    threads, these object are collected by the main and not the subprocess. So, we just
+    return placeholders.
+
+    """
+    __tracebackhide__ = True
+    try:
+        func(**kwargs)
+    except Exception:
+        exc_info = sys.exc_info()
+    else:
+        exc_info = None
+    return [], exc_info
 
 
 def _create_kwargs_for_task(task: Task) -> dict[Any, Any]:

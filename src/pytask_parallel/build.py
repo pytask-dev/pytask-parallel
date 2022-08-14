@@ -29,14 +29,5 @@ def pytask_extend_command_line_interface(cli: click.Group) -> None:
             ),
             default=None,
         ),
-        click.Option(
-            ["--delay"],
-            help=(
-                "Delay between checking whether tasks have finished.  [default: 0.1 "
-                "(seconds)]"
-            ),
-            metavar="NUMBER > 0",
-            default=None,
-        ),
     ]
     cli.commands["build"].params.extend(additional_parameters)

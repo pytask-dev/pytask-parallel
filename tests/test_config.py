@@ -35,8 +35,6 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
         ("n_workers", "auto", ExitCode.OK),
         ("n_workers", 1, ExitCode.OK),
         ("n_workers", 2, ExitCode.OK),
-        ("delay", 0.1, ExitCode.OK),
-        ("delay", 1, ExitCode.OK),
         ("parallel_backend", "unknown_backend", ExitCode.CONFIGURATION_FAILED),
     ]
     + [

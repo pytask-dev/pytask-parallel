@@ -7,7 +7,6 @@ from typing import Callable
 
 from pytask import hookimpl
 from pytask_parallel.backends import PARALLEL_BACKENDS_DEFAULT
-from pytask_parallel.callbacks import delay_callback
 from pytask_parallel.callbacks import n_workers_callback
 from pytask_parallel.callbacks import parallel_backend_callback
 
@@ -29,13 +28,7 @@ def pytask_parse_config(
     if config["n_workers"] == "auto":
         config["n_workers"] = max(os.cpu_count() - 1, 1)
 
-    config["delay"] = _get_first_non_none_value(
-        config_from_cli,
-        config_from_file,
-        key="delay",
-        default=0.1,
-        callback=delay_callback,
-    )
+    config["delay"] = 0.1
 
     config["parallel_backend"] = _get_first_non_none_value(
         config_from_cli,

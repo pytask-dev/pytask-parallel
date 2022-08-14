@@ -33,19 +33,3 @@ def parallel_backend_callback(value: Any) -> str | None:
             f"parallel_backend has to be one of {list(PARALLEL_BACKENDS)}."
         )
     return value
-
-
-def delay_callback(value: Any) -> float | None:
-    """Validate the delay option."""
-    if value in [None, "None", "none"]:
-        value = None
-    else:
-        try:
-            value = float(value)
-        except ValueError:
-            pass
-
-        if not (isinstance(value, float) and value > 0):
-            raise ValueError("delay has to be a number greater than 0.")
-
-    return value

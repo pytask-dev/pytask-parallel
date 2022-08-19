@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pickle
 import textwrap
+import time
 from pathlib import Path
-from time import time
 
 import pytest
 from pytask import cli
@@ -317,4 +317,4 @@ def test_sleeper():
     start = time.time()
     sleeper.sleep()
     end = time.time()
-    assert 1 <= end - start <= 1.000001
+    assert 1 <= end - start <= 1.01

@@ -5,7 +5,7 @@ chronological order. Releases follow [semantic versioning](https://semver.org/) 
 releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel).
 
-## 0.2.1 - 2022-08-xx
+## 0.2.1 - 2022-08-19
 
 - {pull}`43` adds docformatter.
 - {pull}`44` allows to capture warnings from subprocesses. Fixes {issue}`41`.

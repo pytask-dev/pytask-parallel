@@ -31,8 +31,8 @@ repos:
     rev: v2.0.0
     hooks:
     -   id: setup-cfg-fmt
--   repo: https://github.com/myint/docformatter
-    rev: v1.5.0-rc1
+-   repo: https://github.com/PYCQA/docformatter
+    rev: v1.5.0
     hooks:
     -   id: docformatter
         args: [--in-place, --wrap-summaries, "88", --wrap-descriptions, "88", --blank]
@@ -67,7 +67,7 @@ repos:
     -   id: interrogate
         args: [-v, --fail-under=40, src, tests]
 -   repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.14
+    rev: 0.7.15
     hooks:
     -   id: mdformat
         additional_dependencies: [
@@ -76,7 +76,7 @@ repos:
         ]
         args: [--wrap, "88"]
 - repo: https://github.com/codespell-project/codespell
-  rev: v2.1.0
+  rev: v2.2.1
   hooks:
     -   id: codespell
 -   repo: https://github.com/pre-commit/mirrors-mypy

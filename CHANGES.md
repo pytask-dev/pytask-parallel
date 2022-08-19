@@ -5,10 +5,13 @@ chronological order. Releases follow [semantic versioning](https://semver.org/) 
 releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel).
 
-## 0.2.1 - 2022-08-xx
+## 0.2.1 - 2022-08-19
 
 - {pull}`43` adds docformatter.
 - {pull}`44` allows to capture warnings from subprocesses. Fixes {issue}`41`.
+- {pull}`45` replaces the delay command line option with an internal, dynamic parameter.
+  Fixes {issue}`41`.
+- {pull}`46` adds a dynamic sleep duration during the execution. Fixes {issue}`42`.
 
 ## 0.2.0 - 2022-04-15
 

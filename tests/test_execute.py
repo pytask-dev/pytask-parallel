@@ -11,6 +11,7 @@ from pytask import ExitCode
 from pytask import main
 from pytask import Task
 from pytask_parallel.backends import PARALLEL_BACKENDS
+from pytask_parallel.execute import _Sleeper
 from pytask_parallel.execute import DefaultBackendNameSpace
 from pytask_parallel.execute import ProcessesNameSpace
 
@@ -139,35 +140,6 @@ def test_pytask_execute_task_w_processes(parallel_backend):
     warning_reports, exception = future.result()
     assert warning_reports == []
     assert exception is None
-
-
-@pytest.mark.end_to_end
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
-def test_parallel_execution_delay(tmp_path, parallel_backend):
-    source = """
-    import pytask
-
-    @pytask.mark.produces("out_1.txt")
-    def task_1(produces):
-        produces.write_text("1")
-
-    @pytask.mark.produces("out_2.txt")
-    def task_2(produces):
-        produces.write_text("2")
-    """
-    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
-
-    session = main(
-        {
-            "paths": tmp_path,
-            "delay": 3,
-            "n_workers": 2,
-            "parallel_backend": parallel_backend,
-        }
-    )
-
-    assert session.exit_code == ExitCode.OK
-    assert 3 < session.execution_end - session.execution_start < 10
 
 
 @pytest.mark.end_to_end
@@ -325,3 +297,24 @@ def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_bac
     warnings_block = result.output.split("Warnings")[1]
     assert "task_example.py::task_example[0]" in warnings_block
     assert "task_example.py::task_example[1]" in warnings_block
+
+
+def test_sleeper():
+    sleeper = _Sleeper(timings=[1, 2, 3], timing_idx=0)
+
+    assert sleeper.timings == [1, 2, 3]
+    assert sleeper.timing_idx == 0
+
+    sleeper.increment()
+    assert sleeper.timing_idx == 1
+
+    sleeper.increment()
+    assert sleeper.timing_idx == 2
+
+    sleeper.reset()
+    assert sleeper.timing_idx == 0
+
+    start = time()
+    sleeper.sleep()
+    end = time()
+    assert 1 <= end - start <= 2

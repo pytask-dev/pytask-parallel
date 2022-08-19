@@ -11,7 +11,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 - {pull}`44` allows to capture warnings from subprocesses. Fixes {issue}`41`.
 - {pull}`45` replaces the delay command line option with an internal, dynamic parameter.
   Fixes {issue}`41`.
-- {pull}`46` adds a dynamic sleep duration during the execution.
+- {pull}`46` adds a dynamic sleep duration during the execution. Fixes {issue}`42`.
 
 ## 0.2.0 - 2022-04-15
 

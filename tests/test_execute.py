@@ -11,6 +11,7 @@ from pytask import ExitCode
 from pytask import main
 from pytask import Task
 from pytask_parallel.backends import PARALLEL_BACKENDS
+from pytask_parallel.execute import _Sleeper
 from pytask_parallel.execute import DefaultBackendNameSpace
 from pytask_parallel.execute import ProcessesNameSpace
 
@@ -296,3 +297,24 @@ def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_bac
     warnings_block = result.output.split("Warnings")[1]
     assert "task_example.py::task_example[0]" in warnings_block
     assert "task_example.py::task_example[1]" in warnings_block
+
+
+def test_sleeper():
+    sleeper = _Sleeper(timings=[1, 2, 3], timing_idx=0)
+
+    assert sleeper.timings == [1, 2, 3]
+    assert sleeper.timing_idx == 0
+
+    sleeper.increment()
+    assert sleeper.timing_idx == 1
+
+    sleeper.increment()
+    assert sleeper.timing_idx == 2
+
+    sleeper.reset()
+    assert sleeper.timing_idx == 0
+
+    start = time.time()
+    sleeper.sleep()
+    end = time.time()
+    assert 1 <= end - start <= 1.000001

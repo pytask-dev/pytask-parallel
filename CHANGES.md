@@ -10,6 +10,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 - {pull}`43` adds docformatter.
 - {pull}`44` allows to capture warnings from subprocesses. Fixes {issue}`41`.
 - {pull}`45` replaces the delay command line option with an internal, dynamic parameter.
+  Fixes {issue}`41`.
 
 ## 0.2.0 - 2022-04-15
 

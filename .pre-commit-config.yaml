@@ -31,7 +31,7 @@ repos:
     rev: v2.0.0
     hooks:
     -   id: setup-cfg-fmt
--   repo: https://github.com/myint/docformatter
+-   repo: https://github.com/PYCQA/docformatter
     rev: v1.4
     hooks:
     -   id: docformatter

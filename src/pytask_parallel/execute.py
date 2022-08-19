@@ -9,7 +9,9 @@ from concurrent.futures import Future
 from types import TracebackType
 from typing import Any
 from typing import Callable
+from typing import List
 
+import attr
 import cloudpickle
 from pybaum.tree_util import tree_map
 from pytask import console
@@ -65,6 +67,7 @@ def pytask_execute_build(session: Session) -> bool | None:
         with parallel_backend(max_workers=session.config["n_workers"]) as executor:
 
             session.executor = executor
+            sleeper = _Sleeper()
 
             while session.scheduler.is_active():
 
@@ -96,6 +99,10 @@ def pytask_execute_build(session: Session) -> bool | None:
                             running_tasks[task_name] = session.hook.pytask_execute_task(
                                 session=session, task=task
                             )
+                            sleeper.reset()
+
+                    if not ready_tasks:
+                        sleeper.increment()
 
                     for task_name in list(running_tasks):
                         future = running_tasks[task_name]
@@ -146,7 +153,7 @@ def pytask_execute_build(session: Session) -> bool | None:
                     if session.should_stop:
                         break
                     else:
-                        time.sleep(session.config["delay"])
+                        sleeper.sleep()
                 except KeyboardInterrupt:
                     break
 
@@ -316,3 +323,26 @@ def _create_kwargs_for_task(task: Task) -> dict[Any, Any]:
             kwargs[arg_name] = tree_map(lambda x: x.value, attribute)
 
     return kwargs
+
+
+@attr.s(kw_only=True)
+class _Sleeper:
+    """A sleeper that always sleeps a bit and up to 1 second if you don't wake it up.
+
+    This class controls when the next iteration of the execution loop starts. If new
+    tasks are scheduled, the time spent sleeping is reset to a lower value.
+
+    """
+
+    timings = attr.ib(type=List[float], default=[(i / 10) ** 2 for i in range(1, 11)])
+    timing_idx = attr.ib(type=int, default=0)
+
+    def reset(self) -> None:
+        self.timing_idx = 0
+
+    def increment(self) -> None:
+        if self.timing_idx < len(self.timings) - 1:
+            self.timing_idx += 1
+
+    def sleep(self) -> None:
+        time.sleep(self.timings[self.timing_idx])

@@ -317,4 +317,4 @@ def test_sleeper():
     start = time()
     sleeper.sleep()
     end = time()
-    assert 1 <= end - start <= 1.01
+    assert 1 <= end - start <= 2

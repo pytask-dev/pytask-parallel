@@ -93,7 +93,6 @@ repos:
             types-setuptools
         ]
         pass_filenames: false
-        language_version: "3.9"
 -   repo: https://github.com/mgedmin/check-manifest
     rev: "0.49"
     hooks:

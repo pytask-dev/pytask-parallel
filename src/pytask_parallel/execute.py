@@ -19,30 +19,27 @@ from pytask import ExecutionReport
 from pytask import get_marks
 from pytask import hookimpl
 from pytask import Mark
+from pytask import parse_warning_filter
 from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask import Session
 from pytask import Task
+from pytask import warning_record_to_str
+from pytask import WarningReport
 from pytask_parallel.backends import PARALLEL_BACKENDS
+from pytask_parallel.backends import ParallelBackendsChoices
 from rich.console import ConsoleOptions
 from rich.traceback import Traceback
-
-# Can be removed if pinned to pytask >= 0.2.6.
-try:
-    from pytask import parse_warning_filter
-    from pytask import warning_record_to_str
-    from pytask import WarningReport
-except ImportError:
-    from _pytask.warnings import parse_warning_filter
-    from _pytask.warnings import warning_record_to_str
-    from _pytask.warnings_utils import WarningReport
 
 
 @hookimpl
 def pytask_post_parse(config: dict[str, Any]) -> None:
     """Register the parallel backend."""
-    if config["parallel_backend"] in ("loky", "processes"):
+    if config["parallel_backend"] in (
+        ParallelBackendsChoices.LOKY,  # type: ignore[attr-defined]
+        ParallelBackendsChoices.PROCESSES,
+    ):
         config["pm"].register(ProcessesNameSpace)
-    elif config["parallel_backend"] in ("threads",):
+    elif config["parallel_backend"] in (ParallelBackendsChoices.THREADS,):
         config["pm"].register(DefaultBackendNameSpace)
 
 

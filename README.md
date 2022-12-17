@@ -5,7 +5,7 @@
 [![image](https://img.shields.io/conda/vn/conda-forge/pytask-parallel.svg)](https://anaconda.org/conda-forge/pytask-parallel)
 [![image](https://img.shields.io/conda/pn/conda-forge/pytask-parallel.svg)](https://anaconda.org/conda-forge/pytask-parallel)
 [![PyPI - License](https://img.shields.io/pypi/l/pytask-parallel)](https://pypi.org/project/pytask-parallel)
-[![image](https://img.shields.io/github/workflow/status/pytask-dev/pytask-parallel/Continuous%20Integration%20Workflow/main)](https://github.com/pytask-dev/pytask-parallel/actions?query=branch%3Amain)
+[![image](https://img.shields.io/github/actions/workflow/status/pytask-dev/pytask-parallel/main.yml?branch=main)](https://github.com/pytask-dev/pytask-parallel/actions?query=branch%3Amain)
 [![image](https://codecov.io/gh/pytask-dev/pytask-parallel/branch/main/graph/badge.svg)](https://codecov.io/gh/pytask-dev/pytask-parallel)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/pytask-dev/pytask-parallel/main.svg)](https://results.pre-commit.ci/latest/github/pytask-dev/pytask-parallel/main)
 [![image](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)

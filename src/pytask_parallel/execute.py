@@ -26,7 +26,7 @@ from pytask import Task
 from pytask import warning_record_to_str
 from pytask import WarningReport
 from pytask_parallel.backends import PARALLEL_BACKENDS
-from pytask_parallel.backends import ParallelBackendsChoices
+from pytask_parallel.backends import ParallelBackendChoices
 from rich.console import ConsoleOptions
 from rich.traceback import Traceback
 
@@ -34,13 +34,10 @@ from rich.traceback import Traceback
 @hookimpl
 def pytask_post_parse(config: dict[str, Any]) -> None:
     """Register the parallel backend."""
-    if config["parallel_backend"] in (
-        ParallelBackendsChoices.LOKY,  # type: ignore[attr-defined]
-        ParallelBackendsChoices.PROCESSES,
-    ):
-        config["pm"].register(ProcessesNameSpace)
-    elif config["parallel_backend"] in (ParallelBackendsChoices.THREADS,):
+    if config["parallel_backend"] == ParallelBackendChoices.THREADS:
         config["pm"].register(DefaultBackendNameSpace)
+    else:
+        config["pm"].register(ProcessesNameSpace)
 
 
 @hookimpl(tryfirst=True)

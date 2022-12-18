@@ -11,34 +11,34 @@ try:
 
 except ImportError:
 
-    class ParallelBackendsChoices(str, Enum):
+    class ParallelBackendChoices(str, Enum):
         PROCESSES = "processes"
         THREADS = "threads"
 
-    PARALLEL_BACKENDS_DEFAULT = ParallelBackendsChoices.PROCESSES
+    PARALLEL_BACKENDS_DEFAULT = ParallelBackendChoices.PROCESSES
 
     PARALLEL_BACKENDS = {
-        ParallelBackendsChoices.PROCESSES: ProcessPoolExecutor,
-        ParallelBackendsChoices.THREADS: ThreadPoolExecutor,
+        ParallelBackendChoices.PROCESSES: ProcessPoolExecutor,
+        ParallelBackendChoices.THREADS: ThreadPoolExecutor,
     }
 
 else:
 
-    class ParallelBackendsChoices(str, Enum):  # type: ignore[no-redef]
+    class ParallelBackendChoices(str, Enum):  # type: ignore[no-redef]
         PROCESSES = "processes"
         THREADS = "threads"
         LOKY = "loky"
 
-    PARALLEL_BACKENDS_DEFAULT = ParallelBackendsChoices.PROCESSES
+    PARALLEL_BACKENDS_DEFAULT = ParallelBackendChoices.PROCESSES
 
     PARALLEL_BACKENDS = {
-        ParallelBackendsChoices.PROCESSES: ProcessPoolExecutor,
-        ParallelBackendsChoices.THREADS: ThreadPoolExecutor,
-        ParallelBackendsChoices.LOKY: (  # type: ignore[attr-defined]
+        ParallelBackendChoices.PROCESSES: ProcessPoolExecutor,
+        ParallelBackendChoices.THREADS: ThreadPoolExecutor,
+        ParallelBackendChoices.LOKY: (  # type: ignore[attr-defined]
             get_reusable_executor
         ),
     }
 
     PARALLEL_BACKENDS_DEFAULT = (
-        ParallelBackendsChoices.LOKY  # type: ignore[attr-defined]
+        ParallelBackendChoices.LOKY  # type: ignore[attr-defined]
     )

@@ -6,7 +6,7 @@ import textwrap
 import pytest
 from pytask import ExitCode
 from pytask import main
-from pytask_parallel.backends import PARALLEL_BACKENDS
+from pytask_parallel.backends import ParallelBackendChoices
 
 
 @pytest.mark.end_to_end
@@ -35,8 +35,8 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
         ("parallel_backend", "unknown_backend", ExitCode.CONFIGURATION_FAILED),
     ]
     + [
-        ("parallel_backend", parallel_backend, ExitCode.OK)
-        for parallel_backend in PARALLEL_BACKENDS
+        ("parallel_backend", parallel_backend.value, ExitCode.OK)
+        for parallel_backend in ParallelBackendChoices
     ],
 )
 def test_reading_values_from_config_file(

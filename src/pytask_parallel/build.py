@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import click
+from pytask import EnumChoice
 from pytask import hookimpl
 from pytask_parallel.backends import PARALLEL_BACKENDS_DEFAULT
-from pytask_parallel.backends import ParallelBackendsChoices
+from pytask_parallel.backends import ParallelBackendChoices
 
 
 @hookimpl
@@ -22,7 +23,7 @@ def pytask_extend_command_line_interface(cli: click.Group) -> None:
         ),
         click.Option(
             ["--parallel-backend"],
-            type=click.Choice(ParallelBackendsChoices),
+            type=EnumChoice(ParallelBackendChoices),
             help="Backend for the parallelization.",
             default=PARALLEL_BACKENDS_DEFAULT,
         ),

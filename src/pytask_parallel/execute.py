@@ -60,7 +60,7 @@ def pytask_execute_build(session: Session) -> bool | None:
 
         with parallel_backend(max_workers=session.config["n_workers"]) as executor:
 
-            session.executor = executor
+            session.config["_parallel_executor"] = executor
             sleeper = _Sleeper()
 
             while session.scheduler.is_active():
@@ -183,7 +183,7 @@ class ProcessesNameSpace:
             bytes_function = cloudpickle.dumps(task)
             bytes_kwargs = cloudpickle.dumps(kwargs)
 
-            return session.executor.submit(
+            return session.config["_parallel_executor"].submit(
                 _unserialize_and_execute_task,
                 bytes_function=bytes_function,
                 bytes_kwargs=bytes_kwargs,
@@ -279,7 +279,7 @@ class DefaultBackendNameSpace:
         """
         if session.config["n_workers"] > 1:
             kwargs = _create_kwargs_for_task(task)
-            return session.executor.submit(
+            return session.config["_parallel_executor"].submit(
                 _mock_processes_for_threads, func=task.execute, **kwargs
             )
         else:

@@ -126,7 +126,7 @@ def test_pytask_execute_task_w_processes(parallel_backend):
     with PARALLEL_BACKENDS[parallel_backend](
         max_workers=session.config["n_workers"]
     ) as executor:
-        session.executor = executor
+        session.config["_parallel_executor"] = executor
 
         backend_name_space = {
             "processes": ProcessesNameSpace,

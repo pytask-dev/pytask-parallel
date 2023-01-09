@@ -1,9 +1,9 @@
 """This module configures the available backends."""
 from __future__ import annotations
 
+import enum
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
-from enum import Enum
 
 
 try:
@@ -11,7 +11,9 @@ try:
 
 except ImportError:
 
-    class ParallelBackendChoices(str, Enum):
+    class ParallelBackendChoices(enum.Enum):
+        """Choices for parallel backends."""
+
         PROCESSES = "processes"
         THREADS = "threads"
 
@@ -24,7 +26,9 @@ except ImportError:
 
 else:
 
-    class ParallelBackendChoices(str, Enum):  # type: ignore[no-redef]
+    class ParallelBackendChoices(enum.Enum):  # type: ignore[no-redef]
+        """Choices for parallel backends."""
+
         PROCESSES = "processes"
         THREADS = "threads"
         LOKY = "loky"

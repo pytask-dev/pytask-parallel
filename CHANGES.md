@@ -8,6 +8,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 ## 0.3.0 - 2023-xx-xx
 
 - {pull}`50` deprecates INI configurations and aligns the package with pytask v0.3.
+- {pull}`51` adds ruff and refurb.
 
 ## 0.2.1 - 2022-08-19
 

@@ -20,7 +20,7 @@ class Session:
     pass
 
 
-@pytest.mark.end_to_end
+@pytest.mark.end_to_end()
 @pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_parallel_execution_speedup(tmp_path, parallel_backend):
     source = """
@@ -55,7 +55,7 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
     assert session.execution_end - session.execution_start < 10
 
 
-@pytest.mark.end_to_end
+@pytest.mark.end_to_end()
 @pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
     source = """
@@ -102,7 +102,7 @@ def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
     assert end - start < 10
 
 
-@pytest.mark.integration
+@pytest.mark.integration()
 @pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_pytask_execute_task_w_processes(parallel_backend):
     # Local function which cannot be used with multiprocessing.
@@ -142,7 +142,7 @@ def test_pytask_execute_task_w_processes(parallel_backend):
     assert exception is None
 
 
-@pytest.mark.end_to_end
+@pytest.mark.end_to_end()
 @pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend):
     source = """
@@ -171,7 +171,7 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
     assert len(session.execution_reports) == 2
 
 
-@pytest.mark.end_to_end
+@pytest.mark.end_to_end()
 @pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_task_priorities(tmp_path, parallel_backend):
     source = """
@@ -213,7 +213,7 @@ def test_task_priorities(tmp_path, parallel_backend):
     assert last_task_name.endswith("task_2") or last_task_name.endswith("task_5")
 
 
-@pytest.mark.end_to_end
+@pytest.mark.end_to_end()
 @pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 @pytest.mark.parametrize("show_locals", [True, False])
 def test_rendering_of_tracebacks_with_rich(
@@ -239,7 +239,7 @@ def test_rendering_of_tracebacks_with_rich(
     assert ("[0, 1, 2, 3, 4]" in result.output) is show_locals
 
 
-@pytest.mark.end_to_end
+@pytest.mark.end_to_end()
 @pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_generators_are_removed_from_depends_on_produces(tmp_path, parallel_backend):
     """Only works with pytask >=0.1.9."""
@@ -265,7 +265,7 @@ def test_generators_are_removed_from_depends_on_produces(tmp_path, parallel_back
     assert session.exit_code == ExitCode.OK
 
 
-@pytest.mark.end_to_end
+@pytest.mark.end_to_end()
 @pytest.mark.parametrize(
     "parallel_backend",
     # Capturing warnings is not thread-safe.

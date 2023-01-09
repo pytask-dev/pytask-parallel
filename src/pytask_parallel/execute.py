@@ -19,31 +19,25 @@ from pytask import ExecutionReport
 from pytask import get_marks
 from pytask import hookimpl
 from pytask import Mark
+from pytask import parse_warning_filter
 from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask import Session
 from pytask import Task
+from pytask import warning_record_to_str
+from pytask import WarningReport
 from pytask_parallel.backends import PARALLEL_BACKENDS
+from pytask_parallel.backends import ParallelBackendChoices
 from rich.console import ConsoleOptions
 from rich.traceback import Traceback
-
-# Can be removed if pinned to pytask >= 0.2.6.
-try:
-    from pytask import parse_warning_filter
-    from pytask import warning_record_to_str
-    from pytask import WarningReport
-except ImportError:
-    from _pytask.warnings import parse_warning_filter
-    from _pytask.warnings import warning_record_to_str
-    from _pytask.warnings_utils import WarningReport
 
 
 @hookimpl
 def pytask_post_parse(config: dict[str, Any]) -> None:
     """Register the parallel backend."""
-    if config["parallel_backend"] in ("loky", "processes"):
-        config["pm"].register(ProcessesNameSpace)
-    elif config["parallel_backend"] in ("threads",):
+    if config["parallel_backend"] == ParallelBackendChoices.THREADS:
         config["pm"].register(DefaultBackendNameSpace)
+    else:
+        config["pm"].register(ProcessesNameSpace)
 
 
 @hookimpl(tryfirst=True)
@@ -66,7 +60,7 @@ def pytask_execute_build(session: Session) -> bool | None:
 
         with parallel_backend(max_workers=session.config["n_workers"]) as executor:
 
-            session.executor = executor
+            session.config["_parallel_executor"] = executor
             sleeper = _Sleeper()
 
             while session.scheduler.is_active():
@@ -189,7 +183,7 @@ class ProcessesNameSpace:
             bytes_function = cloudpickle.dumps(task)
             bytes_kwargs = cloudpickle.dumps(kwargs)
 
-            return session.executor.submit(
+            return session.config["_parallel_executor"].submit(
                 _unserialize_and_execute_task,
                 bytes_function=bytes_function,
                 bytes_kwargs=bytes_kwargs,
@@ -285,7 +279,7 @@ class DefaultBackendNameSpace:
         """
         if session.config["n_workers"] > 1:
             kwargs = _create_kwargs_for_task(task)
-            return session.executor.submit(
+            return session.config["_parallel_executor"].submit(
                 _mock_processes_for_threads, func=task.execute, **kwargs
             )
         else:

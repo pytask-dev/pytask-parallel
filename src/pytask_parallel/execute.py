@@ -69,10 +69,11 @@ def pytask_execute_build(session: Session) -> bool | None:
                     newly_collected_reports = []
                     n_new_tasks = session.config["n_workers"] - len(running_tasks)
 
-                    if n_new_tasks >= 1:
-                        ready_tasks = list(session.scheduler.get_ready(n_new_tasks))
-                    else:
-                        ready_tasks = []
+                    ready_tasks = (
+                        list(session.scheduler.get_ready(n_new_tasks))
+                        if n_new_tasks >= 1
+                        else []
+                    )
 
                     for task_name in ready_tasks:
                         task = session.dag.nodes[task_name]["task"]
@@ -83,7 +84,7 @@ def pytask_execute_build(session: Session) -> bool | None:
                             session.hook.pytask_execute_task_setup(
                                 session=session, task=task
                             )
-                        except Exception:
+                        except Exception:  # noqa: BLE001
                             report = ExecutionReport.from_task_and_exception(
                                 task, sys.exc_info()
                             )
@@ -122,7 +123,7 @@ def pytask_execute_build(session: Session) -> bool | None:
                                     session.hook.pytask_execute_task_teardown(
                                         session=session, task=task
                                     )
-                                except Exception:
+                                except Exception:  # noqa: BLE001
                                     report = ExecutionReport.from_task_and_exception(
                                         task, sys.exc_info()
                                     )
@@ -146,8 +147,8 @@ def pytask_execute_build(session: Session) -> bool | None:
 
                     if session.should_stop:
                         break
-                    else:
-                        sleeper.sleep()
+                    sleeper.sleep()
+
                 except KeyboardInterrupt:
                     break
 
@@ -230,7 +231,7 @@ def _unserialize_and_execute_task(
 
         try:
             task.execute(**kwargs)
-        except Exception:
+        except Exception:  # noqa: BLE001
             exc_info = sys.exc_info()
             processed_exc_info = _process_exception(
                 exc_info, show_locals, console_options
@@ -282,8 +283,7 @@ class DefaultBackendNameSpace:
             return session.config["_parallel_executor"].submit(
                 _mock_processes_for_threads, func=task.execute, **kwargs
             )
-        else:
-            return None
+        return None
 
 
 def _mock_processes_for_threads(
@@ -299,7 +299,7 @@ def _mock_processes_for_threads(
     __tracebackhide__ = True
     try:
         func(**kwargs)
-    except Exception:
+    except Exception:  # noqa: BLE001
         exc_info = sys.exc_info()
     else:
         exc_info = None

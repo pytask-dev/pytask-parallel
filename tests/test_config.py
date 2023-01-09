@@ -9,9 +9,9 @@ from pytask import main
 from pytask_parallel.backends import ParallelBackendChoices
 
 
-@pytest.mark.end_to_end
+@pytest.mark.end_to_end()
 @pytest.mark.parametrize(
-    "pdb, n_workers, expected",
+    ("pdb", "n_workers", "expected"),
     [
         (False, 1, 1),
         (True, 1, 1),
@@ -25,9 +25,9 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
     assert session.config["n_workers"] == expected
 
 
-@pytest.mark.end_to_end
+@pytest.mark.end_to_end()
 @pytest.mark.parametrize(
-    "configuration_option, value, exit_code",
+    ("configuration_option", "value", "exit_code"),
     [
         ("n_workers", "auto", ExitCode.OK),
         ("n_workers", 1, ExitCode.OK),

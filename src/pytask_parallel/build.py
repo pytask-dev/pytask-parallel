@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import click
+from pytask import EnumChoice
 from pytask import hookimpl
-from pytask_parallel.backends import PARALLEL_BACKENDS
 from pytask_parallel.backends import PARALLEL_BACKENDS_DEFAULT
+from pytask_parallel.backends import ParallelBackendChoices
 
 
 @hookimpl
@@ -15,19 +16,16 @@ def pytask_extend_command_line_interface(cli: click.Group) -> None:
             ["-n", "--n-workers"],
             help=(
                 "Max. number of pytask_parallel tasks. Integer >= 1 or 'auto' which is "
-                "os.cpu_count() - 1.  [default: 1 (no parallelization)]"
+                "os.cpu_count() - 1."
             ),
             metavar="[INTEGER|auto]",
-            default=None,
+            default=1,
         ),
         click.Option(
             ["--parallel-backend"],
-            type=click.Choice(PARALLEL_BACKENDS),
-            help=(
-                "Backend for the parallelization.  "
-                f"[default: {PARALLEL_BACKENDS_DEFAULT}]"
-            ),
-            default=None,
+            type=EnumChoice(ParallelBackendChoices),
+            help="Backend for the parallelization.",
+            default=PARALLEL_BACKENDS_DEFAULT,
         ),
     ]
     cli.commands["build"].params.extend(additional_parameters)

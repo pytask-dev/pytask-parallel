@@ -6,7 +6,7 @@ import textwrap
 import pytest
 from pytask import ExitCode
 from pytask import main
-from pytask_parallel.backends import PARALLEL_BACKENDS
+from pytask_parallel.backends import ParallelBackendChoices
 
 
 @pytest.mark.end_to_end
@@ -27,9 +27,6 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
 
 @pytest.mark.end_to_end
 @pytest.mark.parametrize(
-    "config_file", ["pytask.ini", "tox.ini", "setup.cfg", "pyproject.toml"]
-)
-@pytest.mark.parametrize(
     "configuration_option, value, exit_code",
     [
         ("n_workers", "auto", ExitCode.OK),
@@ -38,31 +35,20 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
         ("parallel_backend", "unknown_backend", ExitCode.CONFIGURATION_FAILED),
     ]
     + [
-        ("parallel_backend", parallel_backend, ExitCode.OK)
-        for parallel_backend in PARALLEL_BACKENDS
+        ("parallel_backend", parallel_backend.value, ExitCode.OK)
+        for parallel_backend in ParallelBackendChoices
     ],
 )
 def test_reading_values_from_config_file(
-    tmp_path, capsys, config_file, configuration_option, value, exit_code
+    tmp_path, configuration_option, value, exit_code
 ):
-    if config_file == "pyproject.toml":
-        config = f"""
-        [tool.pytask.ini_options]
-        {configuration_option} = {value!r}
-        """
-    else:
-        config = f"""
-        [pytask]
-        {configuration_option} = {value}
-        """
-    tmp_path.joinpath(config_file).write_text(textwrap.dedent(config))
+    config = f"""
+    [tool.pytask.ini_options]
+    {configuration_option} = {value!r}
+    """
+    tmp_path.joinpath("pyproject.toml").write_text(textwrap.dedent(config))
 
     session = main({"paths": tmp_path})
-    captured = capsys.readouterr()
-    if config_file == "pyproject.toml":
-        assert "WARNING" not in captured.out
-    else:
-        assert "WARNING" in captured.out
 
     assert session.exit_code == exit_code
     if value == "auto":

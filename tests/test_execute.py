@@ -48,7 +48,7 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
     tmp_path.joinpath("out_2.txt").unlink()
 
     session = main(
-        {"paths": tmp_path, "n_workers": 2, "parallel_backend": parallel_backend}
+        {"paths": tmp_path, "n_workers": 2, "parallel_backend": parallel_backend},
     )
 
     assert session.exit_code == ExitCode.OK
@@ -124,7 +124,7 @@ def test_pytask_execute_task_w_processes(parallel_backend):
     }
 
     with PARALLEL_BACKENDS[parallel_backend](
-        max_workers=session.config["n_workers"]
+        max_workers=session.config["n_workers"],
     ) as executor:
         session.config["_parallel_executor"] = executor
 
@@ -163,7 +163,7 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
             "n_workers": 2,
             "parallel_backend": parallel_backend,
             "max_failures": 1,
-        }
+        },
     )
 
     assert session.exit_code == ExitCode.FAILED
@@ -203,7 +203,7 @@ def test_task_priorities(tmp_path, parallel_backend):
     tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
 
     session = main(
-        {"paths": tmp_path, "parallel_backend": parallel_backend, "n_workers": 2}
+        {"paths": tmp_path, "parallel_backend": parallel_backend, "n_workers": 2},
     )
 
     assert session.exit_code == ExitCode.OK
@@ -217,7 +217,7 @@ def test_task_priorities(tmp_path, parallel_backend):
 @pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 @pytest.mark.parametrize("show_locals", [True, False])
 def test_rendering_of_tracebacks_with_rich(
-    runner, tmp_path, parallel_backend, show_locals
+    runner, tmp_path, parallel_backend, show_locals,
 ):
     source = """
     import pytask
@@ -259,7 +259,7 @@ def test_generators_are_removed_from_depends_on_produces(tmp_path, parallel_back
     tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
 
     session = main(
-        {"paths": tmp_path, "parallel_backend": parallel_backend, "n_workers": 2}
+        {"paths": tmp_path, "parallel_backend": parallel_backend, "n_workers": 2},
     )
 
     assert session.exit_code == ExitCode.OK
@@ -286,7 +286,7 @@ def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_bac
     tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
 
     result = runner.invoke(
-        cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend]
+        cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend],
     )
 
     assert result.exit_code == ExitCode.OK

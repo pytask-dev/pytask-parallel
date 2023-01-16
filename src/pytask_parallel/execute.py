@@ -78,21 +78,21 @@ def pytask_execute_build(session: Session) -> bool | None:
                     for task_name in ready_tasks:
                         task = session.dag.nodes[task_name]["task"]
                         session.hook.pytask_execute_task_log_start(
-                            session=session, task=task
+                            session=session, task=task,
                         )
                         try:
                             session.hook.pytask_execute_task_setup(
-                                session=session, task=task
+                                session=session, task=task,
                             )
                         except Exception:  # noqa: BLE001
                             report = ExecutionReport.from_task_and_exception(
-                                task, sys.exc_info()
+                                task, sys.exc_info(),
                             )
                             newly_collected_reports.append(report)
                             session.scheduler.done(task_name)
                         else:
                             running_tasks[task_name] = session.hook.pytask_execute_task(
-                                session=session, task=task
+                                session=session, task=task,
                             )
                             sleeper.reset()
 
@@ -112,8 +112,8 @@ def pytask_execute_build(session: Session) -> bool | None:
                                 task = session.dag.nodes[task_name]["task"]
                                 newly_collected_reports.append(
                                     ExecutionReport.from_task_and_exception(
-                                        task, exc_info
-                                    )
+                                        task, exc_info,
+                                    ),
                                 )
                                 running_tasks.pop(task_name)
                                 session.scheduler.done(task_name)
@@ -121,11 +121,11 @@ def pytask_execute_build(session: Session) -> bool | None:
                                 task = session.dag.nodes[task_name]["task"]
                                 try:
                                     session.hook.pytask_execute_task_teardown(
-                                        session=session, task=task
+                                        session=session, task=task,
                                     )
                                 except Exception:  # noqa: BLE001
                                     report = ExecutionReport.from_task_and_exception(
-                                        task, sys.exc_info()
+                                        task, sys.exc_info(),
                                     )
                                 else:
                                     report = ExecutionReport.from_task(task)
@@ -138,10 +138,10 @@ def pytask_execute_build(session: Session) -> bool | None:
 
                     for report in newly_collected_reports:
                         session.hook.pytask_execute_task_process_report(
-                            session=session, report=report
+                            session=session, report=report,
                         )
                         session.hook.pytask_execute_task_log_end(
-                            session=session, task=task, report=report
+                            session=session, task=task, report=report,
                         )
                         reports.append(report)
 
@@ -234,7 +234,7 @@ def _unserialize_and_execute_task(
         except Exception:  # noqa: BLE001
             exc_info = sys.exc_info()
             processed_exc_info = _process_exception(
-                exc_info, show_locals, console_options
+                exc_info, show_locals, console_options,
             )
         else:
             processed_exc_info = None
@@ -247,7 +247,7 @@ def _unserialize_and_execute_task(
                     message=warning_record_to_str(warning_message),
                     fs_location=fs_location,
                     id_=task_short_name,
-                )
+                ),
             )
 
     return warning_reports, processed_exc_info
@@ -281,13 +281,13 @@ class DefaultBackendNameSpace:
         if session.config["n_workers"] > 1:
             kwargs = _create_kwargs_for_task(task)
             return session.config["_parallel_executor"].submit(
-                _mock_processes_for_threads, func=task.execute, **kwargs
+                _mock_processes_for_threads, func=task.execute, **kwargs,
             )
         return None
 
 
 def _mock_processes_for_threads(
-    func: Callable[..., Any], **kwargs: Any
+    func: Callable[..., Any], **kwargs: Any,
 ) -> tuple[list[Any], tuple[type[BaseException], BaseException, TracebackType] | None]:
     """Mock execution function such that it returns the same as for processes.
 

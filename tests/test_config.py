@@ -40,7 +40,7 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
     ],
 )
 def test_reading_values_from_config_file(
-    tmp_path, configuration_option, value, exit_code,
+    tmp_path, configuration_option, value, exit_code
 ):
     config = f"""
     [tool.pytask.ini_options]

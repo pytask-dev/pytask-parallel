@@ -11,6 +11,7 @@ from pytask import ExitCode
 from pytask import main
 from pytask import Task
 from pytask_parallel.backends import PARALLEL_BACKENDS
+from pytask_parallel.backends import ParallelBackendChoices
 from pytask_parallel.execute import _Sleeper
 from pytask_parallel.execute import DefaultBackendNameSpace
 from pytask_parallel.execute import ProcessesNameSpace
@@ -129,9 +130,9 @@ def test_pytask_execute_task_w_processes(parallel_backend):
         session.config["_parallel_executor"] = executor
 
         backend_name_space = {
-            "processes": ProcessesNameSpace,
-            "threads": DefaultBackendNameSpace,
-            "loky": DefaultBackendNameSpace,
+            ParallelBackendChoices.PROCESSES: ProcessesNameSpace,
+            ParallelBackendChoices.THREADS: DefaultBackendNameSpace,
+            ParallelBackendChoices.LOKY: DefaultBackendNameSpace,
         }[parallel_backend]
 
         future = backend_name_space.pytask_execute_task(session, task)
@@ -269,7 +270,11 @@ def test_generators_are_removed_from_depends_on_produces(tmp_path, parallel_back
 @pytest.mark.parametrize(
     "parallel_backend",
     # Capturing warnings is not thread-safe.
-    [backend for backend in PARALLEL_BACKENDS if backend != "threads"],
+    [
+        backend
+        for backend in PARALLEL_BACKENDS
+        if backend != ParallelBackendChoices.THREADS
+    ],
 )
 def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_backend):
     source = """

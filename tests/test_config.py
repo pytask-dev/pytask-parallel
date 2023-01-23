@@ -35,16 +35,17 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
         ("parallel_backend", "unknown_backend", ExitCode.CONFIGURATION_FAILED),
     ]
     + [
-        ("parallel_backend", parallel_backend.value, ExitCode.OK)
+        ("parallel_backend", parallel_backend, ExitCode.OK)
         for parallel_backend in ParallelBackendChoices
     ],
 )
 def test_reading_values_from_config_file(
     tmp_path, configuration_option, value, exit_code
 ):
+    config_value = value.value if isinstance(value, ParallelBackendChoices) else value
     config = f"""
     [tool.pytask.ini_options]
-    {configuration_option} = {value!r}
+    {configuration_option} = {config_value!r}
     """
     tmp_path.joinpath("pyproject.toml").write_text(textwrap.dedent(config))
 

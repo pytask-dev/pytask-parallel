@@ -59,12 +59,10 @@ def pytask_execute_build(session: Session) -> bool | None:
         parallel_backend = PARALLEL_BACKENDS[session.config["parallel_backend"]]
 
         with parallel_backend(max_workers=session.config["n_workers"]) as executor:
-
             session.config["_parallel_executor"] = executor
             sleeper = _Sleeper()
 
             while session.scheduler.is_active():
-
                 try:
                     newly_collected_reports = []
                     n_new_tasks = session.config["n_workers"] - len(running_tasks)

@@ -12,7 +12,7 @@ from pytask_parallel.backends import ParallelBackendChoices
 @hookimpl
 def pytask_parse_config(config: dict[str, Any]) -> None:
     """Parse the configuration."""
-    if config["n_workers"] == "auto":  # noqa: PLR2004
+    if config["n_workers"] == "auto":
         config["n_workers"] = max(os.cpu_count() - 1, 1)
 
     if (

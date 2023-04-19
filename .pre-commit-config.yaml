@@ -3,11 +3,17 @@ repos:
     rev: v4.4.0
     hooks:
     -   id: check-added-large-files
-        args: ['--maxkb=100']
+        args: ['--maxkb=25']
+    -   id: check-case-conflict
     -   id: check-merge-conflict
+    -   id: check-vcs-permalinks
     -   id: check-yaml
     -   id: debug-statements
     -   id: end-of-file-fixer
+    -   id: fix-byte-order-marker
+    -   id: mixed-line-ending
+    -   id: no-commit-to-branch
+        args: [--branch, main]
 -   repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0  # Use the ref you want to point at
     hooks:
@@ -26,11 +32,6 @@ repos:
     rev: v2.2.0
     hooks:
     -   id: setup-cfg-fmt
--   repo: https://github.com/PYCQA/docformatter
-    rev: v1.6.0
-    hooks:
-    -   id: docformatter
-        args: [--in-place, --wrap-summaries, "88", --wrap-descriptions, "88", --blank]
 -   repo: https://github.com/psf/black
     rev: 23.3.0
     hooks:

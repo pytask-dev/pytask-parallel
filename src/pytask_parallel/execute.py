@@ -41,7 +41,7 @@ def pytask_post_parse(config: dict[str, Any]) -> None:
 
 
 @hookimpl(tryfirst=True)
-def pytask_execute_build(session: Session) -> bool | None:
+def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR0915
     """Execute tasks with a parallel backend.
 
     There are three phases while the scheduler has tasks which need to be executed.
@@ -59,12 +59,10 @@ def pytask_execute_build(session: Session) -> bool | None:
         parallel_backend = PARALLEL_BACKENDS[session.config["parallel_backend"]]
 
         with parallel_backend(max_workers=session.config["n_workers"]) as executor:
-
             session.config["_parallel_executor"] = executor
             sleeper = _Sleeper()
 
             while session.scheduler.is_active():
-
                 try:
                     newly_collected_reports = []
                     n_new_tasks = session.config["n_workers"] - len(running_tasks)
@@ -197,7 +195,7 @@ class ProcessesNameSpace:
         return None
 
 
-def _unserialize_and_execute_task(
+def _unserialize_and_execute_task(  # noqa: PLR0913
     bytes_function: bytes,
     bytes_kwargs: bytes,
     show_locals: bool,

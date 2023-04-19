@@ -209,9 +209,9 @@ def test_task_priorities(tmp_path, parallel_backend):
 
     assert session.exit_code == ExitCode.OK
     first_task_name = session.execution_reports[0].task.name
-    assert first_task_name.endswith("task_0") or first_task_name.endswith("task_3")
+    assert first_task_name.endswith(("task_0", "task_3"))
     last_task_name = session.execution_reports[-1].task.name
-    assert last_task_name.endswith("task_2") or last_task_name.endswith("task_5")
+    assert last_task_name.endswith(("task_2", "task_5"))
 
 
 @pytest.mark.end_to_end()

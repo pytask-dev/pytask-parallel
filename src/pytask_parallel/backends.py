@@ -2,8 +2,36 @@
 from __future__ import annotations
 
 import enum
+from concurrent.futures import Future
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
+from typing import Callable
+
+import cloudpickle
+
+
+def deserialize_and_run_with_cloudpickle(
+    fn: Callable[..., Any], /, kwargs: dict[str, Any]
+) -> Any:
+    """Deserialize and execute a function and keyword arguments."""
+    deserialized_fn = cloudpickle.loads(fn)
+    deserialized_kwargs = cloudpickle.loads(kwargs)
+    return deserialized_fn(**deserialized_kwargs)
+
+
+class CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
+    """Patches the standard executor to serialize functions with cloudpickle."""
+
+    def submit(
+        self, fn: Callable[..., Any], /, *args: Any, **kwargs: Any  # noqa: ARG002
+    ) -> Future[Any]:
+        """Submit a new task."""
+        return super().submit(
+            deserialize_and_run_with_cloudpickle,
+            cloudpickle.dumps(fn),
+            kwargs=cloudpickle.dumps(kwargs),
+        )
 
 
 try:
@@ -20,7 +48,7 @@ except ImportError:
     PARALLEL_BACKENDS_DEFAULT = ParallelBackendChoices.PROCESSES
 
     PARALLEL_BACKENDS = {
-        ParallelBackendChoices.PROCESSES: ProcessPoolExecutor,
+        ParallelBackendChoices.PROCESSES: CloudpickleProcessPoolExecutor,
         ParallelBackendChoices.THREADS: ThreadPoolExecutor,
     }
 
@@ -36,7 +64,7 @@ else:
     PARALLEL_BACKENDS_DEFAULT = ParallelBackendChoices.PROCESSES
 
     PARALLEL_BACKENDS = {
-        ParallelBackendChoices.PROCESSES: ProcessPoolExecutor,
+        ParallelBackendChoices.PROCESSES: CloudpickleProcessPoolExecutor,
         ParallelBackendChoices.THREADS: ThreadPoolExecutor,
         ParallelBackendChoices.LOKY: (  # type: ignore[attr-defined]
             get_reusable_executor

@@ -7,6 +7,8 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 
 ## 0.3.1 - 2023-xx-xx
 
+- {pull}`56` refactors the `ProcessPoolExecutor`.
+
 ## 0.3.0 - 2023-01-23
 
 - {pull}`50` deprecates INI configurations and aligns the package with pytask v0.3.

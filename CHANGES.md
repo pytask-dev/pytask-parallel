@@ -5,7 +5,9 @@ chronological order. Releases follow [semantic versioning](https://semver.org/) 
 releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel).
 
-## 0.3.0 - 2023-xx-xx
+## 0.3.1 - 2023-xx-xx
+
+## 0.3.0 - 2023-01-23
 
 - {pull}`50` deprecates INI configurations and aligns the package with pytask v0.3.
 - {pull}`51` adds ruff and refurb.

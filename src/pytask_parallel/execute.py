@@ -96,7 +96,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                     if not ready_tasks:
                         sleeper.increment()
 
-                    for task_name in list(running_tasks):
+                    for task_name in running_tasks:
                         future = running_tasks[task_name]
                         if future.done():
                             warning_reports, task_exception = future.result()

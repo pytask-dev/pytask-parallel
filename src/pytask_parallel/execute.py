@@ -154,14 +154,10 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
 
 def _parse_future_exception(
-    exception: BaseException | None,
+    exc: BaseException | None,
 ) -> tuple[type[BaseException], BaseException, TracebackType] | None:
-    """Parse a future exception."""
-    return (
-        None
-        if exception is None
-        else (type(exception), exception, exception.__traceback__)
-    )
+    """Parse a future exception into the format of ``sys.exc_info``."""
+    return None if exc is None else (type(exc), exc, exc.__traceback__)
 
 
 class ProcessesNameSpace:

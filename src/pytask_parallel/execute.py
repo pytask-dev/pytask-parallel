@@ -12,7 +12,6 @@ from typing import Callable
 from typing import List
 
 import attr
-import cloudpickle
 from pybaum.tree_util import tree_map
 from pytask import console
 from pytask import ExecutionReport
@@ -179,13 +178,10 @@ class ProcessesNameSpace:
         if session.config["n_workers"] > 1:
             kwargs = _create_kwargs_for_task(task)
 
-            bytes_function = cloudpickle.dumps(task)
-            bytes_kwargs = cloudpickle.dumps(kwargs)
-
             return session.config["_parallel_executor"].submit(
                 _unserialize_and_execute_task,
-                bytes_function=bytes_function,
-                bytes_kwargs=bytes_kwargs,
+                task=task,
+                kwargs=kwargs,
                 show_locals=session.config["show_locals"],
                 console_options=console.options,
                 session_filterwarnings=session.config["filterwarnings"],
@@ -196,8 +192,8 @@ class ProcessesNameSpace:
 
 
 def _unserialize_and_execute_task(  # noqa: PLR0913
-    bytes_function: bytes,
-    bytes_kwargs: bytes,
+    task: Task,
+    kwargs: dict[str, Any],
     show_locals: bool,
     console_options: ConsoleOptions,
     session_filterwarnings: tuple[str, ...],
@@ -211,9 +207,6 @@ def _unserialize_and_execute_task(  # noqa: PLR0913
 
     """
     __tracebackhide__ = True
-
-    task = cloudpickle.loads(bytes_function)
-    kwargs = cloudpickle.loads(bytes_kwargs)
 
     with warnings.catch_warnings(record=True) as log:
         # mypy can't infer that record=True means log is not None; help it.

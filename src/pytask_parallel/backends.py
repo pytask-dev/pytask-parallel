@@ -12,7 +12,7 @@ import cloudpickle
 
 
 def deserialize_and_run_with_cloudpickle(
-    fn: Callable[..., Any], /, kwargs: dict[str, Any]
+    fn: Callable[..., Any], kwargs: dict[str, Any]
 ) -> Any:
     """Deserialize and execute a function and keyword arguments."""
     deserialized_fn = cloudpickle.loads(fn)
@@ -23,13 +23,14 @@ def deserialize_and_run_with_cloudpickle(
 class CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
     """Patches the standard executor to serialize functions with cloudpickle."""
 
-    def submit(
-        self, fn: Callable[..., Any], /, *args: Any, **kwargs: Any  # noqa: ARG002
+    # The type signature is wrong for version above Py3.7. Fix when 3.7 is deprecated.
+    def submit(  # type: ignore[override]
+        self, fn: Callable[..., Any], *args: Any, **kwargs: Any  # noqa: ARG002
     ) -> Future[Any]:
         """Submit a new task."""
         return super().submit(
             deserialize_and_run_with_cloudpickle,
-            cloudpickle.dumps(fn),
+            fn=cloudpickle.dumps(fn),
             kwargs=cloudpickle.dumps(kwargs),
         )
 

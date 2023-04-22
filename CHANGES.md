@@ -8,6 +8,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 ## 0.3.1 - 2023-xx-xx
 
 - {pull}`56` refactors the `ProcessPoolExecutor`.
+- {pull}`57` does some housekeeping.
 
 ## 0.3.0 - 2023-01-23
 

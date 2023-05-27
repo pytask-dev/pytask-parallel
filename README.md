@@ -28,9 +28,9 @@ $ pip install pytask-parallel
 $ conda install -c conda-forge pytask-parallel
 ```
 
-By default, the plugin uses `loky`'s robust implementation of the `ProcessPoolExecutor`.
+By default, the plugin uses `concurrent.futures.ProcessPoolExecutor`.
 
-It is also possible to select the `ProcessPoolExecutor` or `ThreadPoolExecutor` from the
+It is also possible to select the executor from loky or `ThreadPoolExecutor` from the
 [concurrent.futures](https://docs.python.org/3/library/concurrent.futures.html) module
 as backends to execute tasks asynchronously.
 
@@ -65,7 +65,7 @@ You can also set the options in a `pyproject.toml`.
 
 [tool.pytask.ini_options]
 n_workers = 1
-parallel_backend = "loky"  # or processes or threads
+parallel_backend = "processes"  # or loky or threads
 ```
 
 ## Some implementation details

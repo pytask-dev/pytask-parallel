@@ -46,8 +46,6 @@ except ImportError:
         PROCESSES = "processes"
         THREADS = "threads"
 
-    PARALLEL_BACKENDS_DEFAULT = ParallelBackendChoices.PROCESSES
-
     PARALLEL_BACKENDS = {
         ParallelBackendChoices.PROCESSES: CloudpickleProcessPoolExecutor,
         ParallelBackendChoices.THREADS: ThreadPoolExecutor,
@@ -72,6 +70,4 @@ else:
         ),
     }
 
-    PARALLEL_BACKENDS_DEFAULT = (
-        ParallelBackendChoices.LOKY  # type: ignore[attr-defined]
-    )
+PARALLEL_BACKENDS_DEFAULT = ParallelBackendChoices.PROCESSES

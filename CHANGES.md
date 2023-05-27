@@ -5,10 +5,12 @@ chronological order. Releases follow [semantic versioning](https://semver.org/) 
 releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel).
 
-## 0.3.1 - 2023-xx-xx
+## 0.3.1 - 2023-05-27
 
 - {pull}`56` refactors the `ProcessPoolExecutor`.
 - {pull}`57` does some housekeeping.
+- {pull}`59` sets the default backend to `ProcessPoolExecutor` even when loky is
+  installed.
 
 ## 0.3.0 - 2023-01-23
 

@@ -184,7 +184,7 @@ class ProcessesNameSpace:
                 console_options=console.options,
                 session_filterwarnings=session.config["filterwarnings"],
                 task_filterwarnings=get_marks(task, "filterwarnings"),
-                task_short_name=task.short_name,
+                task_display_name=getattr(task, "display_name", task.name),
             )
         return None
 
@@ -196,7 +196,7 @@ def _unserialize_and_execute_task(  # noqa: PLR0913
     console_options: ConsoleOptions,
     session_filterwarnings: tuple[str, ...],
     task_filterwarnings: tuple[Mark, ...],
-    task_short_name: str,
+    task_display_name: str,
 ) -> tuple[list[WarningReport], tuple[type[BaseException], BaseException, str] | None]:
     """Unserialize and execute task.
 
@@ -252,7 +252,7 @@ def _unserialize_and_execute_task(  # noqa: PLR0913
                 WarningReport(
                     message=warning_record_to_str(warning_message),
                     fs_location=fs_location,
-                    id_=task_short_name,
+                    id_=task_display_name,
                 )
             )
 

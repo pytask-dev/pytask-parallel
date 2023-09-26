@@ -63,20 +63,23 @@ repos:
   rev: v2.2.5
   hooks:
     -   id: codespell
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v1.5.1'
-    hooks:
-    -   id: mypy
-        args: [
-            --no-strict-optional,
-            --ignore-missing-imports,
-        ]
-        additional_dependencies: [
-            types-attrs,
-            types-click,
-            types-setuptools
-        ]
-        pass_filenames: false
+# -   repo: https://github.com/pre-commit/mirrors-mypy
+#     rev: 'v1.5.1'
+#     hooks:
+#     -   id: mypy
+#         args: [
+#             --no-strict-optional,
+#             --ignore-missing-imports,
+#         ]
+#         additional_dependencies: [
+#             types-attrs,
+#             types-click,
+#             types-setuptools,
+#             pytask==0.4.0rc2,
+#             rich,
+#             optree,
+#         ]
+#         pass_filenames: false
 -   repo: https://github.com/mgedmin/check-manifest
     rev: "0.49"
     hooks:

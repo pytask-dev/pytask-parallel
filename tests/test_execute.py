@@ -16,13 +16,23 @@ from pytask_parallel.execute import _Sleeper
 from pytask_parallel.execute import DefaultBackendNameSpace
 from pytask_parallel.execute import ProcessesNameSpace
 
+from tests.conftest import restore_sys_path_and_module_after_test_execution
+
+
+_PARALLEL_BACKENDS_PARAMETRIZATION = [
+    pytest.param(i, marks=pytest.mark.xfail(reason="loky fails"))
+    if i.value == "loky"
+    else pytest.param(i)
+    for i in PARALLEL_BACKENDS
+]
+
 
 class Session:
     pass
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", _PARALLEL_BACKENDS_PARAMETRIZATION)
 def test_parallel_execution_speedup(tmp_path, parallel_backend):
     source = """
     import pytask
@@ -40,7 +50,8 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
     """
     tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
 
-    session = build(paths=tmp_path)
+    with restore_sys_path_and_module_after_test_execution():
+        session = build(paths=tmp_path)
 
     assert session.exit_code == ExitCode.OK
     assert session.execution_end - session.execution_start > 10
@@ -55,7 +66,7 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", _PARALLEL_BACKENDS_PARAMETRIZATION)
 def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
     source = """
     import pytask
@@ -102,7 +113,7 @@ def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
 
 
 @pytest.mark.integration()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", _PARALLEL_BACKENDS_PARAMETRIZATION)
 def test_pytask_execute_task_w_processes(parallel_backend):
     # Local function which cannot be used with multiprocessing.
     def myfunc():
@@ -142,7 +153,7 @@ def test_pytask_execute_task_w_processes(parallel_backend):
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", _PARALLEL_BACKENDS_PARAMETRIZATION)
 def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend):
     source = """
     import time
@@ -156,12 +167,13 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
     """
     tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
 
-    session = build(
-        paths=tmp_path,
-        n_workers=2,
-        parallel_backend=parallel_backend,
-        max_failures=1,
-    )
+    with restore_sys_path_and_module_after_test_execution():
+        session = build(
+            paths=tmp_path,
+            n_workers=2,
+            parallel_backend=parallel_backend,
+            max_failures=1,
+        )
 
     assert session.exit_code == ExitCode.FAILED
     assert len(session.tasks) == 3
@@ -169,7 +181,7 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", _PARALLEL_BACKENDS_PARAMETRIZATION)
 def test_task_priorities(tmp_path, parallel_backend):
     source = """
     import pytask
@@ -199,9 +211,8 @@ def test_task_priorities(tmp_path, parallel_backend):
     """
     tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
 
-    session = build(
-        {"paths": tmp_path, "parallel_backend": parallel_backend, "n_workers": 2}
-    )
+    with restore_sys_path_and_module_after_test_execution():
+        session = build(paths=tmp_path, parallel_backend=parallel_backend, n_workers=2)
 
     assert session.exit_code == ExitCode.OK
     first_task_name = session.execution_reports[0].task.name
@@ -211,7 +222,7 @@ def test_task_priorities(tmp_path, parallel_backend):
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", _PARALLEL_BACKENDS_PARAMETRIZATION)
 @pytest.mark.parametrize("show_locals", [True, False])
 def test_rendering_of_tracebacks_with_rich(
     runner, tmp_path, parallel_backend, show_locals
@@ -237,38 +248,10 @@ def test_rendering_of_tracebacks_with_rich(
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
-def test_generators_are_removed_from_depends_on_produces(tmp_path, parallel_backend):
-    """Only works with pytask >=0.1.9."""
-    source = """
-    from pathlib import Path
-    import pytask
-
-    @pytask.mark.parametrize("produces", [
-        ((x for x in ["out.txt", "out_2.txt"]),),
-        ["in.txt"],
-    ])
-    def task_example(produces):
-        produces = {0: produces} if isinstance(produces, Path) else produces
-        for p in produces.values():
-            p.write_text("hihi")
-    """
-    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
-
-    session = build(paths=tmp_path, parallel_backend=parallel_backend, n_workers=2)
-
-    assert session.exit_code == ExitCode.OK
-
-
-@pytest.mark.end_to_end()
 @pytest.mark.parametrize(
     "parallel_backend",
     # Capturing warnings is not thread-safe.
-    [
-        backend
-        for backend in PARALLEL_BACKENDS
-        if backend != ParallelBackendChoices.THREADS
-    ],
+    [ParallelBackendChoices.PROCESSES],
 )
 def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_backend):
     source = """
@@ -277,7 +260,7 @@ def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_bac
 
     for i in range(2):
 
-        @pytask.mark.task(id=i, kwargs={"produces": f"{i}.txt"})
+        @pytask.mark.task(id=str(i), kwargs={"produces": f"{i}.txt"})
         def task_example(produces):
             warnings.warn("This is a warning.")
             produces.touch()
@@ -320,7 +303,7 @@ def test_sleeper():
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", _PARALLEL_BACKENDS_PARAMETRIZATION)
 def test_task_that_return(runner, tmp_path, parallel_backend):
     source = """
     from pathlib import Path

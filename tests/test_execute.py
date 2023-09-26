@@ -6,9 +6,9 @@ from pathlib import Path
 from time import time
 
 import pytest
+from pytask import build
 from pytask import cli
 from pytask import ExitCode
-from pytask import main
 from pytask import Task
 from pytask_parallel.backends import PARALLEL_BACKENDS
 from pytask_parallel.backends import ParallelBackendChoices
@@ -38,9 +38,9 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
         time.sleep(5)
         produces.write_text("2")
     """
-    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
 
-    session = main({"paths": tmp_path})
+    session = build(paths=tmp_path)
 
     assert session.exit_code == ExitCode.OK
     assert session.execution_end - session.execution_start > 10
@@ -48,9 +48,7 @@ def test_parallel_execution_speedup(tmp_path, parallel_backend):
     tmp_path.joinpath("out_1.txt").unlink()
     tmp_path.joinpath("out_2.txt").unlink()
 
-    session = main(
-        {"paths": tmp_path, "n_workers": 2, "parallel_backend": parallel_backend}
-    )
+    session = build(paths=tmp_path, n_workers=2, parallel_backend=parallel_backend)
 
     assert session.exit_code == ExitCode.OK
     assert session.execution_end - session.execution_start < 10
@@ -73,7 +71,7 @@ def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
         time.sleep(5)
         produces.write_text("2")
     """
-    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
 
     start = time()
     result = runner.invoke(cli, [tmp_path.as_posix()])
@@ -156,15 +154,13 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
     @pytask.mark.try_last
     def task_3(): time.sleep(3)
     """
-    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
 
-    session = main(
-        {
-            "paths": tmp_path,
-            "n_workers": 2,
-            "parallel_backend": parallel_backend,
-            "max_failures": 1,
-        }
+    session = build(
+        paths=tmp_path,
+        n_workers=2,
+        parallel_backend=parallel_backend,
+        max_failures=1,
     )
 
     assert session.exit_code == ExitCode.FAILED
@@ -201,9 +197,9 @@ def test_task_priorities(tmp_path, parallel_backend):
     def task_5():
         time.sleep(0.1)
     """
-    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
 
-    session = main(
+    session = build(
         {"paths": tmp_path, "parallel_backend": parallel_backend, "n_workers": 2}
     )
 
@@ -227,7 +223,7 @@ def test_rendering_of_tracebacks_with_rich(
         a = list(range(5))
         raise Exception
     """
-    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
 
     args = [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend]
     if show_locals:
@@ -257,11 +253,9 @@ def test_generators_are_removed_from_depends_on_produces(tmp_path, parallel_back
         for p in produces.values():
             p.write_text("hihi")
     """
-    tmp_path.joinpath("task_dummy.py").write_text(textwrap.dedent(source))
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
 
-    session = main(
-        {"paths": tmp_path, "parallel_backend": parallel_backend, "n_workers": 2}
-    )
+    session = build(paths=tmp_path, parallel_backend=parallel_backend, n_workers=2)
 
     assert session.exit_code == ExitCode.OK
 
@@ -323,3 +317,21 @@ def test_sleeper():
     sleeper.sleep()
     end = time()
     assert 1 <= end - start <= 2
+
+
+@pytest.mark.end_to_end()
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+def test_task_that_return(runner, tmp_path, parallel_backend):
+    source = """
+    from pathlib import Path
+    from typing_extensions import Annotated
+
+    def task_example() -> Annotated[str, Path("file.txt")]:
+        return "Hello, Darkness, my old friend."
+    """
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
+    result = runner.invoke(
+        cli, [tmp_path.as_posix(), "--parallel-backend", parallel_backend]
+    )
+    assert result.exit_code == ExitCode.OK
+    assert tmp_path.joinpath("file.txt").exists()

@@ -4,8 +4,8 @@ import os
 import textwrap
 
 import pytest
+from pytask import build
 from pytask import ExitCode
-from pytask import main
 from pytask_parallel.backends import ParallelBackendChoices
 
 
@@ -21,7 +21,7 @@ from pytask_parallel.backends import ParallelBackendChoices
     ],
 )
 def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expected):
-    session = main({"paths": tmp_path, "pdb": pdb, "n_workers": n_workers})
+    session = build(paths=tmp_path, pdb=pdb, n_workers=n_workers)
     assert session.config["n_workers"] == expected
 
 
@@ -49,7 +49,7 @@ def test_reading_values_from_config_file(
     """
     tmp_path.joinpath("pyproject.toml").write_text(textwrap.dedent(config))
 
-    session = main({"paths": tmp_path})
+    session = build(paths=tmp_path)
 
     assert session.exit_code == exit_code
     if value == "auto":

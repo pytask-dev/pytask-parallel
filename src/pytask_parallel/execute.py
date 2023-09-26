@@ -12,7 +12,6 @@ from typing import Callable
 from typing import List
 
 import attr
-from pybaum.tree_util import tree_map
 from pytask import console
 from pytask import ExecutionReport
 from pytask import get_marks
@@ -24,6 +23,9 @@ from pytask import Session
 from pytask import Task
 from pytask import warning_record_to_str
 from pytask import WarningReport
+from pytask.tree_util import tree_leaves
+from pytask.tree_util import tree_map
+from pytask.tree_util import tree_structure
 from pytask_parallel.backends import PARALLEL_BACKENDS
 from pytask_parallel.backends import ParallelBackendChoices
 from rich.console import ConsoleOptions
@@ -217,13 +219,30 @@ def _unserialize_and_execute_task(  # noqa: PLR0913
                 warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
 
         try:
-            task.execute(**kwargs)
+            out = task.execute(**kwargs)
         except Exception:  # noqa: BLE001
             exc_info = sys.exc_info()
             processed_exc_info = _process_exception(
                 exc_info, show_locals, console_options
             )
         else:
+            if "return" in task.produces:
+                structure_out = tree_structure(out)
+                structure_return = tree_structure(task.produces["return"])
+                # strict must be false when none is leaf.
+                if not structure_return.is_prefix(structure_out, strict=False):
+                    msg = (
+                        "The structure of the return annotation is not a subtree of "
+                        "the structure of the function return.\n\nFunction return: "
+                        f"{structure_out}\n\nReturn annotation: {structure_return}"
+                    )
+                    raise ValueError(msg)
+
+                nodes = tree_leaves(task.produces["return"])
+                values = structure_return.flatten_up_to(out)
+                for node, value in zip(nodes, values):
+                    node.save(value)
+
             processed_exc_info = None
 
         warning_reports = []
@@ -295,13 +314,15 @@ def _mock_processes_for_threads(
 
 def _create_kwargs_for_task(task: Task) -> dict[Any, Any]:
     """Create kwargs for task function."""
-    kwargs = {**task.kwargs}
+    parameters = inspect.signature(task.function).parameters
 
-    func_arg_names = set(inspect.signature(task.function).parameters)
-    for arg_name in ("depends_on", "produces"):
-        if arg_name in func_arg_names:
-            attribute = getattr(task, arg_name)
-            kwargs[arg_name] = tree_map(lambda x: x.value, attribute)
+    kwargs = {}
+    for name, value in task.depends_on.items():
+        kwargs[name] = tree_map(lambda x: x.load(), value)
+
+    for name, value in task.produces.items():
+        if name in parameters:
+            kwargs[name] = tree_map(lambda x: x.load(), value)
 
     return kwargs
 

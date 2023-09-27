@@ -17,7 +17,8 @@ def deserialize_and_run_with_cloudpickle(
 ) -> Any:
     """Deserialize and execute a function and keyword arguments."""
     deserialized_kwargs_import_path = cloudpickle.loads(kwargs_import_path)
-    import_path(**deserialized_kwargs_import_path)
+    if deserialized_kwargs_import_path:
+        import_path(**deserialized_kwargs_import_path)
 
     deserialized_fn = cloudpickle.loads(fn)
     deserialized_kwargs = cloudpickle.loads(kwargs)

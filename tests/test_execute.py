@@ -236,6 +236,7 @@ def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_bac
     assert "task_example.py::task_example[1]" in warnings_block
 
 
+@pytest.mark.unit()
 def test_sleeper():
     sleeper = _Sleeper(timings=[1, 2, 3], timing_idx=0)
 

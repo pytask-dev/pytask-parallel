@@ -6,7 +6,7 @@ import textwrap
 import pytest
 from pytask import build
 from pytask import ExitCode
-from pytask_parallel.backends import ParallelBackendChoices
+from pytask_parallel.backends import ParallelBackend
 
 
 @pytest.mark.end_to_end()
@@ -36,13 +36,13 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
     ]
     + [
         ("parallel_backend", parallel_backend, ExitCode.OK)
-        for parallel_backend in ParallelBackendChoices
+        for parallel_backend in ParallelBackend
     ],
 )
 def test_reading_values_from_config_file(
     tmp_path, configuration_option, value, exit_code
 ):
-    config_value = value.value if isinstance(value, ParallelBackendChoices) else value
+    config_value = value.value if isinstance(value, ParallelBackend) else value
     config = f"""
     [tool.pytask.ini_options]
     {configuration_option} = {config_value!r}

@@ -19,7 +19,6 @@ from pytask import hookimpl
 from pytask import Mark
 from pytask import parse_warning_filter
 from pytask import PTask
-from pytask import PTaskWithPath
 from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask import Session
 from pytask import Task
@@ -30,7 +29,7 @@ from pytask.tree_util import tree_leaves
 from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
 from pytask_parallel.backends import PARALLEL_BACKENDS
-from pytask_parallel.backends import ParallelBackendChoices
+from pytask_parallel.backends import ParallelBackend
 from rich.console import ConsoleOptions
 from rich.traceback import Traceback
 
@@ -38,7 +37,7 @@ from rich.traceback import Traceback
 @hookimpl
 def pytask_post_parse(config: dict[str, Any]) -> None:
     """Register the parallel backend."""
-    if config["parallel_backend"] == ParallelBackendChoices.THREADS:
+    if config["parallel_backend"] == ParallelBackend.THREADS:
         config["pm"].register(DefaultBackendNameSpace)
     else:
         config["pm"].register(ProcessesNameSpace)
@@ -186,11 +185,6 @@ class ProcessesNameSpace:
         if session.config["n_workers"] > 1:
             kwargs = _create_kwargs_for_task(task)
 
-            if sys.platform == "win32" and isinstance(task, PTaskWithPath):
-                kwargs_import_path = {"path": task.path, "root": session.config["root"]}
-            else:
-                kwargs_import_path = None
-
             return session.config["_parallel_executor"].submit(
                 _execute_task,
                 task=task,
@@ -199,7 +193,6 @@ class ProcessesNameSpace:
                 console_options=console.options,
                 session_filterwarnings=session.config["filterwarnings"],
                 task_filterwarnings=get_marks(task, "filterwarnings"),
-                kwargs_import_path=kwargs_import_path,
             )
         return None
 

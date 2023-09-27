@@ -11,9 +11,7 @@ from typing import Callable
 import cloudpickle
 
 
-def deserialize_and_run_with_cloudpickle(
-    fn: Callable[..., Any], kwargs: dict[str, Any]
-) -> Any:
+def deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:
     """Deserialize and execute a function and keyword arguments."""
     deserialized_fn = cloudpickle.loads(fn)
     deserialized_kwargs = cloudpickle.loads(kwargs)
@@ -40,34 +38,32 @@ try:
 
 except ImportError:
 
-    class ParallelBackendChoices(enum.Enum):
+    class ParallelBackend(enum.Enum):
         """Choices for parallel backends."""
 
         PROCESSES = "processes"
         THREADS = "threads"
 
+    PARALLEL_BACKENDS_DEFAULT = ParallelBackend.PROCESSES
+
     PARALLEL_BACKENDS = {
-        ParallelBackendChoices.PROCESSES: CloudpickleProcessPoolExecutor,
-        ParallelBackendChoices.THREADS: ThreadPoolExecutor,
+        ParallelBackend.PROCESSES: CloudpickleProcessPoolExecutor,
+        ParallelBackend.THREADS: ThreadPoolExecutor,
     }
 
 else:
 
-    class ParallelBackendChoices(enum.Enum):  # type: ignore[no-redef]
+    class ParallelBackend(enum.Enum):  # type: ignore[no-redef]
         """Choices for parallel backends."""
 
         PROCESSES = "processes"
         THREADS = "threads"
         LOKY = "loky"
 
-    PARALLEL_BACKENDS_DEFAULT = ParallelBackendChoices.PROCESSES
+    PARALLEL_BACKENDS_DEFAULT = ParallelBackend.LOKY  # type: ignore[attr-defined]
 
     PARALLEL_BACKENDS = {
-        ParallelBackendChoices.PROCESSES: CloudpickleProcessPoolExecutor,
-        ParallelBackendChoices.THREADS: ThreadPoolExecutor,
-        ParallelBackendChoices.LOKY: (  # type: ignore[attr-defined]
-            get_reusable_executor
-        ),
+        ParallelBackend.PROCESSES: CloudpickleProcessPoolExecutor,
+        ParallelBackend.THREADS: ThreadPoolExecutor,
+        ParallelBackend.LOKY: get_reusable_executor,  # type: ignore[attr-defined]
     }
-
-PARALLEL_BACKENDS_DEFAULT = ParallelBackendChoices.PROCESSES

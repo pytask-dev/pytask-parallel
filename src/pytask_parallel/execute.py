@@ -12,20 +12,25 @@ from typing import Callable
 from typing import List
 
 import attr
-from pybaum.tree_util import tree_map
+import cloudpickle
 from pytask import console
 from pytask import ExecutionReport
 from pytask import get_marks
 from pytask import hookimpl
 from pytask import Mark
 from pytask import parse_warning_filter
+from pytask import PTask
 from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask import Session
 from pytask import Task
 from pytask import warning_record_to_str
 from pytask import WarningReport
+from pytask.tree_util import PyTree
+from pytask.tree_util import tree_leaves
+from pytask.tree_util import tree_map
+from pytask.tree_util import tree_structure
 from pytask_parallel.backends import PARALLEL_BACKENDS
-from pytask_parallel.backends import ParallelBackendChoices
+from pytask_parallel.backends import ParallelBackend
 from rich.console import ConsoleOptions
 from rich.traceback import Traceback
 
@@ -33,7 +38,7 @@ from rich.traceback import Traceback
 @hookimpl
 def pytask_post_parse(config: dict[str, Any]) -> None:
     """Register the parallel backend."""
-    if config["parallel_backend"] == ParallelBackendChoices.THREADS:
+    if config["parallel_backend"] == ParallelBackend.THREADS:
         config["pm"].register(DefaultBackendNameSpace)
     else:
         config["pm"].register(ProcessesNameSpace)
@@ -99,12 +104,19 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                     for task_name in list(running_tasks):
                         future = running_tasks[task_name]
                         if future.done():
-                            warning_reports, task_exception = future.result()
-                            session.warnings.extend(warning_reports)
-                            exc_info = (
-                                _parse_future_exception(future.exception())
-                                or task_exception
-                            )
+                            # An exception was thrown before the task was executed.
+                            if future.exception() is not None:
+                                exc_info = _parse_future_exception(future.exception())
+                                warning_reports = []
+                            # A task raised an exception.
+                            else:
+                                warning_reports, task_exception = future.result()
+                                session.warnings.extend(warning_reports)
+                                exc_info = (
+                                    _parse_future_exception(future.exception())
+                                    or task_exception
+                                )
+
                             if exc_info is not None:
                                 task = session.dag.nodes[task_name]["task"]
                                 newly_collected_reports.append(
@@ -165,7 +177,7 @@ class ProcessesNameSpace:
 
     @staticmethod
     @hookimpl(tryfirst=True)
-    def pytask_execute_task(session: Session, task: Task) -> Future[Any] | None:
+    def pytask_execute_task(session: Session, task: PTask) -> Future[Any] | None:
         """Execute a task.
 
         Take a task, pickle it and send the bytes over to another process.
@@ -174,27 +186,33 @@ class ProcessesNameSpace:
         if session.config["n_workers"] > 1:
             kwargs = _create_kwargs_for_task(task)
 
+            # Task modules are dynamically loaded and added to `sys.modules`. Thus,
+            # cloudpickle believes the module of the task function is also importable in
+            # the child process. We have to register the module as dynamic again, so
+            # that cloudpickle will pickle it with the function. See cloudpickle#417,
+            # pytask#373 and pytask#374.
+            task_module = inspect.getmodule(task.function)
+            cloudpickle.register_pickle_by_value(task_module)
+
             return session.config["_parallel_executor"].submit(
-                _unserialize_and_execute_task,
+                _execute_task,
                 task=task,
                 kwargs=kwargs,
                 show_locals=session.config["show_locals"],
                 console_options=console.options,
                 session_filterwarnings=session.config["filterwarnings"],
                 task_filterwarnings=get_marks(task, "filterwarnings"),
-                task_short_name=task.short_name,
             )
         return None
 
 
-def _unserialize_and_execute_task(  # noqa: PLR0913
-    task: Task,
+def _execute_task(  # noqa: PLR0913
+    task: PTask,
     kwargs: dict[str, Any],
     show_locals: bool,
     console_options: ConsoleOptions,
     session_filterwarnings: tuple[str, ...],
     task_filterwarnings: tuple[Mark, ...],
-    task_short_name: str,
 ) -> tuple[list[WarningReport], tuple[type[BaseException], BaseException, str] | None]:
     """Unserialize and execute task.
 
@@ -217,15 +235,33 @@ def _unserialize_and_execute_task(  # noqa: PLR0913
                 warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
 
         try:
-            task.execute(**kwargs)
+            out = task.execute(**kwargs)
         except Exception:  # noqa: BLE001
             exc_info = sys.exc_info()
             processed_exc_info = _process_exception(
                 exc_info, show_locals, console_options
             )
         else:
+            if "return" in task.produces:
+                structure_out = tree_structure(out)
+                structure_return = tree_structure(task.produces["return"])
+                # strict must be false when none is leaf.
+                if not structure_return.is_prefix(structure_out, strict=False):
+                    msg = (
+                        "The structure of the return annotation is not a subtree of "
+                        "the structure of the function return.\n\nFunction return: "
+                        f"{structure_out}\n\nReturn annotation: {structure_return}"
+                    )
+                    raise ValueError(msg)
+
+                nodes = tree_leaves(task.produces["return"])
+                values = structure_return.flatten_up_to(out)
+                for node, value in zip(nodes, values):
+                    node.save(value)  # type: ignore[attr-defined]
+
             processed_exc_info = None
 
+        task_display_name = getattr(task, "display_name", task.name)
         warning_reports = []
         for warning_message in log:
             fs_location = warning_message.filename, warning_message.lineno
@@ -233,7 +269,7 @@ def _unserialize_and_execute_task(  # noqa: PLR0913
                 WarningReport(
                     message=warning_record_to_str(warning_message),
                     fs_location=fs_location,
-                    id_=task_short_name,
+                    id_=task_display_name,
                 )
             )
 
@@ -293,15 +329,17 @@ def _mock_processes_for_threads(
     return [], exc_info
 
 
-def _create_kwargs_for_task(task: Task) -> dict[Any, Any]:
+def _create_kwargs_for_task(task: PTask) -> dict[str, PyTree[Any]]:
     """Create kwargs for task function."""
-    kwargs = {**task.kwargs}
+    parameters = inspect.signature(task.function).parameters
 
-    func_arg_names = set(inspect.signature(task.function).parameters)
-    for arg_name in ("depends_on", "produces"):
-        if arg_name in func_arg_names:
-            attribute = getattr(task, arg_name)
-            kwargs[arg_name] = tree_map(lambda x: x.value, attribute)
+    kwargs = {}
+    for name, value in task.depends_on.items():
+        kwargs[name] = tree_map(lambda x: x.load(), value)
+
+    for name, value in task.produces.items():
+        if name in parameters:
+            kwargs[name] = tree_map(lambda x: x.load(), value)
 
     return kwargs
 

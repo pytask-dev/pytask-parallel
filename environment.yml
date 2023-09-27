@@ -1,6 +1,7 @@
 name: pytask-parallel
 
 channels:
+  - conda-forge/label/pytask_rc
   - conda-forge
   - nodefaults
 
@@ -10,16 +11,11 @@ dependencies:
   - setuptools_scm
   - toml
 
-  # Conda
-  - anaconda-client
-  - conda-build
-  - conda-verify
-
   # Package dependencies
-  - pytask >=0.3
+  - pytask>=0.4.0rc2
   - cloudpickle
   - loky
-  - pybaum >=0.1.1
+  - optree
 
   # Misc
   - black

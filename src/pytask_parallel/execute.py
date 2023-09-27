@@ -12,6 +12,7 @@ from typing import Callable
 from typing import List
 
 import attr
+import cloudpickle
 from pytask import console
 from pytask import ExecutionReport
 from pytask import get_marks
@@ -184,6 +185,14 @@ class ProcessesNameSpace:
         """
         if session.config["n_workers"] > 1:
             kwargs = _create_kwargs_for_task(task)
+
+            # Task modules are dynamically loaded and added to `sys.modules`. Thus,
+            # cloudpickle believes the module of the task function is also importable in
+            # the child process. We have to register the module as dynamic again, so
+            # that cloudpickle will pickle it with the function. See cloudpickle#417,
+            # pytask#373 and pytask#374.
+            task_module = inspect.getmodule(task.function)
+            cloudpickle.register_pickle_by_value(task_module)
 
             return session.config["_parallel_executor"].submit(
                 _execute_task,

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import enum
-import inspect
 from concurrent.futures import Future
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
@@ -27,8 +26,6 @@ class CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
         self, fn: Callable[..., Any], *args: Any, **kwargs: Any  # noqa: ARG002
     ) -> Future[Any]:
         """Submit a new task."""
-        task_module = inspect.getmodule(kwargs["task"].function)
-        cloudpickle.register_pickle_by_value(task_module)
         return super().submit(
             deserialize_and_run_with_cloudpickle,
             fn=cloudpickle.dumps(fn),
@@ -68,5 +65,5 @@ else:
     PARALLEL_BACKENDS = {
         ParallelBackend.PROCESSES: CloudpickleProcessPoolExecutor,
         ParallelBackend.THREADS: ThreadPoolExecutor,
-        ParallelBackend.LOKY: (get_reusable_executor),  # type: ignore[attr-defined]
+        ParallelBackend.LOKY: get_reusable_executor,  # type: ignore[attr-defined]
     }

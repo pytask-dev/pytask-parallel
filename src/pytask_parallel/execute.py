@@ -19,11 +19,13 @@ from pytask import hookimpl
 from pytask import Mark
 from pytask import parse_warning_filter
 from pytask import PTask
+from pytask import PTaskWithPath
 from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask import Session
 from pytask import Task
 from pytask import warning_record_to_str
 from pytask import WarningReport
+from pytask.tree_util import PyTree
 from pytask.tree_util import tree_leaves
 from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
@@ -175,7 +177,7 @@ class ProcessesNameSpace:
 
     @staticmethod
     @hookimpl(tryfirst=True)
-    def pytask_execute_task(session: Session, task: Task) -> Future[Any] | None:
+    def pytask_execute_task(session: Session, task: PTask) -> Future[Any] | None:
         """Execute a task.
 
         Take a task, pickle it and send the bytes over to another process.
@@ -183,6 +185,11 @@ class ProcessesNameSpace:
         """
         if session.config["n_workers"] > 1:
             kwargs = _create_kwargs_for_task(task)
+
+            if sys.platform == "win32" and isinstance(task, PTaskWithPath):
+                kwargs_import_path = {"path": task.path, "root": session.config["root"]}
+            else:
+                kwargs_import_path = None
 
             return session.config["_parallel_executor"].submit(
                 _execute_task,
@@ -192,6 +199,7 @@ class ProcessesNameSpace:
                 console_options=console.options,
                 session_filterwarnings=session.config["filterwarnings"],
                 task_filterwarnings=get_marks(task, "filterwarnings"),
+                kwargs_import_path=kwargs_import_path,
             )
         return None
 
@@ -319,7 +327,7 @@ def _mock_processes_for_threads(
     return [], exc_info
 
 
-def _create_kwargs_for_task(task: Task) -> dict[Any, Any]:
+def _create_kwargs_for_task(task: PTask) -> dict[str, PyTree[Any]]:
     """Create kwargs for task function."""
     parameters = inspect.signature(task.function).parameters
 

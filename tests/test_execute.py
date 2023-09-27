@@ -112,46 +112,6 @@ def test_parallel_execution_speedup_w_cli(runner, tmp_path, parallel_backend):
     assert end - start < 10
 
 
-@pytest.mark.integration()
-@pytest.mark.parametrize("parallel_backend", _PARALLEL_BACKENDS_PARAMETRIZATION)
-def test_pytask_execute_task_w_processes(parallel_backend):
-    # Local function which cannot be used with multiprocessing.
-    def myfunc():
-        return 1
-
-    # Verify it cannot be used with multiprocessing because it cannot be pickled.
-    with pytest.raises(AttributeError):
-        pickle.dumps(myfunc)
-
-    task = Task(base_name="task_example", path=Path(), function=myfunc)
-
-    session = Session()
-    session.config = {
-        "n_workers": 2,
-        "parallel_backend": parallel_backend,
-        "show_locals": False,
-        "filterwarnings": [],
-    }
-
-    with PARALLEL_BACKENDS[parallel_backend](
-        max_workers=session.config["n_workers"]
-    ) as executor:
-        session.config["_parallel_executor"] = executor
-
-        backend_name_space = {
-            ParallelBackendChoices.PROCESSES: ProcessesNameSpace,
-            ParallelBackendChoices.THREADS: DefaultBackendNameSpace,
-            ParallelBackendChoices.LOKY: DefaultBackendNameSpace,
-        }[parallel_backend]
-
-        future = backend_name_space.pytask_execute_task(session, task)
-        executor.shutdown()
-
-    warning_reports, exception = future.result()
-    assert warning_reports == []
-    assert exception is None
-
-
 @pytest.mark.end_to_end()
 @pytest.mark.parametrize("parallel_backend", _PARALLEL_BACKENDS_PARAMETRIZATION)
 def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend):
@@ -311,6 +271,24 @@ def test_task_that_return(runner, tmp_path, parallel_backend):
 
     def task_example() -> Annotated[str, Path("file.txt")]:
         return "Hello, Darkness, my old friend."
+    """
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
+    result = runner.invoke(
+        cli, [tmp_path.as_posix(), "--parallel-backend", parallel_backend]
+    )
+    assert result.exit_code == ExitCode.OK
+    assert tmp_path.joinpath("file.txt").exists()
+
+
+
+@pytest.mark.end_to_end()
+@pytest.mark.parametrize("parallel_backend", _PARALLEL_BACKENDS_PARAMETRIZATION)
+def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
+    source = """
+    from pathlib import Path
+    from pytask import task
+
+    task_example = task(produces=Path("file.txt"))(lambda *x: "Hello, Darkness, my old friend.")
     """
     tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
     result = runner.invoke(

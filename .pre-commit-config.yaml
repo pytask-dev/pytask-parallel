@@ -72,12 +72,13 @@ repos:
             --ignore-missing-imports,
         ]
         additional_dependencies: [
+            cloudpickle,
+            optree,
+            pytask==0.4.0rc2,
+            rich,
             types-attrs,
             types-click,
             types-setuptools,
-            pytask==0.4.0rc2,
-            rich,
-            optree,
         ]
         pass_filenames: false
 -   repo: https://github.com/mgedmin/check-manifest

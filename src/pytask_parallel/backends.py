@@ -9,12 +9,16 @@ from typing import Any
 from typing import Callable
 
 import cloudpickle
+from _pytask.path import import_path
 
 
 def deserialize_and_run_with_cloudpickle(
-    fn: Callable[..., Any], kwargs: dict[str, Any]
+    fn: bytes, kwargs: bytes, kwargs_import_path: bytes
 ) -> Any:
     """Deserialize and execute a function and keyword arguments."""
+    deserialized_kwargs_import_path = cloudpickle.loads(kwargs_import_path)
+    import_path(**deserialized_kwargs_import_path)
+
     deserialized_fn = cloudpickle.loads(fn)
     deserialized_kwargs = cloudpickle.loads(kwargs)
     return deserialized_fn(**deserialized_kwargs)
@@ -31,6 +35,7 @@ class CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
         return super().submit(
             deserialize_and_run_with_cloudpickle,
             fn=cloudpickle.dumps(fn),
+            kwargs_import_path=cloudpickle.dumps(kwargs.pop("kwargs_import_path")),
             kwargs=cloudpickle.dumps(kwargs),
         )
 

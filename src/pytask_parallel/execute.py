@@ -18,6 +18,7 @@ from pytask import get_marks
 from pytask import hookimpl
 from pytask import Mark
 from pytask import parse_warning_filter
+from pytask import PTask
 from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask import Session
 from pytask import Task
@@ -101,12 +102,19 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                     for task_name in list(running_tasks):
                         future = running_tasks[task_name]
                         if future.done():
-                            warning_reports, task_exception = future.result()
-                            session.warnings.extend(warning_reports)
-                            exc_info = (
-                                _parse_future_exception(future.exception())
-                                or task_exception
-                            )
+                            # An exception was thrown before the task was executed.
+                            if future.exception() is not None:
+                                exc_info = _parse_future_exception(future.exception())
+                                warning_reports = []
+                            # A task raised an exception.
+                            else:
+                                warning_reports, task_exception = future.result()
+                                session.warnings.extend(warning_reports)
+                                exc_info = (
+                                    _parse_future_exception(future.exception())
+                                    or task_exception
+                                )
+
                             if exc_info is not None:
                                 task = session.dag.nodes[task_name]["task"]
                                 newly_collected_reports.append(
@@ -177,26 +185,24 @@ class ProcessesNameSpace:
             kwargs = _create_kwargs_for_task(task)
 
             return session.config["_parallel_executor"].submit(
-                _unserialize_and_execute_task,
+                _execute_task,
                 task=task,
                 kwargs=kwargs,
                 show_locals=session.config["show_locals"],
                 console_options=console.options,
                 session_filterwarnings=session.config["filterwarnings"],
                 task_filterwarnings=get_marks(task, "filterwarnings"),
-                task_display_name=getattr(task, "display_name", task.name),
             )
         return None
 
 
-def _unserialize_and_execute_task(  # noqa: PLR0913
-    task: Task,
+def _execute_task(  # noqa: PLR0913
+    task: PTask,
     kwargs: dict[str, Any],
     show_locals: bool,
     console_options: ConsoleOptions,
     session_filterwarnings: tuple[str, ...],
     task_filterwarnings: tuple[Mark, ...],
-    task_display_name: str,
 ) -> tuple[list[WarningReport], tuple[type[BaseException], BaseException, str] | None]:
     """Unserialize and execute task.
 
@@ -241,10 +247,11 @@ def _unserialize_and_execute_task(  # noqa: PLR0913
                 nodes = tree_leaves(task.produces["return"])
                 values = structure_return.flatten_up_to(out)
                 for node, value in zip(nodes, values):
-                    node.save(value)
+                    node.save(value)  # type: ignore[attr-defined]
 
             processed_exc_info = None
 
+        task_display_name = getattr(task, "display_name", task.name)
         warning_reports = []
         for warning_message in log:
             fs_location = warning_message.filename, warning_message.lineno

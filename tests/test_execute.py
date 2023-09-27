@@ -1,20 +1,15 @@
 from __future__ import annotations
 
-import pickle
 import textwrap
-from pathlib import Path
 from time import time
 
 import pytest
 from pytask import build
 from pytask import cli
 from pytask import ExitCode
-from pytask import Task
 from pytask_parallel.backends import PARALLEL_BACKENDS
 from pytask_parallel.backends import ParallelBackendChoices
 from pytask_parallel.execute import _Sleeper
-from pytask_parallel.execute import DefaultBackendNameSpace
-from pytask_parallel.execute import ProcessesNameSpace
 
 from tests.conftest import restore_sys_path_and_module_after_test_execution
 
@@ -280,7 +275,6 @@ def test_task_that_return(runner, tmp_path, parallel_backend):
     assert tmp_path.joinpath("file.txt").exists()
 
 
-
 @pytest.mark.end_to_end()
 @pytest.mark.parametrize("parallel_backend", _PARALLEL_BACKENDS_PARAMETRIZATION)
 def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
@@ -288,7 +282,9 @@ def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
     from pathlib import Path
     from pytask import task
 
-    task_example = task(produces=Path("file.txt"))(lambda *x: "Hello, Darkness, my old friend.")
+    task_example = task(
+        produces=Path("file.txt")
+    )(lambda *x: "Hello, Darkness, my old friend.")
     """
     tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
     result = runner.invoke(

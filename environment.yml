@@ -1,6 +1,7 @@
 name: pytask-parallel
 
 channels:
+  - conda-forge/label/pytask_rc
   - conda-forge
   - nodefaults
 
@@ -11,7 +12,7 @@ dependencies:
   - toml
 
   # Package dependencies
-  - conda-forge/label/pytask_rc::pytask=0.4.0rc2
+  - pytask>=0.4.0rc2
   - cloudpickle
   - loky
   - optree

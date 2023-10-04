@@ -256,3 +256,15 @@ def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
     )
     assert result.exit_code == ExitCode.OK
     assert tmp_path.joinpath("file.txt").exists()
+
+
+@pytest.mark.end_to_end()
+@pytest.mark.parametrize("flag", ["--pdb", "--trace", "--dry-run"])
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_backend):
+    tmp_path.joinpath("task_example.py").write_text("def task_example(): pass")
+    result = runner.invoke(
+        cli, [tmp_path.as_posix(), "-n 2", "--parallel-backend", parallel_backend, flag]
+    )
+    assert result.exit_code == ExitCode.OK
+    assert "Started 2 workers" not in result.output

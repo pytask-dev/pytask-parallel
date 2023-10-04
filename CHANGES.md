@@ -9,6 +9,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 
 - {pull}`62` deprecates Python 3.7.
 - {pull}`64` aligns pytask-parallel with pytask v0.4.0rc2.
+- {pull}`66` deactivates parallelization for dry-runs.
 
 ## 0.3.1 - 2023-05-27
 

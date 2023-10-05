@@ -6,13 +6,15 @@ import sys
 import time
 import warnings
 from concurrent.futures import Future
+from pathlib import Path
+from types import ModuleType
 from types import TracebackType
 from typing import Any
 from typing import Callable
-from typing import List
 
-import attr
 import cloudpickle
+from attrs import define
+from attrs import field
 from pytask import console
 from pytask import ExecutionReport
 from pytask import get_marks
@@ -56,6 +58,8 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     3. Process all reports and report the result on the command line.
 
     """
+    __tracebackhide__ = True
+
     if session.config["n_workers"] > 1:
         reports = session.execution_reports
         running_tasks: dict[str, Future[Any]] = {}
@@ -191,7 +195,7 @@ class ProcessesNameSpace:
             # the child process. We have to register the module as dynamic again, so
             # that cloudpickle will pickle it with the function. See cloudpickle#417,
             # pytask#373 and pytask#374.
-            task_module = inspect.getmodule(task.function)
+            task_module = _get_module(task.function, getattr(task, "path", None))
             cloudpickle.register_pickle_by_value(task_module)
 
             return session.config["_parallel_executor"].submit(
@@ -344,7 +348,7 @@ def _create_kwargs_for_task(task: PTask) -> dict[str, PyTree[Any]]:
     return kwargs
 
 
-@attr.s(kw_only=True)
+@define(kw_only=True)
 class _Sleeper:
     """A sleeper that always sleeps a bit and up to 1 second if you don't wake it up.
 
@@ -353,8 +357,8 @@ class _Sleeper:
 
     """
 
-    timings = attr.ib(type=List[float], default=[(i / 10) ** 2 for i in range(1, 11)])
-    timing_idx = attr.ib(type=int, default=0)
+    timings: list[float] = field(default=[(i / 10) ** 2 for i in range(1, 11)])
+    timing_idx: int = 0
 
     def reset(self) -> None:
         self.timing_idx = 0
@@ -365,3 +369,21 @@ class _Sleeper:
 
     def sleep(self) -> None:
         time.sleep(self.timings[self.timing_idx])
+
+
+def _get_module(func: Callable[..., Any], path: Path) -> ModuleType:
+    """Get the module of a python function.
+
+    For Python <3.10, functools.partial does not set a `__module__` attribute which is
+    why ``inspect.getmodule`` returns ``None`` and ``cloudpickle.pickle_by_value``
+    fails. In later versions, ``functools`` is returned and everything seems to work
+    fine.
+
+    Therefore, we use the path from the task module to aid the search which works for
+    Python <3.10.
+
+    We do not unwrap the partialed function with ``func.func``, since pytask in general
+    does not really support ``functools.partial``. Instead, use ``@task(kwargs=...)``.
+
+    """
+    return inspect.getmodule(func, path.as_posix())

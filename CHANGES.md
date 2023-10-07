@@ -11,8 +11,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 - {pull}`64` aligns pytask-parallel with pytask v0.4.0rc2.
 - {pull}`66` deactivates parallelization for dry-runs.
 - {pull}`67` fixes parallelization with partialed task functions.
-- {pull}`68` updates dependencies and syntaxes.
-- {pull}`69` raises more informative error message when `breakpoint()` was uses when
+- {pull}`68` raises more informative error message when `breakpoint()` was uses when
   parallelizing with processes or loky.
 
 ## 0.3.1 - 2023-05-27

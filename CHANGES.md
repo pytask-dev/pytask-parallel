@@ -5,7 +5,7 @@ chronological order. Releases follow [semantic versioning](https://semver.org/) 
 releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel).
 
-## 0.4.0 - 2023-xx-xx
+## 0.4.0 - 2023-10-07
 
 - {pull}`62` deprecates Python 3.7.
 - {pull}`64` aligns pytask-parallel with pytask v0.4.0rc2.

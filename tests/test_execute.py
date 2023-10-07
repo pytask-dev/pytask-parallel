@@ -268,3 +268,16 @@ def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_back
     )
     assert result.exit_code == ExitCode.OK
     assert "Started 2 workers" not in result.output
+
+
+@pytest.mark.end_to_end()
+@pytest.mark.parametrize(
+    "parallel_backend", [i for i in PARALLEL_BACKENDS if i != ParallelBackend.THREADS]
+)
+def test_raise_error_on_breakpoint(runner, tmp_path, parallel_backend):
+    tmp_path.joinpath("task_example.py").write_text("def task_example(): breakpoint()")
+    result = runner.invoke(
+        cli, [tmp_path.as_posix(), "-n 2", "--parallel-backend", parallel_backend]
+    )
+    assert result.exit_code == ExitCode.FAILED
+    assert "You cannot use 'breakpoint()'" in result.output

@@ -73,7 +73,7 @@ repos:
         additional_dependencies: [
             cloudpickle,
             optree,
-            pytask==0.4.0rc2,
+            pytask==0.4.0,
             rich,
             types-attrs,
             types-click,

@@ -8,7 +8,6 @@ repos:
     -   id: check-merge-conflict
     -   id: check-vcs-permalinks
     -   id: check-yaml
-    -   id: debug-statements
     -   id: end-of-file-fixer
     -   id: fix-byte-order-marker
     -   id: mixed-line-ending
@@ -72,9 +71,10 @@ repos:
             --ignore-missing-imports,
         ]
         additional_dependencies: [
+            attrs,
             cloudpickle,
-            optree,
-            pytask==0.4.0rc2,
+            loky,
+            pytask==0.4.0,
             rich,
             types-attrs,
             types-click,

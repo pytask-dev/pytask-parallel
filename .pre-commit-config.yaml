@@ -71,8 +71,9 @@ repos:
             --ignore-missing-imports,
         ]
         additional_dependencies: [
+            attrs,
             cloudpickle,
-            optree,
+            loky,
             pytask==0.4.0,
             rich,
             types-attrs,

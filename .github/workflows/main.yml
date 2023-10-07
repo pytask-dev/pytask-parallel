@@ -38,10 +38,6 @@ jobs:
           allow-prereleases: true
       - run: pip install tox
 
-      - name: Install core dependencies.
-        shell: bash -l {0}
-        run: conda install -c conda-forge tox-conda coverage
-
       # Unit, integration, and end-to-end tests.
 
       - name: Run unit tests and doctests.

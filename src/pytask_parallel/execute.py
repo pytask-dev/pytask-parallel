@@ -212,10 +212,24 @@ class ProcessesNameSpace:
 
 def _raise_exception_on_breakpoint(*args: Any, **kwargs: Any) -> None:  # noqa: ARG001
     raise RuntimeError(
-        "You cannot use 'breakpoint()' while parallelizing the execution of tasks with "
-        "pytask-parallel. Please, remove the breakpoint or run the task without "
-        "parallelization to debug it."
+        "You cannot use 'breakpoint()' or 'pdb.set_trace()' while parallelizing the "
+        "execution of tasks with pytask-parallel. Please, remove the breakpoint or run "
+        "the task without parallelization to debug it."
     )
+
+
+def _patch_set_trace_and_breakpoint() -> None:
+    """Patch :func:`pdb.set_trace` and :func:`breakpoint`.
+
+    Patch sys.breakpointhook to intercept any call of breakpoint() and pdb.set_trace in
+    a subprocess and print a better exception message.
+
+    """
+    import pdb  # noqa: T100
+    import sys
+
+    pdb.set_trace = _raise_exception_on_breakpoint
+    sys.breakpointhook = _raise_exception_on_breakpoint
 
 
 def _execute_task(  # noqa: PLR0913
@@ -233,12 +247,7 @@ def _execute_task(  # noqa: PLR0913
 
     """
     __tracebackhide__ = True
-
-    # Path sys.breakpointhook to intercept any call of breakpoint() in a subprocess and
-    # print a better exception message.
-    import sys
-
-    sys.breakpointhook = _raise_exception_on_breakpoint
+    _patch_set_trace_and_breakpoint()
 
     with warnings.catch_warnings(record=True) as log:
         # mypy can't infer that record=True means log is not None; help it.

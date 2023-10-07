@@ -271,11 +271,12 @@ def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_back
 
 
 @pytest.mark.end_to_end()
+@pytest.mark.parametrize("code", ["breakpoint()", "import pdb; pdb.set_trace()"])
 @pytest.mark.parametrize(
     "parallel_backend", [i for i in PARALLEL_BACKENDS if i != ParallelBackend.THREADS]
 )
-def test_raise_error_on_breakpoint(runner, tmp_path, parallel_backend):
-    tmp_path.joinpath("task_example.py").write_text("def task_example(): breakpoint()")
+def test_raise_error_on_breakpoint(runner, tmp_path, code, parallel_backend):
+    tmp_path.joinpath("task_example.py").write_text(f"def task_example(): {code}")
     result = runner.invoke(
         cli, [tmp_path.as_posix(), "-n 2", "--parallel-backend", parallel_backend]
     )

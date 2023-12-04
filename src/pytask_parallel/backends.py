@@ -1,4 +1,4 @@
-"""This module configures the available backends."""
+"""Configures the available backends."""
 from __future__ import annotations
 
 import enum
@@ -23,7 +23,10 @@ class CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
 
     # The type signature is wrong for version above Py3.7. Fix when 3.7 is deprecated.
     def submit(  # type: ignore[override]
-        self, fn: Callable[..., Any], *args: Any, **kwargs: Any  # noqa: ARG002
+        self,
+        fn: Callable[..., Any],
+        *args: Any,  # noqa: ARG002
+        **kwargs: Any,
     ) -> Future[Any]:
         """Submit a new task."""
         return super().submit(

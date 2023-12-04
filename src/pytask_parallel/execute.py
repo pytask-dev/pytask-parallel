@@ -211,11 +211,12 @@ class ProcessesNameSpace:
 
 
 def _raise_exception_on_breakpoint(*args: Any, **kwargs: Any) -> None:  # noqa: ARG001
-    raise RuntimeError(
+    msg = (
         "You cannot use 'breakpoint()' or 'pdb.set_trace()' while parallelizing the "
         "execution of tasks with pytask-parallel. Please, remove the breakpoint or run "
         "the task without parallelization to debug it."
     )
+    raise RuntimeError(msg)
 
 
 def _patch_set_trace_and_breakpoint() -> None:
@@ -235,7 +236,7 @@ def _patch_set_trace_and_breakpoint() -> None:
 def _execute_task(  # noqa: PLR0913
     task: PTask,
     kwargs: dict[str, Any],
-    show_locals: bool,
+    show_locals: bool,  # noqa: FBT001
     console_options: ConsoleOptions,
     session_filterwarnings: tuple[str, ...],
     task_filterwarnings: tuple[Mark, ...],
@@ -251,7 +252,7 @@ def _execute_task(  # noqa: PLR0913
 
     with warnings.catch_warnings(record=True) as log:
         # mypy can't infer that record=True means log is not None; help it.
-        assert log is not None
+        assert log is not None  # noqa: S101
 
         for arg in session_filterwarnings:
             warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
@@ -284,7 +285,7 @@ def _execute_task(  # noqa: PLR0913
                 nodes = tree_leaves(task.produces["return"])
                 values = structure_return.flatten_up_to(out)
                 for node, value in zip(nodes, values):
-                    node.save(value)  # type: ignore[attr-defined]
+                    node.save(value)
 
             processed_exc_info = None
 
@@ -305,7 +306,7 @@ def _execute_task(  # noqa: PLR0913
 
 def _process_exception(
     exc_info: tuple[type[BaseException], BaseException, TracebackType | None],
-    show_locals: bool,
+    show_locals: bool,  # noqa: FBT001
     console_options: ConsoleOptions,
 ) -> tuple[type[BaseException], BaseException, str]:
     """Process the exception and convert the traceback to a string."""

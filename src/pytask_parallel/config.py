@@ -17,7 +17,7 @@ def pytask_parse_config(config: dict[str, Any]) -> None:
 
     if (
         isinstance(config["parallel_backend"], str)
-        and config["parallel_backend"] in ParallelBackend._value2member_map_
+        and config["parallel_backend"] in ParallelBackend._value2member_map_  # noqa: SLF001
     ):
         config["parallel_backend"] = ParallelBackend(config["parallel_backend"])
     elif (
@@ -26,7 +26,8 @@ def pytask_parse_config(config: dict[str, Any]) -> None:
     ):
         pass
     else:
-        raise ValueError("Invalid value for 'parallel_backend'.")
+        msg = f"Invalid value for 'parallel_backend'. Got {config['parallel_backend']}."
+        raise ValueError(msg)
 
     config["delay"] = 0.1
 

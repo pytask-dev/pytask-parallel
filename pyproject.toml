@@ -2,10 +2,67 @@
 requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.0"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "pytask_parallel"
+description = "Parallelize the execution of tasks with pytask."
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only"
+]
+requires-python = ">=3.8"
+dependencies = [
+    "attrs>=21.3.0",
+    "click",
+    "cloudpickle",
+    "loky",
+    "pluggy>=1.0.0",
+    "pytask>=0.4.0",
+    "rich"
+]
+dynamic = ["version"]
+
+[[project.authors]]
+name = "Tobias Raabe"
+email = "raabe@posteo.de"
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.license]
+text = "MIT"
+
+[project.urls]
+Homepage = "https://github.com/pytask-dev/pytask-parallel"
+Changelog = "https://github.com/pytask-dev/pytask-parallel/blob/main/CHANGES.md"
+Documentation = "https://github.com/pytask-dev/pytask-parallel"
+Github = "https://github.com/pytask-dev/pytask-parallel"
+Tracker = "https://github.com/pytask-dev/pytask-parallel/issues"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+platforms = [ "any",]
+license-files = [ "LICENSE",]
+
+[tool.check-manifest]
+ignore = ["src/pytask_parallel/_version.py"]
+
+[project.entry-points.pytask]
+pytask_parallel = "pytask_parallel.plugin"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
 
 [tool.setuptools_scm]
 write_to = "src/pytask_parallel/_version.py"
-
 
 [tool.mypy]
 files = ["src", "tests"]

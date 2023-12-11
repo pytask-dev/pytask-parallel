@@ -28,12 +28,12 @@ repos:
     -   id: reorder-python-imports
         args: [--py38-plus, --add-import, 'from __future__ import annotations']
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.6
+    rev: v0.1.7
     hooks:
       - id: ruff
       - id: ruff-format
 -   repo: https://github.com/dosisod/refurb
-    rev: v1.24.0
+    rev: v1.25.0
     hooks:
     -   id: refurb
 -   repo: https://github.com/executablebooks/mdformat

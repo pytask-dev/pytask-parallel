@@ -5,6 +5,11 @@ chronological order. Releases follow [semantic versioning](https://semver.org/) 
 releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel).
 
+## 0.4.1 - 2023-12-xx
+
+- {pull}`72` moves the project to `pyproject.toml`.
+- {pull}`75` updates the release strategy.
+
 ## 0.4.0 - 2023-10-07
 
 - {pull}`62` deprecates Python 3.7.

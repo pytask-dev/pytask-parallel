@@ -28,7 +28,7 @@ repos:
     -   id: reorder-python-imports
         args: [--py38-plus, --add-import, 'from __future__ import annotations']
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.7
+    rev: v0.1.8
     hooks:
       - id: ruff
       - id: ruff-format

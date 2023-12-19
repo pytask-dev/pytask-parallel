@@ -33,6 +33,7 @@ test = [
   "nbmake",
   "pytest",
   "pytest-cov",
+  "pytest-xdist",
 ]
 
 [project.readme]

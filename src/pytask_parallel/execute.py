@@ -139,12 +139,17 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             else:
                                 task = session.dag.nodes[task_name]["task"]
 
-                                # Update PythonNodes with the values from the future.
-                                task.produces = tree_map(
-                                    _update_python_node,
-                                    task.produces,
-                                    python_nodes,
-                                )
+                                # Update PythonNodes with the values from the future if
+                                # not threads.
+                                if (
+                                    session.config["parallel_backend"]
+                                    != ParallelBackend.THREADS
+                                ):
+                                    task.produces = tree_map(
+                                        _update_python_node,
+                                        task.produces,
+                                        python_nodes,
+                                    )
 
                                 try:
                                     session.hook.pytask_execute_task_teardown(
@@ -364,7 +369,9 @@ class DefaultBackendNameSpace:
 
 def _mock_processes_for_threads(
     func: Callable[..., Any], **kwargs: Any
-) -> tuple[list[Any], tuple[type[BaseException], BaseException, TracebackType] | None]:
+) -> tuple[
+    None, list[Any], tuple[type[BaseException], BaseException, TracebackType] | None
+]:
     """Mock execution function such that it returns the same as for processes.
 
     The function for processes returns ``warning_reports`` and an ``exception``. With
@@ -379,7 +386,7 @@ def _mock_processes_for_threads(
         exc_info = sys.exc_info()
     else:
         exc_info = None
-    return [], exc_info
+    return None, [], exc_info
 
 
 def _create_kwargs_for_task(task: PTask) -> dict[str, PyTree[Any]]:

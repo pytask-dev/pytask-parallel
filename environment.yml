@@ -18,7 +18,7 @@ dependencies:
   - optree
 
   # Misc
-  - black
+  - tox
   - ipywidgets
   - nbmake
   - pre-commit

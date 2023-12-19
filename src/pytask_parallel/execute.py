@@ -21,7 +21,9 @@ from pytask import get_marks
 from pytask import hookimpl
 from pytask import Mark
 from pytask import parse_warning_filter
+from pytask import PNode
 from pytask import PTask
+from pytask import PythonNode
 from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask import Session
 from pytask import Task
@@ -114,7 +116,11 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                                 warning_reports = []
                             # A task raised an exception.
                             else:
-                                warning_reports, task_exception = future.result()
+                                (
+                                    python_nodes,
+                                    warning_reports,
+                                    task_exception,
+                                ) = future.result()
                                 session.warnings.extend(warning_reports)
                                 exc_info = (
                                     _parse_future_exception(future.exception())
@@ -132,6 +138,19 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                                 session.scheduler.done(task_name)
                             else:
                                 task = session.dag.nodes[task_name]["task"]
+
+                                # Update PythonNodes with the values from the future if
+                                # not threads.
+                                if (
+                                    session.config["parallel_backend"]
+                                    != ParallelBackend.THREADS
+                                ):
+                                    task.produces = tree_map(
+                                        _update_python_node,
+                                        task.produces,
+                                        python_nodes,
+                                    )
+
                                 try:
                                     session.hook.pytask_execute_task_teardown(
                                         session=session, task=task
@@ -167,6 +186,12 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
         return True
     return None
+
+
+def _update_python_node(x: PNode, y: PythonNode | None) -> PNode:
+    if y:
+        x.save(y.load())
+    return x
 
 
 def _parse_future_exception(
@@ -240,7 +265,11 @@ def _execute_task(  # noqa: PLR0913
     console_options: ConsoleOptions,
     session_filterwarnings: tuple[str, ...],
     task_filterwarnings: tuple[Mark, ...],
-) -> tuple[list[WarningReport], tuple[type[BaseException], BaseException, str] | None]:
+) -> tuple[
+    PyTree[PythonNode | None],
+    list[WarningReport],
+    tuple[type[BaseException], BaseException, str] | None,
+]:
     """Unserialize and execute task.
 
     This function receives bytes and unpickles them to a task which is them execute in a
@@ -251,9 +280,6 @@ def _execute_task(  # noqa: PLR0913
     _patch_set_trace_and_breakpoint()
 
     with warnings.catch_warnings(record=True) as log:
-        # mypy can't infer that record=True means log is not None; help it.
-        assert log is not None  # noqa: S101
-
         for arg in session_filterwarnings:
             warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
 
@@ -301,7 +327,11 @@ def _execute_task(  # noqa: PLR0913
                 )
             )
 
-    return warning_reports, processed_exc_info
+    python_nodes = tree_map(
+        lambda x: x if isinstance(x, PythonNode) else None, task.produces
+    )
+
+    return python_nodes, warning_reports, processed_exc_info
 
 
 def _process_exception(
@@ -339,7 +369,9 @@ class DefaultBackendNameSpace:
 
 def _mock_processes_for_threads(
     func: Callable[..., Any], **kwargs: Any
-) -> tuple[list[Any], tuple[type[BaseException], BaseException, TracebackType] | None]:
+) -> tuple[
+    None, list[Any], tuple[type[BaseException], BaseException, TracebackType] | None
+]:
     """Mock execution function such that it returns the same as for processes.
 
     The function for processes returns ``warning_reports`` and an ``exception``. With
@@ -354,7 +386,7 @@ def _mock_processes_for_threads(
         exc_info = sys.exc_info()
     else:
         exc_info = None
-    return [], exc_info
+    return None, [], exc_info
 
 
 def _create_kwargs_for_task(task: PTask) -> dict[str, PyTree[Any]]:
@@ -395,7 +427,7 @@ class _Sleeper:
         time.sleep(self.timings[self.timing_idx])
 
 
-def _get_module(func: Callable[..., Any], path: Path) -> ModuleType:
+def _get_module(func: Callable[..., Any], path: Path | None) -> ModuleType:
     """Get the module of a python function.
 
     For Python <3.10, functools.partial does not set a `__module__` attribute which is
@@ -410,4 +442,6 @@ def _get_module(func: Callable[..., Any], path: Path) -> ModuleType:
     does not really support ``functools.partial``. Instead, use ``@task(kwargs=...)``.
 
     """
-    return inspect.getmodule(func, path.as_posix())
+    if path:
+        return inspect.getmodule(func, path.as_posix())
+    return inspect.getmodule(func)

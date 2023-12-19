@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.0"]
 build-backend = "setuptools.build_meta"
+requires = ["setuptools>=64", "setuptools_scm[toml]>=8"]
 
 [project]
 name = "pytask_parallel"
@@ -27,6 +27,13 @@ dynamic = ["version"]
 [[project.authors]]
 name = "Tobias Raabe"
 email = "raabe@posteo.de"
+
+[project.optional-dependencies]
+test = [
+  "nbmake",
+  "pytest",
+  "pytest-cov",
+]
 
 [project.readme]
 file = "README.md"
@@ -62,7 +69,7 @@ where = ["src"]
 namespaces = false
 
 [tool.setuptools_scm]
-write_to = "src/pytask_parallel/_version.py"
+version_file = "src/pytask_parallel/_version.py"
 
 [tool.mypy]
 files = ["src", "tests"]

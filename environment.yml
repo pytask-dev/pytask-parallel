@@ -18,7 +18,9 @@ dependencies:
   - optree
 
   # Misc
-  - black
+  - tox
+  - ipywidgets
+  - nbmake
   - pre-commit
   - pytest-cov
 

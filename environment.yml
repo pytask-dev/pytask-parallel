@@ -19,6 +19,8 @@ dependencies:
 
   # Misc
   - black
+  - ipywidgets
+  - nbval
   - pre-commit
   - pytest-cov
 

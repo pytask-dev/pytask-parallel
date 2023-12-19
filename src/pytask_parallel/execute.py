@@ -6,6 +6,7 @@ import sys
 import time
 import warnings
 from concurrent.futures import Future
+from functools import partial
 from pathlib import Path
 from types import ModuleType
 from types import TracebackType
@@ -296,23 +297,7 @@ def _execute_task(  # noqa: PLR0913
                 exc_info, show_locals, console_options
             )
         else:
-            if "return" in task.produces:
-                structure_out = tree_structure(out)
-                structure_return = tree_structure(task.produces["return"])
-                # strict must be false when none is leaf.
-                if not structure_return.is_prefix(structure_out, strict=False):
-                    msg = (
-                        "The structure of the return annotation is not a subtree of "
-                        "the structure of the function return.\n\nFunction return: "
-                        f"{structure_out}\n\nReturn annotation: {structure_return}"
-                    )
-                    raise ValueError(msg)
-
-                nodes = tree_leaves(task.produces["return"])
-                values = structure_return.flatten_up_to(out)
-                for node, value in zip(nodes, values):
-                    node.save(value)
-
+            _handle_task_function_return(task, out)
             processed_exc_info = None
 
         task_display_name = getattr(task, "display_name", task.name)
@@ -347,6 +332,27 @@ def _process_exception(
     return (*exc_info[:2], text)
 
 
+def _handle_task_function_return(task: PTask, out: Any) -> None:
+    if "return" not in task.produces:
+        return
+
+    structure_out = tree_structure(out)
+    structure_return = tree_structure(task.produces["return"])
+    # strict must be false when none is leaf.
+    if not structure_return.is_prefix(structure_out, strict=False):
+        msg = (
+            "The structure of the return annotation is not a subtree of "
+            "the structure of the function return.\n\nFunction return: "
+            f"{structure_out}\n\nReturn annotation: {structure_return}"
+        )
+        raise ValueError(msg)
+
+    nodes = tree_leaves(task.produces["return"])
+    values = structure_return.flatten_up_to(out)
+    for node, value in zip(nodes, values):
+        node.save(value)
+
+
 class DefaultBackendNameSpace:
     """The name space for hooks related to threads."""
 
@@ -362,13 +368,13 @@ class DefaultBackendNameSpace:
         if session.config["n_workers"] > 1:
             kwargs = _create_kwargs_for_task(task)
             return session.config["_parallel_executor"].submit(
-                _mock_processes_for_threads, func=task.execute, **kwargs
+                _mock_processes_for_threads, task=task, **kwargs
             )
         return None
 
 
 def _mock_processes_for_threads(
-    func: Callable[..., Any], **kwargs: Any
+    task: PTask, **kwargs: Any
 ) -> tuple[
     None, list[Any], tuple[type[BaseException], BaseException, TracebackType] | None
 ]:
@@ -381,10 +387,11 @@ def _mock_processes_for_threads(
     """
     __tracebackhide__ = True
     try:
-        func(**kwargs)
+        out = task.function(**kwargs)
     except Exception:  # noqa: BLE001
         exc_info = sys.exc_info()
     else:
+        _handle_task_function_return(task, out)
         exc_info = None
     return None, [], exc_info
 
@@ -430,18 +437,17 @@ class _Sleeper:
 def _get_module(func: Callable[..., Any], path: Path | None) -> ModuleType:
     """Get the module of a python function.
 
-    For Python <3.10, functools.partial does not set a `__module__` attribute which is
-    why ``inspect.getmodule`` returns ``None`` and ``cloudpickle.pickle_by_value``
-    fails. In later versions, ``functools`` is returned and everything seems to work
-    fine.
+    ``functools.partial`` obfuscates the module of the function and
+    ``inspect.getmodule`` returns :mod`functools`. Therefore, we recover the original
+    function.
 
-    Therefore, we use the path from the task module to aid the search which works for
-    Python <3.10.
-
-    We do not unwrap the partialed function with ``func.func``, since pytask in general
-    does not really support ``functools.partial``. Instead, use ``@task(kwargs=...)``.
+    We use the path from the task module to aid the search although it is not clear
+    whether it helps.
 
     """
+    if isinstance(func, partial):
+        func = func.func
+
     if path:
         return inspect.getmodule(func, path.as_posix())
     return inspect.getmodule(func)

@@ -233,10 +233,12 @@ def test_task_that_return(runner, tmp_path, parallel_backend):
     """
     tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
     result = runner.invoke(
-        cli, [tmp_path.as_posix(), "--parallel-backend", parallel_backend]
+        cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend]
     )
     assert result.exit_code == ExitCode.OK
-    assert tmp_path.joinpath("file.txt").exists()
+    assert (
+        tmp_path.joinpath("file.txt").read_text() == "Hello, Darkness, my old friend."
+    )
 
 
 @pytest.mark.end_to_end()
@@ -252,10 +254,12 @@ def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
     """
     tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
     result = runner.invoke(
-        cli, [tmp_path.as_posix(), "--parallel-backend", parallel_backend]
+        cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend]
     )
     assert result.exit_code == ExitCode.OK
-    assert tmp_path.joinpath("file.txt").exists()
+    assert (
+        tmp_path.joinpath("file.txt").read_text() == "Hello, Darkness, my old friend."
+    )
 
 
 @pytest.mark.end_to_end()
@@ -264,7 +268,8 @@ def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
 def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_backend):
     tmp_path.joinpath("task_example.py").write_text("def task_example(): pass")
     result = runner.invoke(
-        cli, [tmp_path.as_posix(), "-n 2", "--parallel-backend", parallel_backend, flag]
+        cli,
+        [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend, flag],
     )
     assert result.exit_code == ExitCode.OK
     assert "Started 2 workers" not in result.output
@@ -278,7 +283,30 @@ def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_back
 def test_raise_error_on_breakpoint(runner, tmp_path, code, parallel_backend):
     tmp_path.joinpath("task_example.py").write_text(f"def task_example(): {code}")
     result = runner.invoke(
-        cli, [tmp_path.as_posix(), "-n 2", "--parallel-backend", parallel_backend]
+        cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend]
     )
     assert result.exit_code == ExitCode.FAILED
     assert "You cannot use 'breakpoint()'" in result.output
+
+
+@pytest.mark.end_to_end()
+@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+def test_task_partialed(runner, tmp_path, parallel_backend):
+    source = """
+    from pathlib import Path
+    from pytask import task
+    from functools import partial
+
+    def create_text(text):
+        return text
+
+    task_example = task(
+        produces=Path("file.txt")
+    )(partial(create_text, text="Hello, Darkness, my old friend."))
+    """
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
+    result = runner.invoke(
+        cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend]
+    )
+    assert result.exit_code == ExitCode.OK
+    assert tmp_path.joinpath("file.txt").exists()

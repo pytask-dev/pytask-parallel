@@ -9,6 +9,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 
 - {pull}`72` moves the project to `pyproject.toml`.
 - {pull}`75` updates the release strategy.
+- {pull}`79` add tests for Jupyter and fix parallelization with `PythonNode`s.
 
 ## 0.4.0 - 2023-10-07
 

@@ -52,8 +52,8 @@ Tracker = "https://github.com/pytask-dev/pytask-parallel/issues"
 [tool.setuptools]
 include-package-data = true
 zip-safe = false
-platforms = [ "any",]
-license-files = [ "LICENSE",]
+platforms = ["any"]
+license-files = ["LICENSE"]
 
 [tool.check-manifest]
 ignore = ["src/pytask_parallel/_version.py"]

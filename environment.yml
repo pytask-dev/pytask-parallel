@@ -12,7 +12,7 @@ dependencies:
   - toml
 
   # Package dependencies
-  - pytask>=0.4.0
+  - pytask>=0.4.5
   - cloudpickle
   - loky
   - optree

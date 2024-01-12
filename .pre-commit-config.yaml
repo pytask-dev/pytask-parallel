@@ -65,7 +65,7 @@ repos:
             attrs,
             cloudpickle,
             loky,
-            pytask>=0.4.0,
+            pytask>=0.4.5,
             rich,
             types-click,
             types-setuptools,

@@ -28,12 +28,12 @@ repos:
     -   id: reorder-python-imports
         args: [--py38-plus, --add-import, 'from __future__ import annotations']
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.8
+    rev: v0.1.11
     hooks:
       - id: ruff
       - id: ruff-format
 -   repo: https://github.com/dosisod/refurb
-    rev: v1.25.0
+    rev: v1.27.0
     hooks:
     -   id: refurb
 -   repo: https://github.com/kynan/nbstripout
@@ -54,7 +54,7 @@ repos:
   hooks:
     -   id: codespell
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v1.7.1'
+    rev: 'v1.8.0'
     hooks:
     -   id: mypy
         args: [
@@ -65,7 +65,7 @@ repos:
             attrs,
             cloudpickle,
             loky,
-            pytask>=0.4.0,
+            pytask>=0.4.5,
             rich,
             types-click,
             types-setuptools,

@@ -16,4 +16,4 @@ __pycache__
 build
 dist
 src/pytask_parallel/_version.py
-tests/test_jupyter/file.txt
+tests/test_jupyter/*.txt

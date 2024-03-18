@@ -1,4 +1,5 @@
 """Contains code relevant to logging."""
+
 from __future__ import annotations
 
 from pytask import console

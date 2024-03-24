@@ -121,3 +121,11 @@ markers = [
     "end_to_end: Flag for tests that cover the whole program.",
 ]
 norecursedirs = [".idea", ".tox"]
+
+[tool.coverage.report]
+exclude_also = [
+    "pragma: no cover",
+    "if TYPE_CHECKING.*:",
+    "\\.\\.\\.",
+    "def __repr__",
+]

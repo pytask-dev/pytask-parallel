@@ -7,7 +7,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 
 ## 0.4.2 - 2024-xx-xx
 
-- {pull}`84` simplifies code since loky is a dependency.
+- {pull}`85` simplifies code since loky is a dependency.
 
 ## 0.4.1 - 2024-01-12
 

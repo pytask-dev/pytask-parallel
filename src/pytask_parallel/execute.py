@@ -21,6 +21,7 @@ from pytask import PTask
 from pytask import PythonNode
 from pytask import Session
 from pytask import Task
+from pytask import Traceback
 from pytask import WarningReport
 from pytask import console
 from pytask import get_marks
@@ -32,7 +33,7 @@ from pytask.tree_util import PyTree
 from pytask.tree_util import tree_leaves
 from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
-from rich.traceback import Traceback
+from rich.traceback import Traceback as RichTraceback
 
 from pytask_parallel.backends import PARALLEL_BACKEND_BUILDER
 from pytask_parallel.backends import ParallelBackend
@@ -54,12 +55,6 @@ def pytask_post_parse(config: dict[str, Any]) -> None:
     else:
         config["pm"].register(ProcessesNameSpace)
 
-    if PARALLEL_BACKEND_BUILDER[config["parallel_backend"]] is None:
-        raise
-        config["_parallel_executor"] = PARALLEL_BACKEND_BUILDER[
-            config["parallel_backend"]
-        ]()
-
 
 @hookimpl(tryfirst=True)
 def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR0915
@@ -79,9 +74,19 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         reports = session.execution_reports
         running_tasks: dict[str, Future[Any]] = {}
 
-        parallel_backend = PARALLEL_BACKEND_BUILDER[
-            session.config["parallel_backend"]
-        ]()
+        try:
+            parallel_backend = PARALLEL_BACKEND_BUILDER[
+                session.config["parallel_backend"]
+            ]()
+        except Exception:  # noqa: BLE001
+            console.print(Traceback(sys.exc_info()))
+            msg = (
+                "Could not build the executor for the parallel backend "
+                f"{session.config['parallel_backend'].value!r}."
+            )
+            raise ValueError(msg) from None
+
+        console.print(parallel_backend)
 
         with parallel_backend(max_workers=session.config["n_workers"]) as executor:
             session.config["_parallel_executor"] = executor
@@ -340,7 +345,7 @@ def _process_exception(
 ) -> tuple[type[BaseException], BaseException, str]:
     """Process the exception and convert the traceback to a string."""
     exc_info = remove_internal_traceback_frames_from_exc_info(exc_info)
-    traceback = Traceback.from_exception(*exc_info, show_locals=show_locals)
+    traceback = RichTraceback.from_exception(*exc_info, show_locals=show_locals)
     segments = console.render(traceback, options=console_options)
     text = "".join(segment.text for segment in segments)
     return (*exc_info[:2], text)

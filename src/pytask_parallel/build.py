@@ -5,6 +5,7 @@ from __future__ import annotations
 import click
 from pytask import EnumChoice
 from pytask import hookimpl
+
 from pytask_parallel.backends import PARALLEL_BACKENDS_DEFAULT
 from pytask_parallel.backends import ParallelBackend
 

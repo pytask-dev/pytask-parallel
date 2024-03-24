@@ -4,8 +4,8 @@ import os
 import textwrap
 
 import pytest
-from pytask import build
 from pytask import ExitCode
+from pytask import build
 from pytask_parallel.backends import ParallelBackend
 
 

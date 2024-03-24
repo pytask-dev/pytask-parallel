@@ -1,4 +1,5 @@
 """Configure pytask."""
+
 from __future__ import annotations
 
 import enum
@@ -6,6 +7,7 @@ import os
 from typing import Any
 
 from pytask import hookimpl
+
 from pytask_parallel.backends import ParallelBackend
 
 

@@ -1,4 +1,5 @@
 """Configures the available backends."""
+
 from __future__ import annotations
 
 import enum

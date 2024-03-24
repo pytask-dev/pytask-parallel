@@ -4,9 +4,9 @@ import textwrap
 from time import time
 
 import pytest
+from pytask import ExitCode
 from pytask import build
 from pytask import cli
-from pytask import ExitCode
 from pytask_parallel.backends import PARALLEL_BACKENDS
 from pytask_parallel.backends import ParallelBackend
 from pytask_parallel.execute import _Sleeper

@@ -1,9 +1,10 @@
 """Contains code relevant to logging."""
+
 from __future__ import annotations
 
+from pytask import Session
 from pytask import console
 from pytask import hookimpl
-from pytask import Session
 
 
 @hookimpl(trylast=True)

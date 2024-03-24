@@ -93,7 +93,6 @@ unsafe-fixes = true
 
 [tool.ruff.lint]
 extend-ignore = [
-    "TCH",  # ignore non-guarded type imports.
     # Others.
     "ANN101",  # type annotating self
     "ANN102",  # type annotating cls

@@ -6,11 +6,8 @@ import inspect
 import sys
 import time
 import warnings
-from concurrent.futures import Future
 from functools import partial
-from pathlib import Path
-from types import ModuleType
-from types import TracebackType
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
 
@@ -35,11 +32,18 @@ from pytask.tree_util import PyTree
 from pytask.tree_util import tree_leaves
 from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
-from rich.console import ConsoleOptions
 from rich.traceback import Traceback
 
 from pytask_parallel.backends import PARALLEL_BACKENDS
 from pytask_parallel.backends import ParallelBackend
+
+if TYPE_CHECKING:
+    from concurrent.futures import Future
+    from pathlib import Path
+    from types import ModuleType
+    from types import TracebackType
+
+    from rich.console import ConsoleOptions
 
 
 @hookimpl

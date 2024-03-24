@@ -22,15 +22,15 @@ class Session:
 @pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_parallel_execution(tmp_path, parallel_backend):
     source = """
-    import pytask
+    from pytask import Product
+    from pathlib import Path
+    from typing_extensions import Annotated
 
-    @pytask.mark.produces("out_1.txt")
-    def task_1(produces):
-        produces.write_text("1")
+    def task_1(path: Annotated[Path, Product] = Path("out_1.txt")):
+        path.write_text("1")
 
-    @pytask.mark.produces("out_2.txt")
-    def task_2(produces):
-        produces.write_text("2")
+    def task_2(path: Annotated[Path, Product] = Path("out_2.txt")):
+        path.write_text("2")
     """
     tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
     session = build(paths=tmp_path, n_workers=2, parallel_backend=parallel_backend)
@@ -44,15 +44,15 @@ def test_parallel_execution(tmp_path, parallel_backend):
 @pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
 def test_parallel_execution_w_cli(runner, tmp_path, parallel_backend):
     source = """
-    import pytask
+    from pytask import Product
+    from pathlib import Path
+    from typing_extensions import Annotated
 
-    @pytask.mark.produces("out_1.txt")
-    def task_1(produces):
-        produces.write_text("1")
+    def task_1(path: Annotated[Path, Product] = Path("out_1.txt")):
+        path.write_text("1")
 
-    @pytask.mark.produces("out_2.txt")
-    def task_2(produces):
-        produces.write_text("2")
+    def task_2(path: Annotated[Path, Product] = Path("out_2.txt")):
+        path.write_text("2")
     """
     tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
     result = runner.invoke(
@@ -173,12 +173,12 @@ def test_rendering_of_tracebacks_with_rich(
 )
 def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_backend):
     source = """
-    import pytask
+    from pytask import task
     import warnings
 
     for i in range(2):
 
-        @pytask.mark.task(id=str(i), kwargs={"produces": f"{i}.txt"})
+        @task(id=str(i), kwargs={"produces": f"{i}.txt"})
         def task_example(produces):
             warnings.warn("This is a warning.")
             produces.touch()

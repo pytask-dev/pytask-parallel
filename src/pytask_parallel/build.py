@@ -6,7 +6,6 @@ import click
 from pytask import EnumChoice
 from pytask import hookimpl
 
-from pytask_parallel.backends import PARALLEL_BACKENDS_DEFAULT
 from pytask_parallel.backends import ParallelBackend
 
 
@@ -27,7 +26,7 @@ def pytask_extend_command_line_interface(cli: click.Group) -> None:
             ["--parallel-backend"],
             type=EnumChoice(ParallelBackend),
             help="Backend for the parallelization.",
-            default=PARALLEL_BACKENDS_DEFAULT,
+            default=ParallelBackend.LOKY,
         ),
     ]
     cli.commands["build"].params.extend(additional_parameters)

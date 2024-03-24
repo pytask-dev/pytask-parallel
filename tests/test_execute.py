@@ -7,7 +7,6 @@ import pytest
 from pytask import ExitCode
 from pytask import build
 from pytask import cli
-from pytask_parallel.backends import PARALLEL_BACKENDS
 from pytask_parallel.backends import ParallelBackend
 from pytask_parallel.execute import _Sleeper
 
@@ -19,7 +18,7 @@ class Session:
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", ParallelBackend)
 def test_parallel_execution(tmp_path, parallel_backend):
     source = """
     from pytask import Product
@@ -41,7 +40,7 @@ def test_parallel_execution(tmp_path, parallel_backend):
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", ParallelBackend)
 def test_parallel_execution_w_cli(runner, tmp_path, parallel_backend):
     source = """
     from pytask import Product
@@ -71,7 +70,7 @@ def test_parallel_execution_w_cli(runner, tmp_path, parallel_backend):
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", ParallelBackend)
 def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend):
     source = """
     import time
@@ -99,7 +98,7 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", ParallelBackend)
 def test_task_priorities(tmp_path, parallel_backend):
     source = """
     import pytask
@@ -140,7 +139,7 @@ def test_task_priorities(tmp_path, parallel_backend):
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", ParallelBackend)
 @pytest.mark.parametrize("show_locals", [True, False])
 def test_rendering_of_tracebacks_with_rich(
     runner, tmp_path, parallel_backend, show_locals
@@ -222,7 +221,7 @@ def test_sleeper():
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", ParallelBackend)
 def test_task_that_return(runner, tmp_path, parallel_backend):
     source = """
     from pathlib import Path
@@ -242,7 +241,7 @@ def test_task_that_return(runner, tmp_path, parallel_backend):
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", ParallelBackend)
 def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
     source = """
     from pathlib import Path
@@ -264,7 +263,7 @@ def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
 
 @pytest.mark.end_to_end()
 @pytest.mark.parametrize("flag", ["--pdb", "--trace", "--dry-run"])
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", ParallelBackend)
 def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_backend):
     tmp_path.joinpath("task_example.py").write_text("def task_example(): pass")
     result = runner.invoke(
@@ -278,7 +277,7 @@ def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_back
 @pytest.mark.end_to_end()
 @pytest.mark.parametrize("code", ["breakpoint()", "import pdb; pdb.set_trace()"])
 @pytest.mark.parametrize(
-    "parallel_backend", [i for i in PARALLEL_BACKENDS if i != ParallelBackend.THREADS]
+    "parallel_backend", [i for i in ParallelBackend if i != ParallelBackend.THREADS]
 )
 def test_raise_error_on_breakpoint(runner, tmp_path, code, parallel_backend):
     tmp_path.joinpath("task_example.py").write_text(f"def task_example(): {code}")
@@ -290,7 +289,7 @@ def test_raise_error_on_breakpoint(runner, tmp_path, code, parallel_backend):
 
 
 @pytest.mark.end_to_end()
-@pytest.mark.parametrize("parallel_backend", PARALLEL_BACKENDS)
+@pytest.mark.parametrize("parallel_backend", ParallelBackend)
 def test_task_partialed(runner, tmp_path, parallel_backend):
     source = """
     from pathlib import Path

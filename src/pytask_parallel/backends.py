@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import Executor
 from concurrent.futures import Future
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
@@ -11,6 +12,7 @@ from typing import Callable
 
 import cloudpickle
 from loky import get_reusable_executor
+from pytask import import_optional_dependency
 
 
 def deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:
@@ -23,7 +25,7 @@ def deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:
 class CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
     """Patches the standard executor to serialize functions with cloudpickle."""
 
-    # The type signature is wrong for version above Py3.7. Fix when 3.7 is deprecated.
+    # The type signature is wrong for Python >3.8. Fix when support is dropped.
     def submit(  # type: ignore[override]
         self,
         fn: Callable[..., Any],
@@ -38,12 +40,19 @@ class CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
         )
 
 
+def get_dask_executor() -> Executor:
+    """Get an executor from a dask client."""
+    distributed = import_optional_dependency("distributed")
+    return distributed.Client.current().get_executor()
+
+
 class ParallelBackend(Enum):
     """Choices for parallel backends."""
 
     PROCESSES = "processes"
     THREADS = "threads"
     LOKY = "loky"
+    DASK = "dask"
 
 
 PARALLEL_BACKEND_BUILDER = {

@@ -34,7 +34,7 @@ from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
 from rich.traceback import Traceback
 
-from pytask_parallel.backends import PARALLEL_BACKENDS
+from pytask_parallel.backends import PARALLEL_BACKEND_BUILDER
 from pytask_parallel.backends import ParallelBackend
 
 if TYPE_CHECKING:
@@ -53,6 +53,12 @@ def pytask_post_parse(config: dict[str, Any]) -> None:
         config["pm"].register(DefaultBackendNameSpace)
     else:
         config["pm"].register(ProcessesNameSpace)
+
+    if PARALLEL_BACKEND_BUILDER[config["parallel_backend"]] is None:
+        raise
+        config["_parallel_executor"] = PARALLEL_BACKEND_BUILDER[
+            config["parallel_backend"]
+        ]()
 
 
 @hookimpl(tryfirst=True)
@@ -73,7 +79,9 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         reports = session.execution_reports
         running_tasks: dict[str, Future[Any]] = {}
 
-        parallel_backend = PARALLEL_BACKENDS[session.config["parallel_backend"]]
+        parallel_backend = PARALLEL_BACKEND_BUILDER[
+            session.config["parallel_backend"]
+        ]()
 
         with parallel_backend(max_workers=session.config["n_workers"]) as executor:
             session.config["_parallel_executor"] = executor

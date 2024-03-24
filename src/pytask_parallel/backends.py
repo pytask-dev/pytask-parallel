@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-import enum
 from concurrent.futures import Future
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
+from enum import Enum
 from typing import Any
 from typing import Callable
 
 import cloudpickle
+from loky import get_reusable_executor
 
 
 def deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:
@@ -37,37 +38,16 @@ class CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
         )
 
 
-try:
-    from loky import get_reusable_executor
+class ParallelBackend(Enum):
+    """Choices for parallel backends."""
 
-except ImportError:
+    PROCESSES = "processes"
+    THREADS = "threads"
+    LOKY = "loky"
 
-    class ParallelBackend(enum.Enum):
-        """Choices for parallel backends."""
 
-        PROCESSES = "processes"
-        THREADS = "threads"
-
-    PARALLEL_BACKENDS_DEFAULT = ParallelBackend.PROCESSES
-
-    PARALLEL_BACKENDS = {
-        ParallelBackend.PROCESSES: CloudpickleProcessPoolExecutor,
-        ParallelBackend.THREADS: ThreadPoolExecutor,
-    }
-
-else:
-
-    class ParallelBackend(enum.Enum):  # type: ignore[no-redef]
-        """Choices for parallel backends."""
-
-        PROCESSES = "processes"
-        THREADS = "threads"
-        LOKY = "loky"
-
-    PARALLEL_BACKENDS_DEFAULT = ParallelBackend.LOKY  # type: ignore[attr-defined]
-
-    PARALLEL_BACKENDS = {
-        ParallelBackend.PROCESSES: CloudpickleProcessPoolExecutor,
-        ParallelBackend.THREADS: ThreadPoolExecutor,
-        ParallelBackend.LOKY: get_reusable_executor,  # type: ignore[attr-defined]
-    }
+PARALLEL_BACKEND_BUILDER = {
+    ParallelBackend.PROCESSES: lambda: CloudpickleProcessPoolExecutor,
+    ParallelBackend.THREADS: lambda: ThreadPoolExecutor,
+    ParallelBackend.LOKY: lambda: get_reusable_executor,
+}

@@ -21,18 +21,17 @@ from pytask import PTask
 from pytask import PythonNode
 from pytask import Session
 from pytask import Task
+from pytask import Traceback
 from pytask import WarningReport
 from pytask import console
 from pytask import get_marks
 from pytask import hookimpl
 from pytask import parse_warning_filter
-from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask import warning_record_to_str
 from pytask.tree_util import PyTree
 from pytask.tree_util import tree_leaves
 from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
-from rich.traceback import Traceback
 
 from pytask_parallel.backends import PARALLEL_BACKEND_BUILDER
 from pytask_parallel.backends import ParallelBackend
@@ -308,7 +307,7 @@ def _execute_task(  # noqa: PLR0913
         except Exception:  # noqa: BLE001
             exc_info = sys.exc_info()
             processed_exc_info = _process_exception(
-                exc_info, show_locals, console_options
+                exc_info, show_locals=show_locals, console_options=console_options
             )
         else:
             _handle_task_function_return(task, out)
@@ -335,12 +334,13 @@ def _execute_task(  # noqa: PLR0913
 
 def _process_exception(
     exc_info: tuple[type[BaseException], BaseException, TracebackType | None],
-    show_locals: bool,  # noqa: FBT001
+    *,
+    show_locals: bool,
     console_options: ConsoleOptions,
 ) -> tuple[type[BaseException], BaseException, str]:
     """Process the exception and convert the traceback to a string."""
-    exc_info = remove_internal_traceback_frames_from_exc_info(exc_info)
-    traceback = Traceback.from_exception(*exc_info, show_locals=show_locals)
+    Traceback.show_locals = show_locals
+    traceback = Traceback(exc_info)
     segments = console.render(traceback, options=console_options)
     text = "".join(segment.text for segment in segments)
     return (*exc_info[:2], text)

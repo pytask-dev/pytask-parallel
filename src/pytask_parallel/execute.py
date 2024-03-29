@@ -27,13 +27,11 @@ from pytask import console
 from pytask import get_marks
 from pytask import hookimpl
 from pytask import parse_warning_filter
-from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask import warning_record_to_str
 from pytask.tree_util import PyTree
 from pytask.tree_util import tree_leaves
 from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
-from rich.traceback import Traceback as RichTraceback
 
 from pytask_parallel.backends import PARALLEL_BACKEND_BUILDER
 from pytask_parallel.backends import ParallelBackend
@@ -81,14 +79,12 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         except Exception:  # noqa: BLE001
             console.print(Traceback(sys.exc_info()))
             msg = (
-                "Could not build the executor for the parallel backend "
-                f"{session.config['parallel_backend'].value!r}."
+                "Creating the executor for the parallel backend "
+                f"{session.config['parallel_backend'].value!r} failed."
             )
-            raise ValueError(msg) from None
+            raise RuntimeError(msg) from None
 
-        console.print(parallel_backend)
-
-        with parallel_backend(max_workers=session.config["n_workers"]) as executor:
+        with parallel_backend() as executor:
             session.config["_parallel_executor"] = executor
             sleeper = _Sleeper()
 
@@ -344,8 +340,8 @@ def _process_exception(
     console_options: ConsoleOptions,
 ) -> tuple[type[BaseException], BaseException, str]:
     """Process the exception and convert the traceback to a string."""
-    exc_info = remove_internal_traceback_frames_from_exc_info(exc_info)
-    traceback = RichTraceback.from_exception(*exc_info, show_locals=show_locals)
+    Traceback.show_locals = show_locals
+    traceback = Traceback(exc_info)
     segments = console.render(traceback, options=console_options)
     text = "".join(segment.text for segment in segments)
     return (*exc_info[:2], text)

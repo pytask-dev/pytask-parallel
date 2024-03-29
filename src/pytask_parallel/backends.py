@@ -44,7 +44,7 @@ def get_dask_executor() -> Executor:
     """Get an executor from a dask client."""
     _rich_traceback_omit = True
     distributed = import_optional_dependency("distributed")
-    return distributed.Client.current().get_executor()
+    return distributed.Client.current().get_executor
 
 
 class ParallelBackend(Enum):

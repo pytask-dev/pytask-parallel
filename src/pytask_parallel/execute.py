@@ -68,14 +68,19 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     """
     __tracebackhide__ = True
 
-    if session.config["n_workers"] > 1:
+    # The parallel backend is only used for multiple workers since the fallback is a
+    # simple loop or when dask is used.
+    if (
+        session.config["n_workers"] > 1
+        or session.config["parallel_backend"] == ParallelBackend.DASK
+    ):
         reports = session.execution_reports
         running_tasks: dict[str, Future[Any]] = {}
 
         try:
             parallel_backend = PARALLEL_BACKEND_BUILDER[
                 session.config["parallel_backend"]
-            ]()
+            ](session.config["n_workers"])
         except Exception:  # noqa: BLE001
             console.print(Traceback(sys.exc_info()))
             msg = (
@@ -84,7 +89,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
             )
             raise RuntimeError(msg) from None
 
-        with parallel_backend() as executor:
+        with parallel_backend as executor:
             session.config["_parallel_executor"] = executor
             sleeper = _Sleeper()
 
@@ -228,7 +233,10 @@ class ProcessesNameSpace:
         Take a task, pickle it and send the bytes over to another process.
 
         """
-        if session.config["n_workers"] > 1:
+        if (
+            session.config["n_workers"] > 1
+            or session.config["parallel_backend"] == ParallelBackend.DASK
+        ):
             kwargs = _create_kwargs_for_task(task)
 
             # Task modules are dynamically loaded and added to `sys.modules`. Thus,

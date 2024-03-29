@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from concurrent.futures import Executor
 from concurrent.futures import Future
 from concurrent.futures import ProcessPoolExecutor
@@ -40,11 +41,25 @@ class CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
         )
 
 
-def get_dask_executor() -> Executor:
+def get_dask_executor(n_workers: int) -> Executor:
     """Get an executor from a dask client."""
     _rich_traceback_omit = True
-    distributed = import_optional_dependency("distributed")
-    return distributed.Client.current().get_executor
+    client = import_optional_dependency("distributed").Client(
+        address="tcp://172.17.199.232:8786"
+    )
+    if client.cluster and len(client.cluster.workers) != n_workers:
+        warnings.warn(
+            f"The number of workers in the dask cluster ({len(client.cluster.workers)})"
+            f" does not match the number of workers requested ({n_workers}). The "
+            "requested number of workers will be ignored.",
+            stacklevel=1,
+        )
+    return client.get_executor()
+
+
+def get_loky_executor(n_workers: int) -> Executor:
+    """Get a loky executor."""
+    return get_reusable_executor(max_workers=n_workers)
 
 
 class ParallelBackend(Enum):
@@ -57,8 +72,10 @@ class ParallelBackend(Enum):
 
 
 PARALLEL_BACKEND_BUILDER = {
-    ParallelBackend.PROCESSES: lambda: CloudpickleProcessPoolExecutor,
-    ParallelBackend.THREADS: lambda: ThreadPoolExecutor,
-    ParallelBackend.LOKY: lambda: get_reusable_executor,
+    ParallelBackend.PROCESSES: lambda n_workers: CloudpickleProcessPoolExecutor(
+        n_workers=n_workers
+    ),
+    ParallelBackend.THREADS: lambda n_workers: ThreadPoolExecutor(n_workers=n_workers),
+    ParallelBackend.LOKY: get_loky_executor,
     ParallelBackend.DASK: get_dask_executor,
 }

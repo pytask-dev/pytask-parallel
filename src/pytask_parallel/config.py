@@ -7,6 +7,8 @@ from typing import Any
 
 from pytask import hookimpl
 
+from pytask_parallel import processes
+from pytask_parallel import threads
 from pytask_parallel.backends import ParallelBackend
 
 
@@ -33,16 +35,12 @@ def pytask_post_parse(config: dict[str, Any]) -> None:
 
     if config["n_workers"] > 1:
         if config["parallel_backend"] == ParallelBackend.THREADS:
-            from pytask_parallel import threads
-
             config["pm"].register(threads)
 
         elif config["parallel_backend"] in (
             ParallelBackend.LOKY,
             ParallelBackend.PROCESSES,
         ):
-            from pytask_parallel import processes
-
             config["pm"].register(processes)
 
     if config["n_workers"] > 1 or config["parallel_backend"] == ParallelBackend.CUSTOM:

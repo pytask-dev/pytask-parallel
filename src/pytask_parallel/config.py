@@ -16,13 +16,18 @@ from pytask_parallel.backends import ParallelBackend
 @hookimpl
 def pytask_parse_config(config: dict[str, Any]) -> None:
     """Parse the configuration."""
+    __tracebackhide__ = True
+
     if config["n_workers"] == "auto":
         config["n_workers"] = max(os.cpu_count() - 1, 1)
 
     try:
         config["parallel_backend"] = ParallelBackend(config["parallel_backend"])
     except ValueError:
-        msg = f"Invalid value for 'parallel_backend'. Got {config['parallel_backend']}."
+        msg = (
+            f"Invalid value for 'parallel_backend'. Got {config['parallel_backend']}. "
+            f"Choose one of {', '.join([e.value for e in ParallelBackend])}."
+        )
         raise ValueError(msg) from None
 
     config["delay"] = 0.1

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import enum
 import os
 from typing import Any
 
@@ -17,25 +16,36 @@ def pytask_parse_config(config: dict[str, Any]) -> None:
     if config["n_workers"] == "auto":
         config["n_workers"] = max(os.cpu_count() - 1, 1)
 
-    if (
-        isinstance(config["parallel_backend"], str)
-        and config["parallel_backend"] in ParallelBackend._value2member_map_  # noqa: SLF001
-    ):
+    try:
         config["parallel_backend"] = ParallelBackend(config["parallel_backend"])
-    elif (
-        isinstance(config["parallel_backend"], enum.Enum)
-        and config["parallel_backend"] in ParallelBackend
-    ):
-        pass
-    else:
+    except ValueError:
         msg = f"Invalid value for 'parallel_backend'. Got {config['parallel_backend']}."
-        raise ValueError(msg)
+        raise ValueError(msg) from None
 
     config["delay"] = 0.1
 
 
-@hookimpl
+@hookimpl(trylast=True)
 def pytask_post_parse(config: dict[str, Any]) -> None:
     """Disable parallelization if debugging is enabled."""
     if config["pdb"] or config["trace"] or config["dry_run"]:
         config["n_workers"] = 1
+
+    if config["n_workers"] > 1:
+        if config["parallel_backend"] == ParallelBackend.THREADS:
+            from pytask_parallel import threads
+
+            config["pm"].register(threads)
+
+        elif config["parallel_backend"] in (
+            ParallelBackend.LOKY,
+            ParallelBackend.PROCESSES,
+        ):
+            from pytask_parallel import processes
+
+            config["pm"].register(processes)
+
+    if config["n_workers"] > 1 or config["parallel_backend"] == ParallelBackend.CUSTOM:
+        from pytask_parallel import execute
+
+        config["pm"].register(execute)

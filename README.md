@@ -68,6 +68,40 @@ n_workers = 1
 parallel_backend = "processes"  # or loky or threads
 ```
 
+## Custom Executor
+
+pytask-parallel allows you to use your parallel backend. The only requirement is that
+you provide an executor that implements the interface of
+[`concurrent.futures.Executor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor).
+
+To register your backend, go to a module that is imported by pytask when building the
+project, for example, the `config.py`. Register a builder function for your custom
+backend.
+
+```python
+from concurrent.futures import Executor
+from concurrent.futures import ProcessPoolExecutor
+
+from pytask_parallel import ParallelBackend, registry
+
+
+def build_custom_executor(n_workers: int) -> Executor:
+    return ProcessPoolExecutor(max_workers=n_workers)
+
+
+registry.register_parallel_backend(ParallelBackend.CUSTOM, build_custom_executor)
+```
+
+Now, build the project requesting your custom backend.
+
+```console
+pytask --parallel-backend custom
+```
+
+> \[!NOTE\]
+>
+> When you request the custom backend, it is even used when `n_workers` is set to 1.
+
 ## Some implementation details
 
 ### Parallelization and Debugging

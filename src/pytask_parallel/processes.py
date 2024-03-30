@@ -39,33 +39,30 @@ if TYPE_CHECKING:
 
 
 @hookimpl
-def pytask_execute_task(session: Session, task: PTask) -> Future[Any] | None:
+def pytask_execute_task(session: Session, task: PTask) -> Future[Any]:
     """Execute a task.
 
     Take a task, pickle it and send the bytes over to another process.
 
     """
-    if session.config["n_workers"] > 1:
-        kwargs = create_kwargs_for_task(task)
+    kwargs = create_kwargs_for_task(task)
 
-        # Task modules are dynamically loaded and added to `sys.modules`. Thus,
-        # cloudpickle believes the module of the task function is also importable in
-        # the child process. We have to register the module as dynamic again, so
-        # that cloudpickle will pickle it with the function. See cloudpickle#417,
-        # pytask#373 and pytask#374.
-        task_module = _get_module(task.function, getattr(task, "path", None))
-        cloudpickle.register_pickle_by_value(task_module)
+    # Task modules are dynamically loaded and added to `sys.modules`. Thus, cloudpickle
+    # believes the module of the task function is also importable in the child process.
+    # We have to register the module as dynamic again, so that cloudpickle will pickle
+    # it with the function. See cloudpickle#417, pytask#373 and pytask#374.
+    task_module = _get_module(task.function, getattr(task, "path", None))
+    cloudpickle.register_pickle_by_value(task_module)
 
-        return session.config["_parallel_executor"].submit(
-            _execute_task,
-            task=task,
-            kwargs=kwargs,
-            show_locals=session.config["show_locals"],
-            console_options=console.options,
-            session_filterwarnings=session.config["filterwarnings"],
-            task_filterwarnings=get_marks(task, "filterwarnings"),
-        )
-    return None
+    return session.config["_parallel_executor"].submit(
+        _execute_task,
+        task=task,
+        kwargs=kwargs,
+        show_locals=session.config["show_locals"],
+        console_options=console.options,
+        session_filterwarnings=session.config["filterwarnings"],
+        task_filterwarnings=get_marks(task, "filterwarnings"),
+    )
 
 
 def _raise_exception_on_breakpoint(*args: Any, **kwargs: Any) -> None:  # noqa: ARG001

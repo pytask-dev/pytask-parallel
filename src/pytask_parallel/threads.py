@@ -19,19 +19,17 @@ if TYPE_CHECKING:
 
 
 @hookimpl
-def pytask_execute_task(session: Session, task: PTask) -> Future[Any] | None:
+def pytask_execute_task(session: Session, task: PTask) -> Future[Any]:
     """Execute a task.
 
     Since threads have shared memory, it is not necessary to pickle and unpickle the
     task.
 
     """
-    if session.config["n_workers"] > 1:
-        kwargs = create_kwargs_for_task(task)
-        return session.config["_parallel_executor"].submit(
-            _mock_processes_for_threads, task=task, **kwargs
-        )
-    return None
+    kwargs = create_kwargs_for_task(task)
+    return session.config["_parallel_executor"].submit(
+        _mock_processes_for_threads, task=task, **kwargs
+    )
 
 
 def _mock_processes_for_threads(

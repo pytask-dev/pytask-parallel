@@ -47,15 +47,15 @@ $ pytask --n-workers 2
 $ pytask -n auto
 ```
 
-Using processes to parallelize the execution of tasks is useful for CPU bound tasks such
+Using processes to parallelize the execution of tasks is useful for CPU-bound tasks such
 as numerical computations. ([Here](https://stackoverflow.com/a/868577/7523785) is an
-explanation on what CPU or IO bound means.)
+explanation of what CPU- or IO-bound means.)
 
-For IO bound tasks, tasks where the limiting factor are network responses, access to
+For IO-bound tasks, tasks where the limiting factor is network latency and access to
 files, you can parallelize via threads.
 
 ```console
-$ pytask --parallel-backend threads
+pytask --parallel-backend threads
 ```
 
 You can also set the options in a `pyproject.toml`.
@@ -70,23 +70,23 @@ parallel_backend = "processes"  # or loky or threads
 
 ## Custom Executor
 
-pytask-parallel allows you to use your parallel backend. The only requirement is that
-you provide an executor that implements the interface of
+pytask-parallel allows you to use your parallel backend as long as it follows the
+interface defined by
 [`concurrent.futures.Executor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor).
 
-To register your backend, go to a module that is imported by pytask when building the
-project, for example, the `config.py`. Register a builder function for your custom
-backend.
+In some cases, adding a new backend can be as easy as registering a builder function
+that receives some arguments (currently only `n_workers`) and returns the instantiated
+executor.
 
 ```python
 from concurrent.futures import Executor
-from concurrent.futures import ProcessPoolExecutor
+from my_project.executor import CustomExecutor
 
 from pytask_parallel import ParallelBackend, registry
 
 
 def build_custom_executor(n_workers: int) -> Executor:
-    return ProcessPoolExecutor(max_workers=n_workers)
+    return CustomExecutor(max_workers=n_workers)
 
 
 registry.register_parallel_backend(ParallelBackend.CUSTOM, build_custom_executor)
@@ -98,9 +98,20 @@ Now, build the project requesting your custom backend.
 pytask --parallel-backend custom
 ```
 
-> \[!NOTE\]
->
-> When you request the custom backend, it is even used when `n_workers` is set to 1.
+Realistically, it is not the only necessary adjustment for a nice user experience. There
+are two other important things. pytask-parallel does not implement them by default since
+it seems more tightly coupled to your backend.
+
+1. A wrapper for the executed function that captures warnings, catches exceptions and
+   saves products of the task (within the child process!).
+
+   As an example, see `def _execute_task()` that does all that for the processes and
+   loky backend.
+
+1. To apply the wrapper, you need to write a custom hook implementation for
+   `def pytask_execute_task()`. See `def pytask_execute_task()` for an example. Use the
+   [`hook_module`](https://pytask-dev.readthedocs.io/en/stable/how_to_guides/extending_pytask.html#using-hook-module-and-hook-module)
+   configuration value to register your implementation.
 
 ## Some implementation details
 
@@ -126,12 +137,12 @@ Consult the [release notes](CHANGES.md) to find out about what is new.
 - `pytask-parallel` does not call the `pytask_execute_task_protocol` hook
   specification/entry-point because `pytask_execute_task_setup` and
   `pytask_execute_task` need to be separated from `pytask_execute_task_teardown`. Thus,
-  plugins which change this hook specification may not interact well with the
+  plugins that change this hook specification may not interact well with the
   parallelization.
 
-- There are two PRs for CPython which try to re-enable setting custom reducers which
-  should have been working, but does not. Here are the references.
+- Two PRs for CPython try to re-enable setting custom reducers which should have been
+  working but does not. Here are the references.
 
-  > - <https://bugs.python.org/issue28053>
-  > - <https://github.com/python/cpython/pull/9959>
-  > - <https://github.com/python/cpython/pull/15058>
+  - https://bugs.python.org/issue28053
+  - https://github.com/python/cpython/pull/9959
+  - https://github.com/python/cpython/pull/15058

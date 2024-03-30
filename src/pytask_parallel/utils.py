@@ -15,7 +15,8 @@ if TYPE_CHECKING:
     from pytask import PTask
 
 
-def _handle_task_function_return(task: PTask, out: Any) -> None:
+def handle_task_function_return(task: PTask, out: Any) -> None:
+    """Handle the return value of a task function."""
     if "return" not in task.produces:
         return
 
@@ -36,7 +37,7 @@ def _handle_task_function_return(task: PTask, out: Any) -> None:
         node.save(value)
 
 
-def _create_kwargs_for_task(task: PTask) -> dict[str, PyTree[Any]]:
+def create_kwargs_for_task(task: PTask) -> dict[str, PyTree[Any]]:
     """Create kwargs for task function."""
     parameters = inspect.signature(task.function).parameters
 

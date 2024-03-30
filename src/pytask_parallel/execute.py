@@ -17,11 +17,12 @@ from pytask import Session
 from pytask import Task
 from pytask import hookimpl
 from pytask.tree_util import tree_map
+
 from pytask_parallel import processes
 from pytask_parallel.backends import PARALLEL_BACKEND_BUILDER
 from pytask_parallel.backends import ParallelBackend
-from pytask_parallel.utils import _create_kwargs_for_task
-from pytask_parallel.utils import _handle_task_function_return
+from pytask_parallel.utils import create_kwargs_for_task
+from pytask_parallel.utils import handle_task_function_return
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -205,7 +206,7 @@ class DefaultBackendNameSpace:
 
         """
         if session.config["n_workers"] > 1:
-            kwargs = _create_kwargs_for_task(task)
+            kwargs = create_kwargs_for_task(task)
             return session.config["_parallel_executor"].submit(
                 _mock_processes_for_threads, task=task, **kwargs
             )
@@ -230,7 +231,7 @@ def _mock_processes_for_threads(
     except Exception:  # noqa: BLE001
         exc_info = sys.exc_info()
     else:
-        _handle_task_function_return(task, out)
+        handle_task_function_return(task, out)
         exc_info = None
     return None, [], exc_info
 

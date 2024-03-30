@@ -26,8 +26,8 @@ from pytask.tree_util import PyTree
 from pytask.tree_util import tree_map
 from rich.traceback import Traceback
 
-from pytask_parallel.utils import _create_kwargs_for_task
-from pytask_parallel.utils import _handle_task_function_return
+from pytask_parallel.utils import create_kwargs_for_task
+from pytask_parallel.utils import handle_task_function_return
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -46,7 +46,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[Any] | None:
 
     """
     if session.config["n_workers"] > 1:
-        kwargs = _create_kwargs_for_task(task)
+        kwargs = create_kwargs_for_task(task)
 
         # Task modules are dynamically loaded and added to `sys.modules`. Thus,
         # cloudpickle believes the module of the task function is also importable in
@@ -129,7 +129,7 @@ def _execute_task(  # noqa: PLR0913
                 exc_info, show_locals, console_options
             )
         else:
-            _handle_task_function_return(task, out)
+            handle_task_function_return(task, out)
             processed_exc_info = None
 
         task_display_name = getattr(task, "display_name", task.name)

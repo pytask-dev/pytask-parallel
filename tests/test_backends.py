@@ -47,7 +47,13 @@ def test_register_custom_backend(runner, tmp_path):
     tmp_path.joinpath("task_example.py").write_text("def task_example(): pass")
     result = runner.invoke(
         cli,
-        [tmp_path.as_posix(), "--parallel-backend", "custom", "--hook-module", tmp_path.joinpath("hook.py").as_posix()],
+        [
+            tmp_path.as_posix(),
+            "--parallel-backend",
+            "custom",
+            "--hook-module",
+            tmp_path.joinpath("hook.py").as_posix(),
+        ],
     )
     print(result.output)  # noqa: T201
     assert result.exit_code == ExitCode.OK

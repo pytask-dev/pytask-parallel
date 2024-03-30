@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import enum
 import os
 from typing import Any
 
@@ -17,19 +16,11 @@ def pytask_parse_config(config: dict[str, Any]) -> None:
     if config["n_workers"] == "auto":
         config["n_workers"] = max(os.cpu_count() - 1, 1)
 
-    if (
-        isinstance(config["parallel_backend"], str)
-        and config["parallel_backend"] in ParallelBackend._value2member_map_  # noqa: SLF001
-    ):
+    try:
         config["parallel_backend"] = ParallelBackend(config["parallel_backend"])
-    elif (
-        isinstance(config["parallel_backend"], enum.Enum)
-        and config["parallel_backend"] in ParallelBackend
-    ):
-        pass
-    else:
+    except ValueError:
         msg = f"Invalid value for 'parallel_backend'. Got {config['parallel_backend']}."
-        raise ValueError(msg)
+        raise ValueError(msg) from None
 
     config["delay"] = 0.1
 

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
 
-@hookimpl(tryfirst=True)
+@hookimpl
 def pytask_execute_task(session: Session, task: PTask) -> Future[Any] | None:
     """Execute a task.
 

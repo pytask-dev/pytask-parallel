@@ -35,7 +35,7 @@ def pytask_post_parse(config: dict[str, Any]) -> None:
         config["pm"].register(processes)
 
 
-@hookimpl(tryfirst=True)
+@hookimpl
 def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR0915
     """Execute tasks with a parallel backend.
 

@@ -70,6 +70,14 @@ parallel_backend = "processes"  # or loky or threads
 
 ## Custom Executor
 
+> [!NOTE]
+>
+> The interface for custom executors is rudimentary right now and there is not a lot of
+> support by public functions. Please, give some feedback if you are trying or managed
+> to use a custom backend.
+>
+> Also, please contribute your custom executors if you consider them useful to others.
+
 pytask-parallel allows you to use your parallel backend as long as it follows the
 interface defined by
 [`concurrent.futures.Executor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor).
@@ -105,13 +113,19 @@ it seems more tightly coupled to your backend.
 1. A wrapper for the executed function that captures warnings, catches exceptions and
    saves products of the task (within the child process!).
 
-   As an example, see `def _execute_task()` that does all that for the processes and
-   loky backend.
+   As an example, see
+   [`def _execute_task()`](https://github.com/pytask-dev/pytask-parallel/blob/c441dbb75fa6ab3ab17d8ad5061840c802dc1c41/src/pytask_parallel/processes.py#L91-L155)
+   that does all that for the processes and loky backend.
 
 1. To apply the wrapper, you need to write a custom hook implementation for
-   `def pytask_execute_task()`. See `def pytask_execute_task()` for an example. Use the
+   `def pytask_execute_task()`. See
+   [`def pytask_execute_task()`](https://github.com/pytask-dev/pytask-parallel/blob/c441dbb75fa6ab3ab17d8ad5061840c802dc1c41/src/pytask_parallel/processes.py#L41-L65)
+   for an example. Use the
    [`hook_module`](https://pytask-dev.readthedocs.io/en/stable/how_to_guides/extending_pytask.html#using-hook-module-and-hook-module)
    configuration value to register your implementation.
+
+Another example of an implementation can be found as a
+[test](https://github.com/pytask-dev/pytask-parallel/blob/c441dbb75fa6ab3ab17d8ad5061840c802dc1c41/tests/test_backends.py#L35-L78).
 
 ## Some implementation details
 

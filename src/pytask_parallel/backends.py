@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
 from concurrent.futures import Executor
 from concurrent.futures import Future
 from concurrent.futures import ProcessPoolExecutor
@@ -10,20 +9,23 @@ from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from typing import Any
 from typing import Callable
+from typing import ClassVar
 
 import cloudpickle
 from loky import get_reusable_executor
 from pytask import import_optional_dependency
 
+__all__ = ["ParallelBackend", "ParallelBackendRegistry", "registry"]
 
-def deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:
+
+def _deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:
     """Deserialize and execute a function and keyword arguments."""
     deserialized_fn = cloudpickle.loads(fn)
     deserialized_kwargs = cloudpickle.loads(kwargs)
     return deserialized_fn(**deserialized_kwargs)
 
 
-class CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
+class _CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
     """Patches the standard executor to serialize functions with cloudpickle."""
 
     # The type signature is wrong for Python >3.8. Fix when support is dropped.
@@ -35,7 +37,7 @@ class CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
     ) -> Future[Any]:
         """Submit a new task."""
         return super().submit(
-            deserialize_and_run_with_cloudpickle,
+            _deserialize_and_run_with_cloudpickle,
             fn=cloudpickle.dumps(fn),
             kwargs=cloudpickle.dumps(kwargs),
         )
@@ -65,17 +67,46 @@ def get_loky_executor(n_workers: int) -> Executor:
 class ParallelBackend(Enum):
     """Choices for parallel backends."""
 
+    CUSTOM = "custom"
+    LOKY = "loky"
     PROCESSES = "processes"
     THREADS = "threads"
-    LOKY = "loky"
-    DASK = "dask"
 
 
-PARALLEL_BACKEND_BUILDER = {
-    ParallelBackend.PROCESSES: lambda n_workers: CloudpickleProcessPoolExecutor(
-        n_workers=n_workers
-    ),
-    ParallelBackend.THREADS: lambda n_workers: ThreadPoolExecutor(n_workers=n_workers),
-    ParallelBackend.LOKY: get_loky_executor,
-    ParallelBackend.DASK: get_dask_executor,
-}
+class ParallelBackendRegistry:
+    """Registry for parallel backends."""
+
+    registry: ClassVar[dict[ParallelBackend, Callable[..., Executor]]] = {}
+
+    def register_parallel_backend(
+        self, kind: ParallelBackend, builder: Callable[..., Executor]
+    ) -> None:
+        """Register a parallel backend."""
+        self.registry[kind] = builder
+
+    def get_parallel_backend(self, kind: ParallelBackend, n_workers: int) -> Executor:
+        """Get a parallel backend."""
+        __tracebackhide__ = True
+        try:
+            return self.registry[kind](n_workers=n_workers)
+        except KeyError:
+            msg = f"No registered parallel backend found for kind {kind}."
+            raise ValueError(msg) from None
+        except Exception as e:  # noqa: BLE001
+            msg = f"Could not instantiate parallel backend {kind.value}."
+            raise ValueError(msg) from e
+
+
+registry = ParallelBackendRegistry()
+
+
+registry.register_parallel_backend(
+    ParallelBackend.PROCESSES,
+    lambda n_workers: _CloudpickleProcessPoolExecutor(max_workers=n_workers),
+)
+registry.register_parallel_backend(
+    ParallelBackend.THREADS, lambda n_workers: ThreadPoolExecutor(max_workers=n_workers)
+)
+registry.register_parallel_backend(
+    ParallelBackend.LOKY, lambda n_workers: get_reusable_executor(max_workers=n_workers)
+)

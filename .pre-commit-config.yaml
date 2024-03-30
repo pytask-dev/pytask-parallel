@@ -23,7 +23,7 @@ repos:
     -   id: python-use-type-annotations
     -   id: text-unicode-replacement-char
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.3
+    rev: v0.3.4
     hooks:
       - id: ruff
       - id: ruff-format
@@ -35,15 +35,16 @@ repos:
     rev: 0.7.1
     hooks:
     -   id: nbstripout
--   repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.17
-    hooks:
-    -   id: mdformat
-        additional_dependencies: [
-            mdformat-gfm,
-            mdformat-black,
-        ]
-        args: [--wrap, "88"]
+# Conflicts with admonitions.
+# -   repo: https://github.com/executablebooks/mdformat
+#     rev: 0.7.17
+#     hooks:
+#     -   id: mdformat
+#         additional_dependencies: [
+#             mdformat-gfm,
+#             mdformat-black,
+#         ]
+#         args: [--wrap, "88"]
 - repo: https://github.com/codespell-project/codespell
   rev: v2.2.6
   hooks:

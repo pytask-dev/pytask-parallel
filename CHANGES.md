@@ -9,6 +9,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 
 - {pull}`85` simplifies code since loky is a dependency.
 - {pull}`86` adds support for dask.
+- {pull}`89` restructures the package.
 
 ## 0.4.1 - 2024-01-12
 

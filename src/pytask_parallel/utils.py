@@ -38,6 +38,9 @@ def parse_future_result(
     if isinstance(out, tuple) and len(out) == 3:  # noqa: PLR2004
         return out
 
+    if out is None:
+        return None, [], None
+
     # What to do when the output does not match?
     msg = (
         "The task function returns an unknown output format. Either return a tuple "

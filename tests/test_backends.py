@@ -15,39 +15,39 @@ def test_error_requesting_custom_backend_without_registration(runner, tmp_path):
 
 @pytest.mark.end_to_end()
 def test_register_custom_backend(runner, tmp_path):
-    source = """
+    hook_source = """
     import cloudpickle
-
-    from concurrent.futures import ProcessPoolExecutor
     from loky import get_reusable_executor
-    from pytask_parallel import registry, ParallelBackend
+    from pytask import hookimpl
+    from pytask_parallel import ParallelBackend
+    from pytask_parallel import registry
+    from pytask_parallel.processes import _get_module
+    from pytask_parallel.utils import create_kwargs_for_task
 
-    def _deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes):
-        deserialized_fn = cloudpickle.loads(fn)
-        deserialized_kwargs = cloudpickle.loads(kwargs)
-        return None, [], deserialized_fn(**deserialized_kwargs)
 
-    class _CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
+    @hookimpl(tryfirst=True)
+    def pytask_execute_task(session, task):
+        kwargs = create_kwargs_for_task(task)
 
-        def submit(self, fn, *args, **kwargs):
-            return super().submit(
-                _deserialize_and_run_with_cloudpickle,
-                fn=cloudpickle.dumps(fn),
-                kwargs=cloudpickle.dumps(kwargs),
-            )
+        task_module = _get_module(task.function, getattr(task, "path", None))
+        cloudpickle.register_pickle_by_value(task_module)
+
+        return session.config["_parallel_executor"].submit(task.function, **kwargs)
+
 
     def custom_builder(n_workers):
         print("Build custom executor.")
-        return _CloudpickleProcessPoolExecutor(max_workers=n_workers)
+        return get_reusable_executor(max_workers=n_workers)
+
 
     registry.register_parallel_backend(ParallelBackend.CUSTOM, custom_builder)
-
-    def task_example(): pass
     """
-    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
+    tmp_path.joinpath("hook.py").write_text(textwrap.dedent(hook_source))
+
+    tmp_path.joinpath("task_example.py").write_text("def task_example(): pass")
     result = runner.invoke(
         cli,
-        [tmp_path.as_posix(), "--parallel-backend", "custom"],
+        [tmp_path.as_posix(), "--parallel-backend", "custom", "--hook-module", tmp_path.joinpath("hook.py").as_posix()],
     )
     print(result.output)  # noqa: T201
     assert result.exit_code == ExitCode.OK

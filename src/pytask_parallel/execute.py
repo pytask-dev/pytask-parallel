@@ -11,17 +11,19 @@ from attrs import define
 from attrs import field
 from pytask import ExecutionReport
 from pytask import PNode
+from pytask import PTask
 from pytask import PythonNode
 from pytask import Session
 from pytask import hookimpl
+from pytask.tree_util import PyTree
 from pytask.tree_util import tree_map
+from pytask.tree_util import tree_structure
 
-from pytask_parallel.backends import ParallelBackend
 from pytask_parallel.backends import registry
+from pytask_parallel.utils import parse_future_result
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
-    from types import TracebackType
 
 
 @hookimpl
@@ -86,21 +88,12 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
                 for task_name in list(running_tasks):
                     future = running_tasks[task_name]
+
                     if future.done():
-                        # An exception was thrown before the task was executed.
-                        if future.exception() is not None:
-                            exc_info = _parse_future_exception(future.exception())
-                            warning_reports = []
-                        # A task raised an exception.
-                        else:
-                            (python_nodes, warning_reports, task_exception) = (
-                                future.result()
-                            )
-                            session.warnings.extend(warning_reports)
-                            exc_info = (
-                                _parse_future_exception(future.exception())
-                                or task_exception
-                            )
+                        python_nodes, warnings_reports, exc_info = parse_future_result(
+                            future
+                        )
+                        session.warnings.extend(warnings_reports)
 
                         if exc_info is not None:
                             task = session.dag.nodes[task_name]["task"]
@@ -111,16 +104,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             session.scheduler.done(task_name)
                         else:
                             task = session.dag.nodes[task_name]["task"]
-
-                            # Update PythonNodes with the values from the future if
-                            # not threads.
-                            if (
-                                session.config["parallel_backend"]
-                                != ParallelBackend.THREADS
-                            ):
-                                task.produces = tree_map(
-                                    _update_python_node, task.produces, python_nodes
-                                )
+                            _update_python_nodes(task, python_nodes)
 
                             try:
                                 session.hook.pytask_execute_task_teardown(
@@ -136,8 +120,6 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             running_tasks.pop(task_name)
                             newly_collected_reports.append(report)
                             session.scheduler.done(task_name)
-                    else:
-                        pass
 
                 for report in newly_collected_reports:
                     session.hook.pytask_execute_task_process_report(
@@ -158,17 +140,21 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     return True
 
 
-def _update_python_node(x: PNode, y: PythonNode | None) -> PNode:
-    if y:
-        x.save(y.load())
-    return x
+def _update_python_nodes(
+    task: PTask, python_nodes: dict[str, PyTree[PythonNode | None]] | None
+) -> None:
+    """Update the python nodes of a task with the python nodes from the future."""
 
+    def _update_python_node(x: PNode, y: PythonNode | None) -> PNode:
+        if y:
+            x.save(y.load())
+        return x
 
-def _parse_future_exception(
-    exc: BaseException | None,
-) -> tuple[type[BaseException], BaseException, TracebackType] | None:
-    """Parse a future exception into the format of ``sys.exc_info``."""
-    return None if exc is None else (type(exc), exc, exc.__traceback__)
+    structure_python_nodes = tree_structure(python_nodes)
+    structure_produces = tree_structure(task.produces)
+    # strict must be false when none is leaf.
+    if structure_produces.is_prefix(structure_python_nodes, strict=False):
+        task.produces = tree_map(_update_python_node, task.produces, python_nodes)  # type: ignore[assignment]
 
 
 @define(kw_only=True)

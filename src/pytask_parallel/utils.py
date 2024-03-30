@@ -12,7 +12,39 @@ from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
 
 if TYPE_CHECKING:
+    from concurrent.futures import Future
+    from types import TracebackType
+
     from pytask import PTask
+    from pytask import PythonNode
+    from pytask import WarningReport
+
+
+def parse_future_result(
+    future: Future[Any],
+) -> tuple[
+    dict[str, PyTree[PythonNode | None]] | None,
+    list[WarningReport],
+    tuple[type[BaseException], BaseException, TracebackType] | None,
+]:
+    """Parse the result of a future."""
+    # An exception was raised before the task was executed.
+    future_exception = future.exception()
+    if future_exception is not None:
+        exc_info = _parse_future_exception(future_exception)
+        return None, [], exc_info
+
+    out = future.result()
+    if isinstance(out, tuple) and len(out) == 3:  # noqa: PLR2004
+        return out
+
+    # What to do when the output does not match?
+    msg = (
+        "The task function returns an unknown output format. Either return a tuple "
+        "with three elements, python nodes, warning reports and exception or only "
+        "return."
+    )
+    raise Exception(msg)  # noqa: TRY002
 
 
 def handle_task_function_return(task: PTask, out: Any) -> None:
@@ -50,3 +82,10 @@ def create_kwargs_for_task(task: PTask) -> dict[str, PyTree[Any]]:
             kwargs[name] = tree_map(lambda x: x.load(), value)
 
     return kwargs
+
+
+def _parse_future_exception(
+    exc: BaseException | None,
+) -> tuple[type[BaseException], BaseException, TracebackType] | None:
+    """Parse a future exception into the format of ``sys.exc_info``."""
+    return None if exc is None else (type(exc), exc, exc.__traceback__)

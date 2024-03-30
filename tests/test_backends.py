@@ -16,15 +16,31 @@ def test_error_requesting_custom_backend_without_registration(runner, tmp_path):
 @pytest.mark.end_to_end()
 def test_register_custom_backend(runner, tmp_path):
     source = """
-    from pytask_parallel import registry, ParallelBackend
+    import cloudpickle
+
     from concurrent.futures import ProcessPoolExecutor
+    from loky import get_reusable_executor
+    from pytask_parallel import registry, ParallelBackend
+
+    def _deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes):
+        deserialized_fn = cloudpickle.loads(fn)
+        deserialized_kwargs = cloudpickle.loads(kwargs)
+        return None, [], deserialized_fn(**deserialized_kwargs)
+
+    class _CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
+
+        def submit(self, fn, *args, **kwargs):
+            return super().submit(
+                _deserialize_and_run_with_cloudpickle,
+                fn=cloudpickle.dumps(fn),
+                kwargs=cloudpickle.dumps(kwargs),
+            )
 
     def custom_builder(n_workers):
         print("Build custom executor.")
-        return ProcessPoolExecutor(max_workers=n_workers)
+        return _CloudpickleProcessPoolExecutor(max_workers=n_workers)
 
     registry.register_parallel_backend(ParallelBackend.CUSTOM, custom_builder)
-
 
     def task_example(): pass
     """

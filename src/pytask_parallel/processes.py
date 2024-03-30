@@ -1,4 +1,4 @@
-"""Contains hooks for parallel execution of tasks with processes/loky."""
+"""Contains functions related to processes and loky."""
 
 from __future__ import annotations
 
@@ -47,11 +47,10 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[Any]:
     """
     kwargs = create_kwargs_for_task(task)
 
-    # Task modules are dynamically loaded and added to `sys.modules`. Thus,
-    # cloudpickle believes the module of the task function is also importable in the
-    # child process. We have to register the module as dynamic again, so that
-    # cloudpickle will pickle it with the function. See cloudpickle#417, pytask#373
-    # and pytask#374.
+    # Task modules are dynamically loaded and added to `sys.modules`. Thus, cloudpickle
+    # believes the module of the task function is also importable in the child process.
+    # We have to register the module as dynamic again, so that cloudpickle will pickle
+    # it with the function. See cloudpickle#417, pytask#373 and pytask#374.
     task_module = _get_module(task.function, getattr(task, "path", None))
     cloudpickle.register_pickle_by_value(task_module)
 
@@ -87,19 +86,6 @@ def _patch_set_trace_and_breakpoint() -> None:
 
     pdb.set_trace = _raise_exception_on_breakpoint
     sys.breakpointhook = _raise_exception_on_breakpoint
-
-
-def _process_exception(
-    exc_info: tuple[type[BaseException], BaseException, TracebackType | None],
-    show_locals: bool,  # noqa: FBT001
-    console_options: ConsoleOptions,
-) -> tuple[type[BaseException], BaseException, str]:
-    """Process the exception and convert the traceback to a string."""
-    exc_info = remove_internal_traceback_frames_from_exc_info(exc_info)
-    traceback = Traceback.from_exception(*exc_info, show_locals=show_locals)
-    segments = console.render(traceback, options=console_options)
-    text = "".join(segment.text for segment in segments)
-    return (*exc_info[:2], text)
 
 
 def _execute_task(  # noqa: PLR0913
@@ -160,6 +146,19 @@ def _execute_task(  # noqa: PLR0913
     )
 
     return python_nodes, warning_reports, processed_exc_info
+
+
+def _process_exception(
+    exc_info: tuple[type[BaseException], BaseException, TracebackType | None],
+    show_locals: bool,  # noqa: FBT001
+    console_options: ConsoleOptions,
+) -> tuple[type[BaseException], BaseException, str]:
+    """Process the exception and convert the traceback to a string."""
+    exc_info = remove_internal_traceback_frames_from_exc_info(exc_info)
+    traceback = Traceback.from_exception(*exc_info, show_locals=show_locals)
+    segments = console.render(traceback, options=console_options)
+    text = "".join(segment.text for segment in segments)
+    return (*exc_info[:2], text)
 
 
 def _get_module(func: Callable[..., Any], path: Path | None) -> ModuleType:

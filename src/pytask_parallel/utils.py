@@ -11,25 +11,8 @@ from pytask.tree_util import tree_leaves
 from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
 
-from pytask_parallel.backends import ParallelBackend
-
 if TYPE_CHECKING:
     from pytask import PTask
-
-
-def create_kwargs_for_task(task: PTask) -> dict[str, PyTree[Any]]:
-    """Create kwargs for task function."""
-    parameters = inspect.signature(task.function).parameters
-
-    kwargs = {}
-    for name, value in task.depends_on.items():
-        kwargs[name] = tree_map(lambda x: x.load(), value)
-
-    for name, value in task.produces.items():
-        if name in parameters:
-            kwargs[name] = tree_map(lambda x: x.load(), value)
-
-    return kwargs
 
 
 def handle_task_function_return(task: PTask, out: Any) -> None:
@@ -54,8 +37,16 @@ def handle_task_function_return(task: PTask, out: Any) -> None:
         node.save(value)
 
 
-def is_parallelized(n_workers: int, parallel_backend: ParallelBackend) -> bool:
-    """Check if the execution is parallelized."""
-    return parallel_backend == ParallelBackend.CUSTOM or (
-        n_workers > 1 and parallel_backend != ParallelBackend.CUSTOM
-    )
+def create_kwargs_for_task(task: PTask) -> dict[str, PyTree[Any]]:
+    """Create kwargs for task function."""
+    parameters = inspect.signature(task.function).parameters
+
+    kwargs = {}
+    for name, value in task.depends_on.items():
+        kwargs[name] = tree_map(lambda x: x.load(), value)
+
+    for name, value in task.produces.items():
+        if name in parameters:
+            kwargs[name] = tree_map(lambda x: x.load(), value)
+
+    return kwargs

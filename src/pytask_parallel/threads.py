@@ -1,4 +1,4 @@
-"""Contains functions for parallel execution of tasks with threads."""
+"""Contains functions for the threads backend."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ from typing import Any
 
 from pytask import PTask
 from pytask import Session
-from pytask import Task
 from pytask import hookimpl
 
 from pytask_parallel.utils import create_kwargs_for_task
@@ -20,7 +19,7 @@ if TYPE_CHECKING:
 
 
 @hookimpl
-def pytask_execute_task(session: Session, task: Task) -> Future[Any]:
+def pytask_execute_task(session: Session, task: PTask) -> Future[Any]:
     """Execute a task.
 
     Since threads have shared memory, it is not necessary to pickle and unpickle the

@@ -18,14 +18,13 @@ from pytask.tree_util import tree_map
 
 from pytask_parallel.backends import ParallelBackend
 from pytask_parallel.backends import registry
-from pytask_parallel.utils import is_parallelized
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
     from types import TracebackType
 
 
-@hookimpl(tryfirst=True)
+@hookimpl
 def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR0915
     """Execute tasks with a parallel backend.
 
@@ -39,132 +38,124 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     """
     __tracebackhide__ = True
 
-    if is_parallelized(session.config["n_workers"], session.config["parallel_backend"]):
-        reports = session.execution_reports
-        running_tasks: dict[str, Future[Any]] = {}
+    reports = session.execution_reports
+    running_tasks: dict[str, Future[Any]] = {}
 
-        parallel_backend = registry.get_parallel_backend(
-            session.config["parallel_backend"], n_workers=session.config["n_workers"]
-        )
+    parallel_backend = registry.get_parallel_backend(
+        session.config["parallel_backend"], n_workers=session.config["n_workers"]
+    )
 
-        with parallel_backend as executor:
-            session.config["_parallel_executor"] = executor
-            sleeper = _Sleeper()
+    with parallel_backend as executor:
+        session.config["_parallel_executor"] = executor
+        sleeper = _Sleeper()
 
-            while session.scheduler.is_active():
-                try:
-                    newly_collected_reports = []
-                    n_new_tasks = session.config["n_workers"] - len(running_tasks)
+        while session.scheduler.is_active():
+            try:
+                newly_collected_reports = []
+                n_new_tasks = session.config["n_workers"] - len(running_tasks)
 
-                    ready_tasks = (
-                        list(session.scheduler.get_ready(n_new_tasks))
-                        if n_new_tasks >= 1
-                        else []
+                ready_tasks = (
+                    list(session.scheduler.get_ready(n_new_tasks))
+                    if n_new_tasks >= 1
+                    else []
+                )
+
+                for task_name in ready_tasks:
+                    task = session.dag.nodes[task_name]["task"]
+                    session.hook.pytask_execute_task_log_start(
+                        session=session, task=task
                     )
-
-                    for task_name in ready_tasks:
-                        task = session.dag.nodes[task_name]["task"]
-                        session.hook.pytask_execute_task_log_start(
+                    try:
+                        session.hook.pytask_execute_task_setup(
                             session=session, task=task
                         )
-                        try:
-                            session.hook.pytask_execute_task_setup(
-                                session=session, task=task
+                    except Exception:  # noqa: BLE001
+                        report = ExecutionReport.from_task_and_exception(
+                            task, sys.exc_info()
+                        )
+                        newly_collected_reports.append(report)
+                        session.scheduler.done(task_name)
+                    else:
+                        running_tasks[task_name] = session.hook.pytask_execute_task(
+                            session=session, task=task
+                        )
+                        sleeper.reset()
+
+                if not ready_tasks:
+                    sleeper.increment()
+
+                for task_name in list(running_tasks):
+                    future = running_tasks[task_name]
+                    if future.done():
+                        # An exception was thrown before the task was executed.
+                        if future.exception() is not None:
+                            exc_info = _parse_future_exception(future.exception())
+                            warning_reports = []
+                        # A task raised an exception.
+                        else:
+                            (python_nodes, warning_reports, task_exception) = (
+                                future.result()
                             )
-                        except Exception:  # noqa: BLE001
-                            report = ExecutionReport.from_task_and_exception(
-                                task, sys.exc_info()
+                            session.warnings.extend(warning_reports)
+                            exc_info = (
+                                _parse_future_exception(future.exception())
+                                or task_exception
                             )
-                            newly_collected_reports.append(report)
+
+                        if exc_info is not None:
+                            task = session.dag.nodes[task_name]["task"]
+                            newly_collected_reports.append(
+                                ExecutionReport.from_task_and_exception(task, exc_info)
+                            )
+                            running_tasks.pop(task_name)
                             session.scheduler.done(task_name)
                         else:
-                            running_tasks[task_name] = session.hook.pytask_execute_task(
-                                session=session, task=task
-                            )
-                            sleeper.reset()
+                            task = session.dag.nodes[task_name]["task"]
 
-                    if not ready_tasks:
-                        sleeper.increment()
-
-                    for task_name in list(running_tasks):
-                        future = running_tasks[task_name]
-                        if future.done():
-                            # An exception was thrown before the task was executed.
-                            if future.exception() is not None:
-                                exc_info = _parse_future_exception(future.exception())
-                                warning_reports = []
-                            # A task raised an exception.
-                            else:
-                                (
-                                    python_nodes,
-                                    warning_reports,
-                                    task_exception,
-                                ) = future.result()
-                                session.warnings.extend(warning_reports)
-                                exc_info = (
-                                    _parse_future_exception(future.exception())
-                                    or task_exception
+                            # Update PythonNodes with the values from the future if
+                            # not threads.
+                            if (
+                                session.config["parallel_backend"]
+                                != ParallelBackend.THREADS
+                            ):
+                                task.produces = tree_map(
+                                    _update_python_node, task.produces, python_nodes
                                 )
 
-                            if exc_info is not None:
-                                task = session.dag.nodes[task_name]["task"]
-                                newly_collected_reports.append(
-                                    ExecutionReport.from_task_and_exception(
-                                        task, exc_info
-                                    )
+                            try:
+                                session.hook.pytask_execute_task_teardown(
+                                    session=session, task=task
                                 )
-                                running_tasks.pop(task_name)
-                                session.scheduler.done(task_name)
+                            except Exception:  # noqa: BLE001
+                                report = ExecutionReport.from_task_and_exception(
+                                    task, sys.exc_info()
+                                )
                             else:
-                                task = session.dag.nodes[task_name]["task"]
+                                report = ExecutionReport.from_task(task)
 
-                                # Update PythonNodes with the values from the future if
-                                # not threads.
-                                if (
-                                    session.config["parallel_backend"]
-                                    != ParallelBackend.THREADS
-                                ):
-                                    task.produces = tree_map(
-                                        _update_python_node,
-                                        task.produces,
-                                        python_nodes,
-                                    )
+                            running_tasks.pop(task_name)
+                            newly_collected_reports.append(report)
+                            session.scheduler.done(task_name)
+                    else:
+                        pass
 
-                                try:
-                                    session.hook.pytask_execute_task_teardown(
-                                        session=session, task=task
-                                    )
-                                except Exception:  # noqa: BLE001
-                                    report = ExecutionReport.from_task_and_exception(
-                                        task, sys.exc_info()
-                                    )
-                                else:
-                                    report = ExecutionReport.from_task(task)
+                for report in newly_collected_reports:
+                    session.hook.pytask_execute_task_process_report(
+                        session=session, report=report
+                    )
+                    session.hook.pytask_execute_task_log_end(
+                        session=session, task=task, report=report
+                    )
+                    reports.append(report)
 
-                                running_tasks.pop(task_name)
-                                newly_collected_reports.append(report)
-                                session.scheduler.done(task_name)
-                        else:
-                            pass
-
-                    for report in newly_collected_reports:
-                        session.hook.pytask_execute_task_process_report(
-                            session=session, report=report
-                        )
-                        session.hook.pytask_execute_task_log_end(
-                            session=session, task=task, report=report
-                        )
-                        reports.append(report)
-
-                    if session.should_stop:
-                        break
-                    sleeper.sleep()
-
-                except KeyboardInterrupt:
+                if session.should_stop:
                     break
+                sleeper.sleep()
 
-        return True
-    return None
+            except KeyboardInterrupt:
+                break
+
+    return True
 
 
 def _update_python_node(x: PNode, y: PythonNode | None) -> PNode:

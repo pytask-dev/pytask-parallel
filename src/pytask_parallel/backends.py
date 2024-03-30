@@ -71,7 +71,7 @@ class ParallelBackendRegistry:
             msg = f"No registered parallel backend found for kind {kind}."
             raise ValueError(msg) from None
         except Exception as e:  # noqa: BLE001
-            msg = f"Could not instantiate parallel backend {kind}."
+            msg = f"Could not instantiate parallel backend {kind.value}."
             raise ValueError(msg) from e
 
 

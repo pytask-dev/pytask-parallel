@@ -14,6 +14,25 @@ def test_error_requesting_custom_backend_without_registration(runner, tmp_path):
 
 
 @pytest.mark.end_to_end()
+def test_error_while_instantiating_custom_backend(runner, tmp_path):
+    hook_source = """
+    from pytask_parallel import ParallelBackend, registry
+
+    def custom_builder(n_workers):
+        raise Exception("ERROR")
+
+    registry.register_parallel_backend(ParallelBackend.CUSTOM, custom_builder)
+
+    def task_example(): pass
+    """
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(hook_source))
+    result = runner.invoke(cli, [tmp_path.as_posix(), "--parallel-backend", "custom"])
+    assert result.exit_code == ExitCode.FAILED
+    assert "ERROR" in result.output
+    assert "Could not instantiate parallel backend custom." in result.output
+
+
+@pytest.mark.end_to_end()
 def test_register_custom_backend(runner, tmp_path):
     hook_source = """
     import cloudpickle
@@ -43,7 +62,6 @@ def test_register_custom_backend(runner, tmp_path):
     registry.register_parallel_backend(ParallelBackend.CUSTOM, custom_builder)
     """
     tmp_path.joinpath("hook.py").write_text(textwrap.dedent(hook_source))
-
     tmp_path.joinpath("task_example.py").write_text("def task_example(): pass")
     result = runner.invoke(
         cli,
@@ -55,7 +73,6 @@ def test_register_custom_backend(runner, tmp_path):
             tmp_path.joinpath("hook.py").as_posix(),
         ],
     )
-    print(result.output)  # noqa: T201
     assert result.exit_code == ExitCode.OK
     assert "Build custom executor." in result.output
     assert "1  Succeeded" in result.output

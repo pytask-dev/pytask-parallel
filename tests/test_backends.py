@@ -49,6 +49,7 @@ def test_register_custom_backend(runner, tmp_path):
         cli,
         [tmp_path.as_posix(), "--parallel-backend", "custom"],
     )
+    print(result.output)  # noqa: T201
     assert result.exit_code == ExitCode.OK
     assert "Build custom executor." in result.output
     assert "1  Succeeded" in result.output

@@ -11,18 +11,15 @@ from attrs import define
 from attrs import field
 from pytask import ExecutionReport
 from pytask import PNode
-from pytask import PTask
 from pytask import PythonNode
 from pytask import Session
-from pytask import Task
 from pytask import hookimpl
 from pytask.tree_util import tree_map
 
 from pytask_parallel import processes
 from pytask_parallel.backends import PARALLEL_BACKEND_BUILDER
 from pytask_parallel.backends import ParallelBackend
-from pytask_parallel.utils import create_kwargs_for_task
-from pytask_parallel.utils import handle_task_function_return
+from pytask_parallel.threads import DefaultBackendNameSpace
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -191,49 +188,6 @@ def _parse_future_exception(
 ) -> tuple[type[BaseException], BaseException, TracebackType] | None:
     """Parse a future exception into the format of ``sys.exc_info``."""
     return None if exc is None else (type(exc), exc, exc.__traceback__)
-
-
-class DefaultBackendNameSpace:
-    """The name space for hooks related to threads."""
-
-    @staticmethod
-    @hookimpl(tryfirst=True)
-    def pytask_execute_task(session: Session, task: Task) -> Future[Any] | None:
-        """Execute a task.
-
-        Since threads have shared memory, it is not necessary to pickle and unpickle the
-        task.
-
-        """
-        if session.config["n_workers"] > 1:
-            kwargs = create_kwargs_for_task(task)
-            return session.config["_parallel_executor"].submit(
-                _mock_processes_for_threads, task=task, **kwargs
-            )
-        return None
-
-
-def _mock_processes_for_threads(
-    task: PTask, **kwargs: Any
-) -> tuple[
-    None, list[Any], tuple[type[BaseException], BaseException, TracebackType] | None
-]:
-    """Mock execution function such that it returns the same as for processes.
-
-    The function for processes returns ``warning_reports`` and an ``exception``. With
-    threads, these object are collected by the main and not the subprocess. So, we just
-    return placeholders.
-
-    """
-    __tracebackhide__ = True
-    try:
-        out = task.function(**kwargs)
-    except Exception:  # noqa: BLE001
-        exc_info = sys.exc_info()
-    else:
-        handle_task_function_return(task, out)
-        exc_info = None
-    return None, [], exc_info
 
 
 @define(kw_only=True)

@@ -54,12 +54,6 @@ def pytask_post_parse(config: dict[str, Any]) -> None:
     else:
         config["pm"].register(ProcessesNameSpace)
 
-    if PARALLEL_BACKEND_BUILDER[config["parallel_backend"]] is None:
-        raise
-        config["_parallel_executor"] = PARALLEL_BACKEND_BUILDER[
-            config["parallel_backend"]
-        ]()
-
 
 @hookimpl(tryfirst=True)
 def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR0915

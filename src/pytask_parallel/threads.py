@@ -18,24 +18,20 @@ if TYPE_CHECKING:
     from types import TracebackType
 
 
-class DefaultBackendNameSpace:
-    """The name space for hooks related to threads."""
+@hookimpl(tryfirst=True)
+def pytask_execute_task(session: Session, task: PTask) -> Future[Any] | None:
+    """Execute a task.
 
-    @staticmethod
-    @hookimpl(tryfirst=True)
-    def pytask_execute_task(session: Session, task: PTask) -> Future[Any] | None:
-        """Execute a task.
+    Since threads have shared memory, it is not necessary to pickle and unpickle the
+    task.
 
-        Since threads have shared memory, it is not necessary to pickle and unpickle the
-        task.
-
-        """
-        if session.config["n_workers"] > 1:
-            kwargs = create_kwargs_for_task(task)
-            return session.config["_parallel_executor"].submit(
-                _mock_processes_for_threads, task=task, **kwargs
-            )
-        return None
+    """
+    if session.config["n_workers"] > 1:
+        kwargs = create_kwargs_for_task(task)
+        return session.config["_parallel_executor"].submit(
+            _mock_processes_for_threads, task=task, **kwargs
+        )
+    return None
 
 
 def _mock_processes_for_threads(

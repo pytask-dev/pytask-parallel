@@ -16,23 +16,12 @@ from pytask import Session
 from pytask import hookimpl
 from pytask.tree_util import tree_map
 
-from pytask_parallel import processes
-from pytask_parallel import threads
 from pytask_parallel.backends import PARALLEL_BACKEND_BUILDER
 from pytask_parallel.backends import ParallelBackend
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
     from types import TracebackType
-
-
-@hookimpl
-def pytask_post_parse(config: dict[str, Any]) -> None:
-    """Register the parallel backend."""
-    if config["parallel_backend"] == ParallelBackend.THREADS:
-        config["pm"].register(threads)
-    else:
-        config["pm"].register(processes)
 
 
 @hookimpl

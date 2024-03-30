@@ -7,6 +7,7 @@ from typing import Any
 
 from pytask import hookimpl
 
+from pytask_parallel import custom
 from pytask_parallel import execute
 from pytask_parallel import processes
 from pytask_parallel import threads
@@ -33,15 +34,22 @@ def pytask_parse_config(config: dict[str, Any]) -> None:
     config["delay"] = 0.1
 
 
-@hookimpl
+@hookimpl(trylast=True)
 def pytask_post_parse(config: dict[str, Any]) -> None:
     """Register the parallel backend if debugging is not enabled."""
     if config["pdb"] or config["trace"] or config["dry_run"]:
         config["n_workers"] = 1
 
-    if config["n_workers"] > 1:
+    # Register parallel execute hook.
+    if config["n_workers"] > 1 or config["parallel_backend"] == ParallelBackend.CUSTOM:
         config["pm"].register(execute)
+
+    # Register parallel backends.
+    if config["n_workers"] > 1:
         if config["parallel_backend"] == ParallelBackend.THREADS:
             config["pm"].register(threads)
         else:
             config["pm"].register(processes)
+
+    if config["parallel_backend"] == ParallelBackend.CUSTOM:
+        config["pm"].register(custom)

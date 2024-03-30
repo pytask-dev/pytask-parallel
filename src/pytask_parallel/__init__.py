@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from pytask_parallel.backends import ParallelBackend
+from pytask_parallel.backends import registry
+
 try:
     from ._version import version as __version__
 except ImportError:
@@ -10,4 +13,4 @@ except ImportError:
     __version__ = "unknown"
 
 
-__all__ = ["__version__"]
+__all__ = ["ParallelBackend", "__version__", "registry"]

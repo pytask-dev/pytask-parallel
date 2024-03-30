@@ -106,14 +106,19 @@ def _execute_task(  # noqa: PLR0913
     spawned process or thread.
 
     """
+    # Hide this function from tracebacks.
     __tracebackhide__ = True
+
+    # Patch set_trace and breakpoint to show a better error message.
     _patch_set_trace_and_breakpoint()
 
+    # Catch warnings and store them in a list.
     with warnings.catch_warnings(record=True) as log:
+        # Apply global filterwarnings.
         for arg in session_filterwarnings:
             warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
 
-        # apply filters from "filterwarnings" marks
+        # Apply filters from "filterwarnings" marks
         for mark in task_filterwarnings:
             for arg in mark.args:
                 warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
@@ -126,6 +131,7 @@ def _execute_task(  # noqa: PLR0913
                 exc_info, show_locals, console_options
             )
         else:
+            # Save products.
             handle_task_function_return(task, out)
             processed_exc_info = None
 
@@ -141,6 +147,7 @@ def _execute_task(  # noqa: PLR0913
                 )
             )
 
+    # Collect all PythonNodes that are products to pass values back to the main process.
     python_nodes = tree_map(
         lambda x: x if isinstance(x, PythonNode) else None, task.produces
     )

@@ -51,6 +51,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         session.config["_parallel_executor"] = executor
         sleeper = _Sleeper()
 
+        i = 0
         while session.scheduler.is_active():
             try:
                 newly_collected_reports = []
@@ -136,6 +137,8 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
             except KeyboardInterrupt:
                 break
+
+            i += 1
 
     return True
 

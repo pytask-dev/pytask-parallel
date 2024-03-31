@@ -8,6 +8,7 @@ from typing import Any
 from pytask import hookimpl
 
 from pytask_parallel import custom
+from pytask_parallel import dask
 from pytask_parallel import execute
 from pytask_parallel import processes
 from pytask_parallel import threads
@@ -50,6 +51,9 @@ def pytask_post_parse(config: dict[str, Any]) -> None:
             config["pm"].register(threads)
         else:
             config["pm"].register(processes)
+
+    if config["parallel_backend"] == ParallelBackend.DASK:
+        config["pm"].register(dask)
 
     if config["parallel_backend"] == ParallelBackend.CUSTOM:
         config["pm"].register(custom)

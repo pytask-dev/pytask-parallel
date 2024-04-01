@@ -32,10 +32,10 @@ email = "raabe@posteo.de"
 all = ["pytask-parallel[dask]"]
 dask = ["dask", "distributed"]
 test = [
-  "pytask-parallel[all]",
-  "nbmake",
-  "pytest",
-  "pytest-cov",
+    "pytask-parallel[all]",
+    "nbmake",
+    "pytest",
+    "pytest-cov",
 ]
 
 [project.readme]

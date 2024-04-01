@@ -7,11 +7,8 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 
 ## 0.5.0 - 2024-xx-xx
 
-- {pull}`88` updates handling `Traceback`.
-
-## 0.4.2 - 2024-xx-xx
-
 - {pull}`85` simplifies code since loky is a dependency.
+- {pull}`88` updates handling `Traceback`.
 - {pull}`89` restructures the package.
 
 ## 0.4.1 - 2024-01-12

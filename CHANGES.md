@@ -10,6 +10,8 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 - {pull}`85` simplifies code since loky is a dependency.
 - {pull}`88` updates handling `Traceback`.
 - {pull}`89` restructures the package.
+- {pull}`92` redirects stdout and stderr from processes and loky and shows them in error
+  reports.
 
 ## 0.4.1 - 2024-01-12
 

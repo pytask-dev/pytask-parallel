@@ -61,7 +61,7 @@ repos:
             attrs,
             cloudpickle,
             loky,
-            pytask>=0.4.5,
+            "git+https://github.com/pytask-dev/pytask.git@main",
             rich,
             types-click,
             types-setuptools,

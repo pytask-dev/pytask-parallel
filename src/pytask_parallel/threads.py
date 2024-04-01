@@ -35,7 +35,11 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[Any]:
 def _mock_processes_for_threads(
     task: PTask, **kwargs: Any
 ) -> tuple[
-    None, list[Any], tuple[type[BaseException], BaseException, TracebackType] | None
+    None,
+    list[Any],
+    tuple[type[BaseException], BaseException, TracebackType] | None,
+    str,
+    str,
 ]:
     """Mock execution function such that it returns the same as for processes.
 
@@ -52,4 +56,4 @@ def _mock_processes_for_threads(
     else:
         handle_task_function_return(task, out)
         exc_info = None
-    return None, [], exc_info
+    return None, [], exc_info, "", ""

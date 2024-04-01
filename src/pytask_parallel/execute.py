@@ -91,10 +91,23 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                     future = running_tasks[task_name]
 
                     if future.done():
-                        python_nodes, warnings_reports, exc_info = parse_future_result(
-                            future
-                        )
+                        (
+                            python_nodes,
+                            warnings_reports,
+                            exc_info,
+                            captured_stdout,
+                            captured_stderr,
+                        ) = parse_future_result(future)
                         session.warnings.extend(warnings_reports)
+
+                        if captured_stdout:
+                            task.report_sections.append(
+                                ("call", "stdout", captured_stdout)
+                            )
+                        if captured_stderr:
+                            task.report_sections.append(
+                                ("call", "stderr", captured_stderr)
+                            )
 
                         if exc_info is not None:
                             task = session.dag.nodes[task_name]["task"]

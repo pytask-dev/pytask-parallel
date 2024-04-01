@@ -5,7 +5,10 @@ from __future__ import annotations
 import inspect
 import sys
 import warnings
+from contextlib import redirect_stderr
+from contextlib import redirect_stdout
 from functools import partial
+from io import StringIO
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
@@ -98,6 +101,8 @@ def _execute_task(  # noqa: PLR0913
     PyTree[PythonNode | None],
     list[WarningReport],
     tuple[type[BaseException], BaseException, str] | None,
+    str,
+    str,
 ]:
     """Unserialize and execute task.
 
@@ -111,8 +116,13 @@ def _execute_task(  # noqa: PLR0913
     # Patch set_trace and breakpoint to show a better error message.
     _patch_set_trace_and_breakpoint()
 
+    captured_stdout_buffer = StringIO()
+    captured_stderr_buffer = StringIO()
+
     # Catch warnings and store them in a list.
-    with warnings.catch_warnings(record=True) as log:
+    with warnings.catch_warnings(record=True) as log, redirect_stdout(
+        captured_stdout_buffer
+    ), redirect_stderr(captured_stderr_buffer):
         # Apply global filterwarnings.
         for arg in session_filterwarnings:
             warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
@@ -146,12 +156,25 @@ def _execute_task(  # noqa: PLR0913
                 )
             )
 
+    captured_stdout_buffer.seek(0)
+    captured_stderr_buffer.seek(0)
+    captured_stdout = captured_stdout_buffer.read()
+    captured_stderr = captured_stderr_buffer.read()
+    captured_stdout_buffer.close()
+    captured_stderr_buffer.close()
+
     # Collect all PythonNodes that are products to pass values back to the main process.
     python_nodes = tree_map(
         lambda x: x if isinstance(x, PythonNode) else None, task.produces
     )
 
-    return python_nodes, warning_reports, processed_exc_info
+    return (
+        python_nodes,
+        warning_reports,
+        processed_exc_info,
+        captured_stdout,
+        captured_stderr,
+    )
 
 
 def _process_exception(

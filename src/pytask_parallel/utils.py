@@ -26,20 +26,22 @@ def parse_future_result(
     dict[str, PyTree[PythonNode | None]] | None,
     list[WarningReport],
     tuple[type[BaseException], BaseException, TracebackType] | None,
+    str,
+    str,
 ]:
     """Parse the result of a future."""
     # An exception was raised before the task was executed.
     future_exception = future.exception()
     if future_exception is not None:
         exc_info = _parse_future_exception(future_exception)
-        return None, [], exc_info
+        return None, [], exc_info, "", ""
 
     out = future.result()
-    if isinstance(out, tuple) and len(out) == 3:  # noqa: PLR2004
+    if isinstance(out, tuple) and len(out) == 5:  # noqa: PLR2004
         return out
 
     if out is None:
-        return None, [], None
+        return None, [], None, "", ""
 
     # What to do when the output does not match?
     msg = (

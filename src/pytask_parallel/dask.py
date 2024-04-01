@@ -11,16 +11,15 @@ from pytask import Mark
 from pytask import PTask
 from pytask import PythonNode
 from pytask import Session
+from pytask import Traceback
 from pytask import WarningReport
 from pytask import console
 from pytask import get_marks
 from pytask import hookimpl
 from pytask import parse_warning_filter
-from pytask import remove_internal_traceback_frames_from_exc_info
 from pytask import warning_record_to_str
 from pytask.tree_util import PyTree
 from pytask.tree_util import tree_map
-from rich.traceback import Traceback
 
 from pytask_parallel.utils import create_kwargs_for_task
 from pytask_parallel.utils import handle_task_function_return
@@ -148,8 +147,7 @@ def _process_exception(
     console_options: ConsoleOptions,
 ) -> tuple[type[BaseException], BaseException, str]:
     """Process the exception and convert the traceback to a string."""
-    exc_info = remove_internal_traceback_frames_from_exc_info(exc_info)
-    traceback = Traceback.from_exception(*exc_info, show_locals=show_locals)
+    traceback = Traceback(exc_info, show_locals=show_locals)
     segments = console.render(traceback, options=console_options)
     text = "".join(segment.text for segment in segments)
     return (*exc_info[:2], text)

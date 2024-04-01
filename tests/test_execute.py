@@ -172,10 +172,11 @@ def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_bac
     source = """
     from pytask import task
     import warnings
+    from pathlib import Path
 
     for i in range(2):
 
-        @task(id=str(i), kwargs={"produces": f"{i}.txt"})
+        @task(id=str(i), kwargs={"produces": Path(f"{i}.txt")})
         def task_example(produces):
             warnings.warn("This is a warning.")
             produces.touch()

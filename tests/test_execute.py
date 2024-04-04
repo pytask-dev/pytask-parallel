@@ -15,7 +15,7 @@ from tests.conftest import restore_sys_path_and_module_after_test_execution
 _IMPLEMENTED_BACKENDS = [
     pytest.param(
         ParallelBackend.DASK,
-        marks=pytest.mark.xfail(
+        marks=pytest.mark.skip(
             reason="dask cannot handle dynamically imported modules."
         ),
     ),

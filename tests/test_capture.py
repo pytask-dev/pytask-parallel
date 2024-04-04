@@ -12,7 +12,7 @@ from pytask_parallel import ParallelBackend
     [
         pytest.param(
             ParallelBackend.DASK,
-            marks=pytest.mark.xfail(
+            marks=pytest.mark.skip(
                 reason="dask cannot handle dynamically imported modules."
             ),
         ),

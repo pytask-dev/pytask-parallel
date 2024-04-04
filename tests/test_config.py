@@ -54,5 +54,5 @@ def test_reading_values_from_config_file(
     assert session.exit_code == exit_code
     if value == "auto":
         value = os.cpu_count() - 1
-    if session.exit_code == ExitCode.OK:
+    if value != "unknown_backend":
         assert session.config[configuration_option] == value

@@ -10,6 +10,4 @@ from pytask import hookimpl
 @hookimpl(trylast=True)
 def pytask_log_session_header(session: Session) -> None:
     """Add a note for how many workers are spawned."""
-    n_workers = session.config["n_workers"]
-    if n_workers > 1:
-        console.print(f"Started {n_workers} workers.")
+    console.print(f"Starting {session.config['n_workers']} workers.")

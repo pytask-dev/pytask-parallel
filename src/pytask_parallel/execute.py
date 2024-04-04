@@ -39,16 +39,16 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
     """
     __tracebackhide__ = True
-
     reports = session.execution_reports
     running_tasks: dict[str, Future[Any]] = {}
 
-    parallel_backend = registry.get_parallel_backend(
+    # The executor can only be created after the collection to give users the
+    # possibility to inject their own executors.
+    session.config["_parallel_executor"] = registry.get_parallel_backend(
         session.config["parallel_backend"], n_workers=session.config["n_workers"]
     )
 
-    with parallel_backend as executor:
-        session.config["_parallel_executor"] = executor
+    with session.config["_parallel_executor"]:
         sleeper = _Sleeper()
 
         i = 0

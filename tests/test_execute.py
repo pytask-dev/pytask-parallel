@@ -12,7 +12,17 @@ from pytask_parallel.execute import _Sleeper
 
 from tests.conftest import restore_sys_path_and_module_after_test_execution
 
-_IMPLEMENTED_BACKENDS = [p for p in ParallelBackend if p != ParallelBackend.CUSTOM]
+_IMPLEMENTED_BACKENDS = [
+    pytest.param(
+        ParallelBackend.DASK,
+        marks=pytest.mark.xfail(
+            reason="dask cannot handle dynamically imported modules."
+        ),
+    ),
+    ParallelBackend.LOKY,
+    ParallelBackend.PROCESSES,
+    ParallelBackend.THREADS,
+]
 
 
 @pytest.mark.end_to_end()

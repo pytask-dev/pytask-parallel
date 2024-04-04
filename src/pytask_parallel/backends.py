@@ -14,6 +14,7 @@ from typing import ClassVar
 
 import cloudpickle
 import distributed
+from attrs import define
 from loky import get_reusable_executor
 
 __all__ = ["ParallelBackend", "ParallelBackendRegistry", "registry"]
@@ -89,6 +90,7 @@ class ParallelBackend(Enum):
     THREADS = "threads"
 
 
+@define
 class ParallelBackendRegistry:
     """Registry for parallel backends."""
 
@@ -106,10 +108,10 @@ class ParallelBackendRegistry:
         try:
             return self.registry[kind](n_workers=n_workers)
         except KeyError:
-            msg = f"No registered parallel backend found for kind {kind}."
+            msg = f"No registered parallel backend found for kind {kind.value!r}."
             raise ValueError(msg) from None
         except Exception as e:  # noqa: BLE001
-            msg = f"Could not instantiate parallel backend {kind.value}."
+            msg = f"Could not instantiate parallel backend {kind.value!r}."
             raise ValueError(msg) from e
 
 

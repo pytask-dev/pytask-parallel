@@ -15,7 +15,7 @@ from pytask_parallel.backends import ParallelBackend
     [
         (False, 1, 1),
         (True, 1, 1),
-        (True, 2, 1),
+        (True, 2, 2),
         (False, 2, 2),
         (False, "auto", os.cpu_count() - 1),
     ],

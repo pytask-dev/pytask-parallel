@@ -10,6 +10,7 @@ from pytask import hookimpl
 from pytask_parallel import custom
 from pytask_parallel import dask
 from pytask_parallel import execute
+from pytask_parallel import logging
 from pytask_parallel import processes
 from pytask_parallel import threads
 from pytask_parallel.backends import ParallelBackend
@@ -38,22 +39,20 @@ def pytask_parse_config(config: dict[str, Any]) -> None:
 @hookimpl(trylast=True)
 def pytask_post_parse(config: dict[str, Any]) -> None:
     """Register the parallel backend if debugging is not enabled."""
+    # Deactivate parallel execution if debugger, trace or dry-run is used.
     if config["pdb"] or config["trace"] or config["dry_run"]:
-        config["n_workers"] = 1
+        return
 
-    # Register parallel execute hook.
-    if config["n_workers"] > 1 or config["parallel_backend"] == ParallelBackend.CUSTOM:
-        config["pm"].register(execute)
+    # Register parallel execute and logging hook.
+    config["pm"].register(logging)
+    config["pm"].register(execute)
 
     # Register parallel backends.
-    if config["n_workers"] > 1:
-        if config["parallel_backend"] == ParallelBackend.THREADS:
-            config["pm"].register(threads)
-        else:
-            config["pm"].register(processes)
-
-    if config["parallel_backend"] == ParallelBackend.DASK:
+    if config["parallel_backend"] == ParallelBackend.THREADS:
+        config["pm"].register(threads)
+    elif config["parallel_backend"] == ParallelBackend.DASK:
         config["pm"].register(dask)
-
-    if config["parallel_backend"] == ParallelBackend.CUSTOM:
+    elif config["parallel_backend"] == ParallelBackend.CUSTOM:
         config["pm"].register(custom)
+    else:
+        config["pm"].register(processes)

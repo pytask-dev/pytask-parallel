@@ -115,6 +115,7 @@ force-single-line = true
 convention = "numpy"
 
 [tool.pytest.ini_options]
+addopts = ["--nbmake"]
 # Do not add src since it messes with the loading of pytask-parallel as a plugin.
 testpaths = ["tests"]
 markers = [

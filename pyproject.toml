@@ -29,8 +29,8 @@ name = "Tobias Raabe"
 email = "raabe@posteo.de"
 
 [project.optional-dependencies]
-all = ["pytask-parallel[dask]"]
 dask = ["dask", "distributed"]
+all = ["pytask-parallel[dask]"]
 test = [
     "pytask-parallel[all]",
     "nbmake",

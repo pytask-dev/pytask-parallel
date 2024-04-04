@@ -15,7 +15,6 @@ from typing import ClassVar
 import cloudpickle
 from attrs import define
 from loky import get_reusable_executor
-from pytask import import_optional_dependency
 
 __all__ = ["ParallelBackend", "ParallelBackendRegistry", "registry"]
 
@@ -48,6 +47,7 @@ class _CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
 def _get_dask_executor(n_workers: int) -> Executor:
     """Get an executor from a dask client."""
     _rich_traceback_omit = True
+    from pytask import import_optional_dependency
 
     distributed = import_optional_dependency("distributed")
     try:

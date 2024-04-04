@@ -9,7 +9,16 @@ from pytask_parallel import ParallelBackend
 @pytest.mark.end_to_end()
 @pytest.mark.parametrize(
     "parallel_backend",
-    [ParallelBackend.DASK, ParallelBackend.LOKY, ParallelBackend.PROCESSES],
+    [
+        pytest.param(
+            ParallelBackend.DASK,
+            marks=pytest.mark.xfail(
+                reason="dask cannot handle dynamically imported modules."
+            ),
+        ),
+        ParallelBackend.LOKY,
+        ParallelBackend.PROCESSES,
+    ],
 )
 @pytest.mark.parametrize("show_capture", ["no", "stdout", "stderr", "all"])
 def test_show_capture(tmp_path, runner, parallel_backend, show_capture):

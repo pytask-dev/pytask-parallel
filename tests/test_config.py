@@ -36,6 +36,13 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
     ]
     + [
         ("parallel_backend", parallel_backend, ExitCode.OK)
+        if parallel_backend != ParallelBackend.DASK
+        else pytest.param(
+            "parallel_backend",
+            "dask",
+            ExitCode.CONFIGURATION_FAILED,
+            marks=pytest.mark.skip(reason="Dask is not yet supported"),
+        )
         for parallel_backend in ParallelBackend
     ],
 )

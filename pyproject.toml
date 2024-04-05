@@ -30,6 +30,19 @@ email = "raabe@posteo.de"
 
 [project.optional-dependencies]
 dask = ["dask[complete]", "distributed"]
+docs = [
+  "furo",
+  "ipython",
+  "matplotlib",
+  "myst-parser",
+  "nbsphinx",
+  "sphinx",
+  "sphinx-click",
+  "sphinx-copybutton",
+  "sphinx-design>=0.3",
+  "sphinx-toolbox",
+  "sphinxext-opengraph",
+]
 test = [
     "pytask-parallel[all]",
     "nbmake",

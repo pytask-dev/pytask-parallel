@@ -13,6 +13,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 - {pull}`89` restructures the package.
 - {pull}`92` redirects stdout and stderr from processes and loky and shows them in error
   reports.
+- {pull}`93` adds documentation on readthedocs.
 
 ## 0.4.1 - 2024-01-12
 

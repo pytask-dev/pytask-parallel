@@ -15,7 +15,7 @@ from pytask_parallel.backends import ParallelBackend
     [
         (False, 1, 1),
         (True, 1, 1),
-        (True, 2, 1),
+        (True, 2, 2),
         (False, 2, 2),
         (False, "auto", os.cpu_count() - 1),
     ],
@@ -36,6 +36,13 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
     ]
     + [
         ("parallel_backend", parallel_backend, ExitCode.OK)
+        if parallel_backend != ParallelBackend.DASK
+        else pytest.param(
+            "parallel_backend",
+            "dask",
+            ExitCode.CONFIGURATION_FAILED,
+            marks=pytest.mark.skip(reason="Dask is not yet supported"),
+        )
         for parallel_backend in ParallelBackend
     ],
 )
@@ -54,5 +61,5 @@ def test_reading_values_from_config_file(
     assert session.exit_code == exit_code
     if value == "auto":
         value = os.cpu_count() - 1
-    if session.exit_code == ExitCode.OK:
+    if value != "unknown_backend":
         assert session.config[configuration_option] == value

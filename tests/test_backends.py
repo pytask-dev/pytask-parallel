@@ -29,7 +29,7 @@ def test_error_while_instantiating_custom_backend(runner, tmp_path):
     result = runner.invoke(cli, [tmp_path.as_posix(), "--parallel-backend", "custom"])
     assert result.exit_code == ExitCode.FAILED
     assert "ERROR" in result.output
-    assert "Could not instantiate parallel backend custom." in result.output
+    assert "Could not instantiate parallel backend 'custom'." in result.output
 
 
 @pytest.mark.end_to_end()

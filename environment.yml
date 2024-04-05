@@ -16,6 +16,12 @@ dependencies:
   - loky
   - optree
 
+  # Additional dependencies
+  - universal_pathlib <0.2
+  - s3fs>=2023.4.0
+  - coiled
+  - distributed
+
   # Misc
   - tox
   - ipywidgets

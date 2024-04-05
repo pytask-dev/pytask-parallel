@@ -12,7 +12,17 @@ from pytask_parallel.execute import _Sleeper
 
 from tests.conftest import restore_sys_path_and_module_after_test_execution
 
-_IMPLEMENTED_BACKENDS = [p for p in ParallelBackend if p != ParallelBackend.CUSTOM]
+_IMPLEMENTED_BACKENDS = [
+    pytest.param(
+        ParallelBackend.DASK,
+        marks=pytest.mark.skip(
+            reason="dask cannot handle dynamically imported modules."
+        ),
+    ),
+    ParallelBackend.LOKY,
+    ParallelBackend.PROCESSES,
+    ParallelBackend.THREADS,
+]
 
 
 @pytest.mark.end_to_end()
@@ -277,11 +287,7 @@ def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_back
 @pytest.mark.parametrize("code", ["breakpoint()", "import pdb; pdb.set_trace()"])
 @pytest.mark.parametrize(
     "parallel_backend",
-    [
-        i
-        for i in ParallelBackend
-        if i not in (ParallelBackend.THREADS, ParallelBackend.CUSTOM)
-    ],
+    [i for i in _IMPLEMENTED_BACKENDS if i != ParallelBackend.THREADS],
 )
 def test_raise_error_on_breakpoint(runner, tmp_path, code, parallel_backend):
     tmp_path.joinpath("task_example.py").write_text(f"def task_example(): {code}")

@@ -29,10 +29,12 @@ name = "Tobias Raabe"
 email = "raabe@posteo.de"
 
 [project.optional-dependencies]
+dask = ["dask[complete]", "distributed"]
 test = [
-  "nbmake",
-  "pytest",
-  "pytest-cov",
+    "pytask-parallel[all]",
+    "nbmake",
+    "pytest",
+    "pytest-cov",
 ]
 
 [project.readme]
@@ -112,6 +114,7 @@ force-single-line = true
 convention = "numpy"
 
 [tool.pytest.ini_options]
+addopts = ["--nbmake"]
 # Do not add src since it messes with the loading of pytask-parallel as a plugin.
 testpaths = ["tests"]
 markers = [

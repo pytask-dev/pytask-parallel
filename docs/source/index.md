@@ -22,6 +22,9 @@ pytask-parallel allows to execute workflows defined with
 ---
 maxdepth: 1
 ---
+quickstart
+dask
+custom_executors
 developers_guide
 changes
 On Github <https://github.com/pytask-dev/pytask-parallel>

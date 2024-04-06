@@ -1,16 +1,15 @@
 # Custom Executors
 
-> [!NOTE]
->
-> The interface for custom executors is rudimentary right now and there is not a lot of
-> support by public functions. Please, give some feedback if you are trying or managed
-> to use a custom backend.
->
-> Also, please contribute your custom executors if you consider them useful to others.
+```{important}
+The interface for custom executors is rudimentary right now. Please, give some feedback
+if you managed to implement a custom executor or have suggestions for improvement.
+
+Please, also consider contributing your executor to pytask-parallel if you believe it
+could be helpful to other people. Start by creating an issue or a draft PR.
+```
 
 pytask-parallel allows you to use your parallel backend as long as it follows the
-interface defined by
-[`concurrent.futures.Executor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor).
+interface defined by {class}`concurrent.futures.Executor`.
 
 In some cases, adding a new backend can be as easy as registering a builder function
 that receives some arguments (currently only `n_workers`) and returns the instantiated

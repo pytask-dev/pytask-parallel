@@ -1,5 +1,11 @@
 # Dask
 
+```{important}
+Currently, the dask backend can only be used if your workflow code is organized in a
+package due to how pytask imports your code and dask serializes task functions
+([issue](https://github.com/dask/distributed/issues/8607)).
+```
+
 Dask is a flexible library for parallel and distributed computing. You probably know it
 from its {class}`dask.dataframe` that allows lazy processing of big data. Here, we use
 {class}`dask.distributed` that provides an interface similar to

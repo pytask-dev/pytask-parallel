@@ -26,7 +26,7 @@ def pytask_extend_command_line_interface(cli: click.Group) -> None:
             ["--parallel-backend"],
             type=EnumChoice(ParallelBackend),
             help="Backend for the parallelization.",
-            default=ParallelBackend.NONE,
+            default=ParallelBackend.LOKY,
         ),
     ]
     cli.commands["build"].params.extend(additional_parameters)

@@ -84,8 +84,6 @@ def _get_thread_pool_executor(n_workers: int) -> Executor:
 class ParallelBackend(Enum):
     """Choices for parallel backends."""
 
-    NONE = "none"
-
     CUSTOM = "custom"
     DASK = "dask"
     LOKY = "loky"

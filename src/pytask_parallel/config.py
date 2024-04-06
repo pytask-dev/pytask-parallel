@@ -21,9 +21,6 @@ def pytask_parse_config(config: dict[str, Any]) -> None:
     """Parse the configuration."""
     __tracebackhide__ = True
 
-    if config["n_workers"] == "auto":
-        config["n_workers"] = max(os.cpu_count() - 1, 1)
-
     try:
         config["parallel_backend"] = ParallelBackend(config["parallel_backend"])
     except ValueError:
@@ -32,6 +29,13 @@ def pytask_parse_config(config: dict[str, Any]) -> None:
             f"Choose one of {', '.join([e.value for e in ParallelBackend])}."
         )
         raise ValueError(msg) from None
+
+    if config["n_workers"] == "auto":
+        config["n_workers"] = max(os.cpu_count() - 1, 1)
+
+    # If more than one worker is used, and no backend is set, use loky.
+    if config["n_workers"] > 1 and config["parallel_backend"] == ParallelBackend.NONE:
+        config["parallel_backend"] = ParallelBackend.LOKY
 
     config["delay"] = 0.1
 

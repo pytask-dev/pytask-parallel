@@ -35,6 +35,16 @@ repos:
     rev: 0.7.1
     hooks:
     -   id: nbstripout
+-   repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.17
+    hooks:
+    -   id: mdformat
+        additional_dependencies: [
+            mdformat-myst,
+            mdformat-black,
+            mdformat-pyproject,
+        ]
+        files: (docs/.)
 # Conflicts with admonitions.
 # -   repo: https://github.com/executablebooks/mdformat
 #     rev: 0.7.17

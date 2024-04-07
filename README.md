@@ -8,11 +8,11 @@
 [![image](https://img.shields.io/github/actions/workflow/status/pytask-dev/pytask-parallel/main.yml?branch=main)](https://github.com/pytask-dev/pytask-parallel/actions?query=branch%3Amain)
 [![image](https://codecov.io/gh/pytask-dev/pytask-parallel/branch/main/graph/badge.svg)](https://codecov.io/gh/pytask-dev/pytask-parallel)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/pytask-dev/pytask-parallel/main.svg)](https://results.pre-commit.ci/latest/github/pytask-dev/pytask-parallel/main)
-[![image](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 ______________________________________________________________________
 
-Parallelize the execution of tasks with `pytask-parallel` which is a plugin for
+Parallelize the execution of tasks with `pytask-parallel`, a plugin for
 [pytask](https://github.com/pytask-dev/pytask).
 
 ## Installation
@@ -28,11 +28,14 @@ $ pip install pytask-parallel
 $ conda install -c conda-forge pytask-parallel
 ```
 
-By default, the plugin uses `concurrent.futures.ProcessPoolExecutor`.
+By default, the plugin uses loky's reusable executor.
 
-It is also possible to select the executor from loky or `ThreadPoolExecutor` from the
-[concurrent.futures](https://docs.python.org/3/library/concurrent.futures.html) module
-as backends to execute tasks asynchronously.
+The following backends are available:
+
+- loky's [`get_reusable_executor`](https://loky.readthedocs.io/en/stable/API.html#loky.get_reusable_executor)
+- `ProcessPoolExecutor` or `ThreadPoolExecutor` from
+  [concurrent.futures](https://docs.python.org/3/library/concurrent.futures.html)
+- dask's [`ClientExecutor`](https://distributed.dask.org/en/stable/api.html#distributed.Client.get_executor) allows in combination with [coiled](https://docs.coiled.io/user_guide/index.html) to spawn clusters and workers on AWS, GCP, and other providers with minimal configuration.
 
 ## Usage
 
@@ -65,71 +68,10 @@ You can also set the options in a `pyproject.toml`.
 
 [tool.pytask.ini_options]
 n_workers = 1
-parallel_backend = "processes"  # or loky or threads
+parallel_backend = "loky"  # or processes or threads
 ```
 
-## Custom Executor
-
-> [!NOTE]
->
-> The interface for custom executors is rudimentary right now and there is not a lot of
-> support by public functions. Please, give some feedback if you are trying or managed
-> to use a custom backend.
->
-> Also, please contribute your custom executors if you consider them useful to others.
-
-pytask-parallel allows you to use your parallel backend as long as it follows the
-interface defined by
-[`concurrent.futures.Executor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor).
-
-In some cases, adding a new backend can be as easy as registering a builder function
-that receives some arguments (currently only `n_workers`) and returns the instantiated
-executor.
-
-```python
-from concurrent.futures import Executor
-from my_project.executor import CustomExecutor
-
-from pytask_parallel import ParallelBackend, registry
-
-
-def build_custom_executor(n_workers: int) -> Executor:
-    return CustomExecutor(max_workers=n_workers)
-
-
-registry.register_parallel_backend(ParallelBackend.CUSTOM, build_custom_executor)
-```
-
-Now, build the project requesting your custom backend.
-
-```console
-pytask --parallel-backend custom
-```
-
-Realistically, it is not the only necessary adjustment for a nice user experience. There
-are two other important things. pytask-parallel does not implement them by default since
-it seems more tightly coupled to your backend.
-
-1. A wrapper for the executed function that captures warnings, catches exceptions and
-   saves products of the task (within the child process!).
-
-   As an example, see
-   [`def _execute_task()`](https://github.com/pytask-dev/pytask-parallel/blob/c441dbb75fa6ab3ab17d8ad5061840c802dc1c41/src/pytask_parallel/processes.py#L91-L155)
-   that does all that for the processes and loky backend.
-
-1. To apply the wrapper, you need to write a custom hook implementation for
-   `def pytask_execute_task()`. See
-   [`def pytask_execute_task()`](https://github.com/pytask-dev/pytask-parallel/blob/c441dbb75fa6ab3ab17d8ad5061840c802dc1c41/src/pytask_parallel/processes.py#L41-L65)
-   for an example. Use the
-   [`hook_module`](https://pytask-dev.readthedocs.io/en/stable/how_to_guides/extending_pytask.html#using-hook-module-and-hook-module)
-   configuration value to register your implementation.
-
-Another example of an implementation can be found as a
-[test](https://github.com/pytask-dev/pytask-parallel/blob/c441dbb75fa6ab3ab17d8ad5061840c802dc1c41/tests/test_backends.py#L35-L78).
-
-## Some implementation details
-
-### Parallelization and Debugging
+## Parallelization and Debugging
 
 It is not possible to combine parallelization with debugging. That is why `--pdb` or
 `--trace` deactivate parallelization.
@@ -137,26 +79,11 @@ It is not possible to combine parallelization with debugging. That is why `--pdb
 If you parallelize the execution of your tasks using two or more workers, do not use
 `breakpoint()` or `import pdb; pdb.set_trace()` since both will cause exceptions.
 
-### Threads and warnings
+## Documentation
 
-Capturing warnings is not thread-safe. Therefore, warnings cannot be captured reliably
-when tasks are parallelized with `--parallel-backend threads`.
+You find the documentation at <https://pytask-parallel.readthedocs.io/en/stable>.
 
 ## Changes
 
-Consult the [release notes](CHANGES.md) to find out about what is new.
-
-## Development
-
-- `pytask-parallel` does not call the `pytask_execute_task_protocol` hook
-  specification/entry-point because `pytask_execute_task_setup` and
-  `pytask_execute_task` need to be separated from `pytask_execute_task_teardown`. Thus,
-  plugins that change this hook specification may not interact well with the
-  parallelization.
-
-- Two PRs for CPython try to re-enable setting custom reducers which should have been
-  working but does not. Here are the references.
-
-  - https://bugs.python.org/issue28053
-  - https://github.com/python/cpython/pull/9959
-  - https://github.com/python/cpython/pull/15058
+Consult the [release notes](https://pytask-parallel.readthedocs.io/en/stable/changes.html) to
+find out about what is new.

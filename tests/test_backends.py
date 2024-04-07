@@ -1,5 +1,6 @@
 import textwrap
 
+from pytask_parallel import ParallelBackend, registry
 import pytest
 from pytask import ExitCode
 from pytask import cli
@@ -54,3 +55,6 @@ def test_register_custom_backend(runner, tmp_path):
     assert result.exit_code == ExitCode.OK
     assert "Build custom executor." in result.output
     assert "1  Succeeded" in result.output
+
+    # Assert that the backend registry has been reset.
+    assert ParallelBackend.CUSTOM not in registry.registry

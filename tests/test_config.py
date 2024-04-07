@@ -6,7 +6,7 @@ import textwrap
 import pytest
 from pytask import ExitCode
 from pytask import build
-from pytask_parallel.backends import ParallelBackend
+from pytask_parallel import ParallelBackend
 
 
 @pytest.mark.end_to_end()

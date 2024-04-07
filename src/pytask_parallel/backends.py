@@ -140,6 +140,7 @@ class ParallelBackendRegistry:
 
     def reset(self) -> None:
         """Register the default backends."""
+        self.registry.clear()
         for parallel_backend, builder, worker_type, remote in (
             (ParallelBackend.DASK, _get_dask_executor, "processes", False),
             (ParallelBackend.LOKY, _get_loky_executor, "processes", False),

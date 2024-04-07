@@ -47,6 +47,9 @@ def pytask_post_parse(config: dict[str, Any]) -> None:
     if config["pdb"] or config["trace"] or config["dry_run"]:
         return
 
+    if config["parallel_backend"] == ParallelBackend.NONE:
+        return
+
     # Register parallel execute and logging hook.
     config["pm"].register(logging)
     config["pm"].register(execute)

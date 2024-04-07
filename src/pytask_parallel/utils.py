@@ -11,15 +11,15 @@ from typing import Callable
 from pytask.tree_util import PyTree
 from pytask.tree_util import tree_map
 
-
 if TYPE_CHECKING:
-    from pytask_parallel.wrappers import WrapperResult
     from concurrent.futures import Future
     from pathlib import Path
     from types import ModuleType
     from types import TracebackType
 
     from pytask import PTask
+
+    from pytask_parallel.wrappers import WrapperResult
 
 
 __all__ = ["create_kwargs_for_task", "get_module", "parse_future_result"]

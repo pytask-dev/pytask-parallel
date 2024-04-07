@@ -15,7 +15,7 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import pytask
+import pytask_parallel
 
 if TYPE_CHECKING:
     import sphinx
@@ -23,12 +23,12 @@ if TYPE_CHECKING:
 
 # -- Project information ---------------------------------------------------------------
 
-project = "pytask"
+project = "pytask_parallel"
 author = "Tobias Raabe"
 copyright = f"2020, {author}"  # noqa: A001
 
 # The version, including alpha/beta/rc tags, but not commit hash and datestamps
-release = version("pytask")
+release = version("pytask_parallel")
 # The short X.Y version.
 version = ".".join(release.split(".")[:2])
 
@@ -74,7 +74,7 @@ add_module_names = True
 copybutton_prompt_text = r"\$ |>>> |In \[\d\]: "
 copybutton_prompt_is_regexp = True
 
-_repo = "https://github.com/pytask-dev/pytask"
+_repo = "https://github.com/pytask-dev/pytask-parallel"
 extlinks = {
     "pypi": ("https://pypi.org/project/%s/", "%s"),
     "issue": (f"{_repo}/issues/%s", "#%s"),
@@ -86,6 +86,7 @@ intersphinx_mapping = {
     "click": ("https://click.palletsprojects.com/en/8.0.x/", None),
     "coiled": ("https://docs.coiled.io/", None),
     "dask": ("https://docs.dask.org/en/stable/", None),
+    "distributed": ("https://distributed.dask.org/en/stable/", None),
     "python": ("https://docs.python.org/3.10", None),
 }
 
@@ -142,15 +143,13 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str:  # noqa: C901, P
 
     linespec = f"#L{lineno}-L{lineno + len(source) - 1}" if lineno else ""
 
-    fn = os.path.relpath(fn, start=Path(pytask.__file__).parent)
+    fn = os.path.relpath(fn, start=Path(pytask_parallel.__file__).parent)
 
-    if "+" in pytask.__version__:
-        return (
-            f"https://github.com/pytask-dev/pytask/blob/main/src/pytask/{fn}{linespec}"
-        )
+    if "+" in pytask_parallel.__version__:
+        return f"https://github.com/pytask-dev/pytask-parallel/blob/main/src/pytask_parallel/{fn}{linespec}"
     return (
-        f"https://github.com/pytask-dev/pytask/blob/"
-        f"v{pytask.__version__}/src/pytask/{fn}{linespec}"
+        f"https://github.com/pytask-dev/pytask-parallel/blob/"
+        f"v{pytask_parallel.__version__}/src/pytask_parallel/{fn}{linespec}"
     )
 
 

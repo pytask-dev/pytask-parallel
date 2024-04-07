@@ -1,6 +1,6 @@
 # Dask
 
-```{important}
+```{caution}
 Currently, the dask backend can only be used if your workflow code is organized in a
 package due to how pytask imports your code and dask serializes task functions
 ([issue](https://github.com/dask/distributed/issues/8607)).
@@ -8,15 +8,15 @@ package due to how pytask imports your code and dask serializes task functions
 
 Dask is a flexible library for parallel and distributed computing. You probably know it
 from its {class}`dask.dataframe` that allows lazy processing of big data. Here, we use
-{class}`dask.distributed` that provides an interface similar to
-{class}`concurrent.futures.Executor` to parallelize our execution.
+{mod}`distributed` that provides an interface similar to
+{class}`~concurrent.futures.Executor` to parallelize our execution.
 
 There are a couple of ways in how we can use dask.
 
 ## Local
 
-By default, using dask as the parallel backend will launch a {class}`dask.LocalCluster`
-with processes on your local machine.
+By default, using dask as the parallel backend will launch a
+{class}`distributed.LocalCluster` with processes on your local machine.
 
 `````{tab-set}
 ````{tab-item} CLI

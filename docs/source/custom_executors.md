@@ -1,6 +1,6 @@
 # Custom Executors
 
-```{important}
+```{caution}
 The interface for custom executors is rudimentary right now. Please, give some feedback
 if you managed to implement a custom executor or have suggestions for improvement.
 
@@ -9,7 +9,7 @@ could be helpful to other people. Start by creating an issue or a draft PR.
 ```
 
 pytask-parallel allows you to use your parallel backend as long as it follows the
-interface defined by {class}`concurrent.futures.Executor`.
+interface defined by {class}`~concurrent.futures.Executor`.
 
 In some cases, adding a new backend can be as easy as registering a builder function
 that receives some arguments (currently only `n_workers`) and returns the instantiated

@@ -31,6 +31,8 @@ from pytask_parallel.utils import parse_future_result
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
+    from pytask_parallel.wrappers import WrapperResult
+
 
 @hookimpl
 def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR0915
@@ -97,34 +99,31 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                     future = running_tasks[task_name]
 
                     if future.done():
-                        (
-                            python_nodes,
-                            warnings_reports,
-                            exc_info,
-                            captured_stdout,
-                            captured_stderr,
-                        ) = parse_future_result(future)
-                        session.warnings.extend(warnings_reports)
+                        wrapper_result = parse_future_result(future)
+                        session.warnings.extend(wrapper_result.warning_reports)
 
-                        if captured_stdout:
+                        if wrapper_result.stdout:
                             task.report_sections.append(
-                                ("call", "stdout", captured_stdout)
+                                ("call", "stdout", wrapper_result.stdout)
                             )
-                        if captured_stderr:
+                        if wrapper_result.stderr:
                             task.report_sections.append(
-                                ("call", "stderr", captured_stderr)
+                                ("call", "stderr", wrapper_result.stderr)
                             )
 
-                        if exc_info is not None:
+                        if wrapper_result.exc_info is not None:
                             task = session.dag.nodes[task_name]["task"]
                             newly_collected_reports.append(
-                                ExecutionReport.from_task_and_exception(task, exc_info)
+                                ExecutionReport.from_task_and_exception(
+                                    task,
+                                    wrapper_result.exc_info,  # type: ignore[arg-type]
+                                )
                             )
                             running_tasks.pop(task_name)
                             session.scheduler.done(task_name)
                         else:
                             task = session.dag.nodes[task_name]["task"]
-                            _update_python_nodes(task, python_nodes)
+                            _update_python_nodes(task, wrapper_result.python_nodes)
 
                             try:
                                 session.hook.pytask_execute_task_teardown(
@@ -163,7 +162,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
 
 @hookimpl
-def pytask_execute_task(session: Session, task: PTask) -> Future[Any]:
+def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
     """Execute a task.
 
     The task function is wrapped according to the worker type and submitted to the
@@ -213,7 +212,7 @@ def pytask_unconfigure() -> None:
 
 
 def _update_python_nodes(
-    task: PTask, python_nodes: dict[str, PyTree[PythonNode | None]] | None
+    task: PTask, python_nodes: PyTree[PythonNode | None] | None
 ) -> None:
     """Update the python nodes of a task with the python nodes from the future."""
 

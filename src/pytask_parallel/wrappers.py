@@ -10,6 +10,8 @@ from io import StringIO
 from typing import TYPE_CHECKING
 from typing import Any
 
+from attrs import define
+from pytask import PTask
 from pytask import PythonNode
 from pytask import Traceback
 from pytask import WarningReport
@@ -17,30 +19,52 @@ from pytask import console
 from pytask import parse_warning_filter
 from pytask import warning_record_to_str
 from pytask.tree_util import PyTree
+from pytask.tree_util import tree_leaves
 from pytask.tree_util import tree_map
-
-from pytask_parallel.utils import handle_task_function_return
+from pytask.tree_util import tree_structure
 
 if TYPE_CHECKING:
     from types import TracebackType
 
     from pytask import Mark
-    from pytask import PTask
     from rich.console import ConsoleOptions
 
 
 __all__ = ["wrap_task_in_process", "wrap_task_in_thread"]
 
 
-def wrap_task_in_thread(
-    task: PTask, **kwargs: Any
-) -> tuple[
-    None,
-    list[Any],
-    tuple[type[BaseException], BaseException, TracebackType] | None,
-    str,
-    str,
-]:
+@define(kw_only=True)
+class WrapperResult:
+    python_nodes: PyTree[PythonNode | None]
+    warning_reports: list[WarningReport]
+    exc_info: tuple[type[BaseException], BaseException, TracebackType | str] | None
+    stdout: str
+    stderr: str
+
+
+def _handle_task_function_return(task: PTask, out: Any) -> None:
+    """Handle the return value of a task function."""
+    if "return" not in task.produces:
+        return
+
+    structure_out = tree_structure(out)
+    structure_return = tree_structure(task.produces["return"])
+    # strict must be false when none is leaf.
+    if not structure_return.is_prefix(structure_out, strict=False):
+        msg = (
+            "The structure of the return annotation is not a subtree of "
+            "the structure of the function return.\n\nFunction return: "
+            f"{structure_out}\n\nReturn annotation: {structure_return}"
+        )
+        raise ValueError(msg)
+
+    nodes = tree_leaves(task.produces["return"])
+    values = structure_return.flatten_up_to(out)
+    for node, value in zip(nodes, values):
+        node.save(value)
+
+
+def wrap_task_in_thread(task: PTask, **kwargs: Any) -> WrapperResult:
     """Mock execution function such that it returns the same as for processes.
 
     The function for processes returns ``warning_reports`` and an ``exception``. With
@@ -54,9 +78,11 @@ def wrap_task_in_thread(
     except Exception:  # noqa: BLE001
         exc_info = sys.exc_info()
     else:
-        handle_task_function_return(task, out)
+        _handle_task_function_return(task, out)
         exc_info = None
-    return None, [], exc_info, "", ""
+    return WrapperResult(
+        python_nodes=None, warning_reports=[], exc_info=exc_info, stdout="", stderr=""
+    )
 
 
 def wrap_task_in_process(  # noqa: PLR0913
@@ -66,13 +92,7 @@ def wrap_task_in_process(  # noqa: PLR0913
     console_options: ConsoleOptions,
     session_filterwarnings: tuple[str, ...],
     task_filterwarnings: tuple[Mark, ...],
-) -> tuple[
-    PyTree[PythonNode | None],
-    list[WarningReport],
-    tuple[type[BaseException], BaseException, str] | None,
-    str,
-    str,
-]:
+) -> WrapperResult:
     """Unserialize and execute task.
 
     This function receives bytes and unpickles them to a task which is them execute in a
@@ -110,7 +130,7 @@ def wrap_task_in_process(  # noqa: PLR0913
             )
         else:
             # Save products.
-            handle_task_function_return(task, out)
+            _handle_task_function_return(task, out)
             processed_exc_info = None
 
         task_display_name = getattr(task, "display_name", task.name)
@@ -137,12 +157,12 @@ def wrap_task_in_process(  # noqa: PLR0913
         lambda x: x if isinstance(x, PythonNode) else None, task.produces
     )
 
-    return (
-        python_nodes,
-        warning_reports,
-        processed_exc_info,
-        captured_stdout,
-        captured_stderr,
+    return WrapperResult(
+        python_nodes=python_nodes,
+        warning_reports=warning_reports,
+        exc_info=processed_exc_info,
+        stdout=captured_stdout,
+        stderr=captured_stderr,
     )
 
 

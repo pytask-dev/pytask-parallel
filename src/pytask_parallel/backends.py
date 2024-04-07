@@ -16,7 +16,7 @@ import cloudpickle
 from attrs import define
 from loky import get_reusable_executor
 
-__all__ = ["ParallelBackend", "ParallelBackendRegistry", "registry"]
+__all__ = ["ParallelBackend", "ParallelBackendRegistry", "WorkerType", "registry"]
 
 
 def _deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:
@@ -138,31 +138,18 @@ class ParallelBackendRegistry:
             msg = f"Could not instantiate parallel backend {kind.value!r}."
             raise ValueError(msg) from e
 
+    def reset(self) -> None:
+        """Register the default backends."""
+        for parallel_backend, builder, worker_type, remote in (
+            (ParallelBackend.DASK, _get_dask_executor, "processes", False),
+            (ParallelBackend.LOKY, _get_loky_executor, "processes", False),
+            (ParallelBackend.PROCESSES, _get_process_pool_executor, "processes", False),
+            (ParallelBackend.THREADS, _get_thread_pool_executor, "threads", False),
+        ):
+            self.register_parallel_backend(
+                parallel_backend, builder, worker_type=worker_type, remote=remote
+            )
+
 
 registry = ParallelBackendRegistry()
-
-
-registry.register_parallel_backend(
-    ParallelBackend.DASK,
-    _get_dask_executor,
-    worker_type=WorkerType.PROCESSES,
-    remote=False,
-)
-registry.register_parallel_backend(
-    ParallelBackend.LOKY,
-    _get_loky_executor,
-    worker_type=WorkerType.PROCESSES,
-    remote=False,
-)
-registry.register_parallel_backend(
-    ParallelBackend.PROCESSES,
-    _get_process_pool_executor,
-    worker_type=WorkerType.PROCESSES,
-    remote=False,
-)
-registry.register_parallel_backend(
-    ParallelBackend.THREADS,
-    _get_thread_pool_executor,
-    worker_type=WorkerType.THREADS,
-    remote=False,
-)
+registry.reset()

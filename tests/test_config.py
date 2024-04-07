@@ -36,14 +36,20 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
     ]
     + [
         ("parallel_backend", parallel_backend, ExitCode.OK)
-        if parallel_backend != ParallelBackend.DASK
-        else pytest.param(
+        for parallel_backend in (
+            ParallelBackend.LOKY,
+            ParallelBackend.PROCESSES,
+            ParallelBackend.THREADS,
+        )
+    ]
+    + [
+        pytest.param(
             "parallel_backend",
             "dask",
             ExitCode.CONFIGURATION_FAILED,
             marks=pytest.mark.skip(reason="Dask is not yet supported"),
-        )
-        for parallel_backend in ParallelBackend
+        ),
+        ("parallel_backend", ParallelBackend.CUSTOM, ExitCode.FAILED),
     ],
 )
 def test_reading_values_from_config_file(

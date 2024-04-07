@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import inspect
+from functools import partial
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Callable
 
 from pytask.tree_util import PyTree
 from pytask.tree_util import tree_leaves
@@ -13,11 +15,21 @@ from pytask.tree_util import tree_structure
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
+    from pathlib import Path
+    from types import ModuleType
     from types import TracebackType
 
     from pytask import PTask
     from pytask import PythonNode
     from pytask import WarningReport
+
+
+__all__ = [
+    "create_kwargs_for_task",
+    "get_module",
+    "handle_task_function_return",
+    "parse_future_result",
+]
 
 
 def parse_future_result(
@@ -94,3 +106,22 @@ def _parse_future_exception(
 ) -> tuple[type[BaseException], BaseException, TracebackType] | None:
     """Parse a future exception into the format of ``sys.exc_info``."""
     return None if exc is None else (type(exc), exc, exc.__traceback__)
+
+
+def get_module(func: Callable[..., Any], path: Path | None) -> ModuleType:
+    """Get the module of a python function.
+
+    ``functools.partial`` obfuscates the module of the function and
+    ``inspect.getmodule`` returns :mod`functools`. Therefore, we recover the original
+    function.
+
+    We use the path from the task module to aid the search although it is not clear
+    whether it helps.
+
+    """
+    if isinstance(func, partial):
+        func = func.func
+
+    if path:
+        return inspect.getmodule(func, path.as_posix())
+    return inspect.getmodule(func)

@@ -15,6 +15,8 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
   reports.
 - {pull}`93` adds documentation on readthedocs.
 - {pull}`94` implements `ParallelBackend.NONE` as the default backend.
+- {pull}`95` formalizes parallel backends and apply wrappers for backends with threads
+  or processes automatically.
 
 ## 0.4.1 - 2024-01-12
 

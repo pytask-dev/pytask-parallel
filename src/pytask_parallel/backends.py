@@ -93,23 +93,44 @@ class ParallelBackend(Enum):
     THREADS = "threads"
 
 
+class WorkerType(Enum):
+    """A type for workers that either spawned as threads or processes."""
+
+    THREADS = "threads"
+    PROCESSES = "processes"
+
+
+@define
+class _ParallelBackend:
+    builder: Callable[..., Executor]
+    worker_type: WorkerType
+    remote: bool
+
+
 @define
 class ParallelBackendRegistry:
     """Registry for parallel backends."""
 
-    registry: ClassVar[dict[ParallelBackend, Callable[..., Executor]]] = {}
+    registry: ClassVar[dict[ParallelBackend, _ParallelBackend]] = {}
 
     def register_parallel_backend(
-        self, kind: ParallelBackend, builder: Callable[..., Executor]
+        self,
+        kind: ParallelBackend,
+        builder: Callable[..., Executor],
+        *,
+        worker_type: WorkerType | str = WorkerType.PROCESSES,
+        remote: bool = False,
     ) -> None:
         """Register a parallel backend."""
-        self.registry[kind] = builder
+        self.registry[kind] = _ParallelBackend(
+            builder=builder, worker_type=WorkerType(worker_type), remote=remote
+        )
 
     def get_parallel_backend(self, kind: ParallelBackend, n_workers: int) -> Executor:
         """Get a parallel backend."""
         __tracebackhide__ = True
         try:
-            return self.registry[kind](n_workers=n_workers)
+            return self.registry[kind].builder(n_workers=n_workers)
         except KeyError:
             msg = f"No registered parallel backend found for kind {kind.value!r}."
             raise ValueError(msg) from None
@@ -121,9 +142,27 @@ class ParallelBackendRegistry:
 registry = ParallelBackendRegistry()
 
 
-registry.register_parallel_backend(ParallelBackend.DASK, _get_dask_executor)
-registry.register_parallel_backend(ParallelBackend.LOKY, _get_loky_executor)
 registry.register_parallel_backend(
-    ParallelBackend.PROCESSES, _get_process_pool_executor
+    ParallelBackend.DASK,
+    _get_dask_executor,
+    worker_type=WorkerType.PROCESSES,
+    remote=False,
 )
-registry.register_parallel_backend(ParallelBackend.THREADS, _get_thread_pool_executor)
+registry.register_parallel_backend(
+    ParallelBackend.LOKY,
+    _get_loky_executor,
+    worker_type=WorkerType.PROCESSES,
+    remote=False,
+)
+registry.register_parallel_backend(
+    ParallelBackend.PROCESSES,
+    _get_process_pool_executor,
+    worker_type=WorkerType.PROCESSES,
+    remote=False,
+)
+registry.register_parallel_backend(
+    ParallelBackend.THREADS,
+    _get_thread_pool_executor,
+    worker_type=WorkerType.THREADS,
+    remote=False,
+)

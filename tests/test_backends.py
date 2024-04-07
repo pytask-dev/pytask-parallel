@@ -1,9 +1,10 @@
 import textwrap
 
-from pytask_parallel import ParallelBackend, registry
 import pytest
 from pytask import ExitCode
 from pytask import cli
+from pytask_parallel import ParallelBackend
+from pytask_parallel import registry
 
 
 @pytest.mark.end_to_end()

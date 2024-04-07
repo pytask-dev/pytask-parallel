@@ -79,6 +79,10 @@ It is not possible to combine parallelization with debugging. That is why `--pdb
 If you parallelize the execution of your tasks using two or more workers, do not use
 `breakpoint()` or `import pdb; pdb.set_trace()` since both will cause exceptions.
 
+## Documentation
+
+You find the documentation at <https://pytask-parallel.readthedocs.io/en/stable>.
+
 ## Changes
 
 Consult the [release notes](https://pytask-parallel.readthedocs.io/en/stable/changes.html) to

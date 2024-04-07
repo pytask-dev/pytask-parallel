@@ -21,9 +21,6 @@ def pytask_parse_config(config: dict[str, Any]) -> None:
     """Parse the configuration."""
     __tracebackhide__ = True
 
-    if config["n_workers"] == "auto":
-        config["n_workers"] = max(os.cpu_count() - 1, 1)
-
     try:
         config["parallel_backend"] = ParallelBackend(config["parallel_backend"])
     except ValueError:
@@ -33,6 +30,13 @@ def pytask_parse_config(config: dict[str, Any]) -> None:
         )
         raise ValueError(msg) from None
 
+    if config["n_workers"] == "auto":
+        config["n_workers"] = max(os.cpu_count() - 1, 1)
+
+    # If more than one worker is used, and no backend is set, use loky.
+    if config["n_workers"] > 1 and config["parallel_backend"] == ParallelBackend.NONE:
+        config["parallel_backend"] = ParallelBackend.LOKY
+
     config["delay"] = 0.1
 
 
@@ -41,6 +45,9 @@ def pytask_post_parse(config: dict[str, Any]) -> None:
     """Register the parallel backend if debugging is not enabled."""
     # Deactivate parallel execution if debugger, trace or dry-run is used.
     if config["pdb"] or config["trace"] or config["dry_run"]:
+        return
+
+    if config["parallel_backend"] == ParallelBackend.NONE:
         return
 
     # Register parallel execute and logging hook.

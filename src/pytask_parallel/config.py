@@ -7,12 +7,8 @@ from typing import Any
 
 from pytask import hookimpl
 
-from pytask_parallel import custom
-from pytask_parallel import dask
 from pytask_parallel import execute
 from pytask_parallel import logging
-from pytask_parallel import processes
-from pytask_parallel import threads
 from pytask_parallel.backends import ParallelBackend
 
 
@@ -53,13 +49,3 @@ def pytask_post_parse(config: dict[str, Any]) -> None:
     # Register parallel execute and logging hook.
     config["pm"].register(logging)
     config["pm"].register(execute)
-
-    # Register parallel backends.
-    if config["parallel_backend"] == ParallelBackend.THREADS:
-        config["pm"].register(threads)
-    elif config["parallel_backend"] == ParallelBackend.DASK:
-        config["pm"].register(dask)
-    elif config["parallel_backend"] == ParallelBackend.CUSTOM:
-        config["pm"].register(custom)
-    else:
-        config["pm"].register(processes)

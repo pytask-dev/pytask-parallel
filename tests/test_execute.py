@@ -7,7 +7,7 @@ import pytest
 from pytask import ExitCode
 from pytask import build
 from pytask import cli
-from pytask_parallel.backends import ParallelBackend
+from pytask_parallel import ParallelBackend
 from pytask_parallel.execute import _Sleeper
 
 from tests.conftest import restore_sys_path_and_module_after_test_execution

@@ -16,7 +16,7 @@ import cloudpickle
 from attrs import define
 from loky import get_reusable_executor
 
-__all__ = ["ParallelBackend", "ParallelBackendRegistry", "registry"]
+__all__ = ["ParallelBackend", "ParallelBackendRegistry", "WorkerType", "registry"]
 
 
 def _deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:
@@ -93,23 +93,44 @@ class ParallelBackend(Enum):
     THREADS = "threads"
 
 
+class WorkerType(Enum):
+    """A type for workers that either spawned as threads or processes."""
+
+    THREADS = "threads"
+    PROCESSES = "processes"
+
+
+@define
+class _ParallelBackend:
+    builder: Callable[..., Executor]
+    worker_type: WorkerType
+    remote: bool
+
+
 @define
 class ParallelBackendRegistry:
     """Registry for parallel backends."""
 
-    registry: ClassVar[dict[ParallelBackend, Callable[..., Executor]]] = {}
+    registry: ClassVar[dict[ParallelBackend, _ParallelBackend]] = {}
 
     def register_parallel_backend(
-        self, kind: ParallelBackend, builder: Callable[..., Executor]
+        self,
+        kind: ParallelBackend,
+        builder: Callable[..., Executor],
+        *,
+        worker_type: WorkerType | str = WorkerType.PROCESSES,
+        remote: bool = False,
     ) -> None:
         """Register a parallel backend."""
-        self.registry[kind] = builder
+        self.registry[kind] = _ParallelBackend(
+            builder=builder, worker_type=WorkerType(worker_type), remote=remote
+        )
 
     def get_parallel_backend(self, kind: ParallelBackend, n_workers: int) -> Executor:
         """Get a parallel backend."""
         __tracebackhide__ = True
         try:
-            return self.registry[kind](n_workers=n_workers)
+            return self.registry[kind].builder(n_workers=n_workers)
         except KeyError:
             msg = f"No registered parallel backend found for kind {kind.value!r}."
             raise ValueError(msg) from None
@@ -117,13 +138,19 @@ class ParallelBackendRegistry:
             msg = f"Could not instantiate parallel backend {kind.value!r}."
             raise ValueError(msg) from e
 
+    def reset(self) -> None:
+        """Register the default backends."""
+        self.registry.clear()
+        for parallel_backend, builder, worker_type, remote in (
+            (ParallelBackend.DASK, _get_dask_executor, "processes", False),
+            (ParallelBackend.LOKY, _get_loky_executor, "processes", False),
+            (ParallelBackend.PROCESSES, _get_process_pool_executor, "processes", False),
+            (ParallelBackend.THREADS, _get_thread_pool_executor, "threads", False),
+        ):
+            self.register_parallel_backend(
+                parallel_backend, builder, worker_type=worker_type, remote=remote
+            )
+
 
 registry = ParallelBackendRegistry()
-
-
-registry.register_parallel_backend(ParallelBackend.DASK, _get_dask_executor)
-registry.register_parallel_backend(ParallelBackend.LOKY, _get_loky_executor)
-registry.register_parallel_backend(
-    ParallelBackend.PROCESSES, _get_process_pool_executor
-)
-registry.register_parallel_backend(ParallelBackend.THREADS, _get_thread_pool_executor)
+registry.reset()

@@ -7,6 +7,7 @@ import time
 from typing import TYPE_CHECKING
 from typing import Any
 
+import cloudpickle
 from attrs import define
 from attrs import field
 from pytask import ExecutionReport
@@ -14,16 +15,23 @@ from pytask import PNode
 from pytask import PTask
 from pytask import PythonNode
 from pytask import Session
+from pytask import console
+from pytask import get_marks
 from pytask import hookimpl
 from pytask.tree_util import PyTree
 from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
 
+from pytask_parallel.backends import WorkerType
 from pytask_parallel.backends import registry
+from pytask_parallel.utils import create_kwargs_for_task
+from pytask_parallel.utils import get_module
 from pytask_parallel.utils import parse_future_result
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
+
+    from pytask_parallel.wrappers import WrapperResult
 
 
 @hookimpl
@@ -91,34 +99,31 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                     future = running_tasks[task_name]
 
                     if future.done():
-                        (
-                            python_nodes,
-                            warnings_reports,
-                            exc_info,
-                            captured_stdout,
-                            captured_stderr,
-                        ) = parse_future_result(future)
-                        session.warnings.extend(warnings_reports)
+                        wrapper_result = parse_future_result(future)
+                        session.warnings.extend(wrapper_result.warning_reports)
 
-                        if captured_stdout:
+                        if wrapper_result.stdout:
                             task.report_sections.append(
-                                ("call", "stdout", captured_stdout)
+                                ("call", "stdout", wrapper_result.stdout)
                             )
-                        if captured_stderr:
+                        if wrapper_result.stderr:
                             task.report_sections.append(
-                                ("call", "stderr", captured_stderr)
+                                ("call", "stderr", wrapper_result.stderr)
                             )
 
-                        if exc_info is not None:
+                        if wrapper_result.exc_info is not None:
                             task = session.dag.nodes[task_name]["task"]
                             newly_collected_reports.append(
-                                ExecutionReport.from_task_and_exception(task, exc_info)
+                                ExecutionReport.from_task_and_exception(
+                                    task,
+                                    wrapper_result.exc_info,  # type: ignore[arg-type]
+                                )
                             )
                             running_tasks.pop(task_name)
                             session.scheduler.done(task_name)
                         else:
                             task = session.dag.nodes[task_name]["task"]
-                            _update_python_nodes(task, python_nodes)
+                            _update_python_nodes(task, wrapper_result.python_nodes)
 
                             try:
                                 session.hook.pytask_execute_task_teardown(
@@ -156,8 +161,58 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     return True
 
 
+@hookimpl
+def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
+    """Execute a task.
+
+    The task function is wrapped according to the worker type and submitted to the
+    executor.
+
+    """
+    worker_type = registry.registry[session.config["parallel_backend"]].worker_type
+
+    kwargs = create_kwargs_for_task(task)
+
+    if worker_type == WorkerType.PROCESSES:
+        # Prevent circular import for loky backend.
+        from pytask_parallel.wrappers import wrap_task_in_process
+
+        # Task modules are dynamically loaded and added to `sys.modules`. Thus,
+        # cloudpickle believes the module of the task function is also importable in the
+        # child process. We have to register the module as dynamic again, so that
+        # cloudpickle will pickle it with the function. See cloudpickle#417, pytask#373
+        # and pytask#374.
+        task_module = get_module(task.function, getattr(task, "path", None))
+        cloudpickle.register_pickle_by_value(task_module)
+
+        return session.config["_parallel_executor"].submit(
+            wrap_task_in_process,
+            task=task,
+            kwargs=kwargs,
+            show_locals=session.config["show_locals"],
+            console_options=console.options,
+            session_filterwarnings=session.config["filterwarnings"],
+            task_filterwarnings=get_marks(task, "filterwarnings"),
+        )
+    if worker_type == WorkerType.THREADS:
+        # Prevent circular import for loky backend.
+        from pytask_parallel.wrappers import wrap_task_in_thread
+
+        return session.config["_parallel_executor"].submit(
+            wrap_task_in_thread, task=task, **kwargs
+        )
+    msg = f"Unknown worker type {worker_type}"
+    raise ValueError(msg)
+
+
+@hookimpl
+def pytask_unconfigure() -> None:
+    """Clean up the parallel executor."""
+    registry.reset()
+
+
 def _update_python_nodes(
-    task: PTask, python_nodes: dict[str, PyTree[PythonNode | None]] | None
+    task: PTask, python_nodes: PyTree[PythonNode | None] | None
 ) -> None:
     """Update the python nodes of a task with the python nodes from the future."""
 

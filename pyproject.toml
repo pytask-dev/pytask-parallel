@@ -1,3 +1,7 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=64", "setuptools_scm[toml]>=8"]
+
 [project]
 name = "pytask_parallel"
 description = "Parallelize the execution of tasks with pytask."
@@ -16,7 +20,7 @@ dependencies = [
     "loky",
     "pluggy>=1.0.0",
     "pytask>=0.4.5",
-    "rich",
+    "rich"
 ]
 dynamic = ["version"]
 
@@ -27,17 +31,17 @@ email = "raabe@posteo.de"
 [project.optional-dependencies]
 dask = ["dask[complete]", "distributed"]
 docs = [
-    "furo",
-    "ipython",
-    "matplotlib",
-    "myst-parser",
-    "nbsphinx",
-    "sphinx",
-    "sphinx-click",
-    "sphinx-copybutton",
-    "sphinx-design>=0.3",
-    "sphinx-toolbox",
-    "sphinxext-opengraph",
+  "furo",
+  "ipython",
+  "matplotlib",
+  "myst-parser",
+  "nbsphinx",
+  "sphinx",
+  "sphinx-click",
+  "sphinx-copybutton",
+  "sphinx-design>=0.3",
+  "sphinx-toolbox",
+  "sphinxext-opengraph",
 ]
 test = [
     "pytask-parallel[all]",
@@ -72,28 +76,15 @@ ignore = ["src/pytask_parallel/_version.py"]
 [project.entry-points.pytask]
 pytask_parallel = "pytask_parallel.plugin"
 
-[build-system]
-requires = ["hatchling", "hatch_vcs"]
-build-backend = "hatchling.build"
+[tool.setuptools.package-dir]
+"" = "src"
 
-[tool.rye]
-managed = true
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
 
-[tool.rye.scripts]
-clean-docs = { cmd = "rm -rf docs/build" }
-build-docs = { cmd = "sphinx-build -b html docs/source docs/build" }
-
-[tool.hatch.metadata]
-allow-direct-references = true
-
-[tool.hatch.build.hooks.vcs]
-version-file = "src/pytask_parallel/_version.py"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/pytask_parallel"]
-
-[tool.hatch.version]
-source = "vcs"
+[tool.setuptools_scm]
+version_file = "src/pytask_parallel/_version.py"
 
 [tool.mypy]
 files = ["src", "tests"]
@@ -117,7 +108,9 @@ unsafe-fixes = true
 
 [tool.ruff.lint]
 extend-ignore = [
+    # Others.
     "ANN101",  # type annotating self
+    "ANN102",  # type annotating cls
     "ANN401",  # flake8-annotate typing.Any
     "COM812",  # Comply with ruff-format.
     "ISC001",  # Comply with ruff-format.

@@ -111,7 +111,7 @@ def create_kwargs_for_task(task: PTask, *, remote: bool) -> dict[str, PyTree[Any
     for name, value in task.depends_on.items():
         kwargs[name] = tree_map_with_path(
             lambda p, x: _safe_load(
-                (name, *p),
+                (name, *p),  # noqa: B023
                 x,
                 task,
                 is_product=False,

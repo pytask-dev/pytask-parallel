@@ -17,6 +17,8 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 - {pull}`94` implements `ParallelBackend.NONE` as the default backend.
 - {pull}`95` formalizes parallel backends and apply wrappers for backends with threads
   or processes automatically.
+- {pull}`96` handles local paths with remote executors. `PathNode`s are not supported as
+  dependencies or products (except for return annotations).
 
 ## 0.4.1 - 2024-01-12
 

@@ -80,17 +80,16 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                         session.hook.pytask_execute_task_setup(
                             session=session, task=task
                         )
+                        running_tasks[task_name] = session.hook.pytask_execute_task(
+                            session=session, task=task
+                        )
+                        sleeper.reset()
                     except Exception:  # noqa: BLE001
                         report = ExecutionReport.from_task_and_exception(
                             task, sys.exc_info()
                         )
                         newly_collected_reports.append(report)
                         session.scheduler.done(task_name)
-                    else:
-                        running_tasks[task_name] = session.hook.pytask_execute_task(
-                            session=session, task=task
-                        )
-                        sleeper.reset()
 
                 if not ready_tasks:
                     sleeper.increment()
@@ -123,7 +122,9 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             session.scheduler.done(task_name)
                         else:
                             task = session.dag.nodes[task_name]["task"]
-                            _update_python_nodes(task, wrapper_result.python_nodes)
+                            _update_carry_over_products(
+                                task, wrapper_result.carry_over_products
+                            )
 
                             try:
                                 session.hook.pytask_execute_task_teardown(
@@ -169,9 +170,11 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
     executor.
 
     """
-    worker_type = registry.registry[session.config["parallel_backend"]].worker_type
+    parallel_backend = registry.registry[session.config["parallel_backend"]]
+    worker_type = parallel_backend.worker_type
+    remote = parallel_backend.remote
 
-    kwargs = create_kwargs_for_task(task)
+    kwargs = create_kwargs_for_task(task, remote=remote)
 
     if worker_type == WorkerType.PROCESSES:
         # Prevent circular import for loky backend.
@@ -188,10 +191,11 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         return session.config["_parallel_executor"].submit(
             wrap_task_in_process,
             task=task,
-            kwargs=kwargs,
-            show_locals=session.config["show_locals"],
             console_options=console.options,
+            kwargs=kwargs,
+            remote=remote,
             session_filterwarnings=session.config["filterwarnings"],
+            show_locals=session.config["show_locals"],
             task_filterwarnings=get_marks(task, "filterwarnings"),
         )
     if worker_type == WorkerType.THREADS:
@@ -211,21 +215,23 @@ def pytask_unconfigure() -> None:
     registry.reset()
 
 
-def _update_python_nodes(
-    task: PTask, python_nodes: PyTree[PythonNode | None] | None
+def _update_carry_over_products(
+    task: PTask, carry_over_products: PyTree[PythonNode | None] | None
 ) -> None:
-    """Update the python nodes of a task with the python nodes from the future."""
+    """Update products carry over from a another process or remote worker."""
 
-    def _update_python_node(x: PNode, y: PythonNode | None) -> PNode:
+    def _update_carry_over_node(x: PNode, y: PythonNode | None) -> PNode:
         if y:
             x.save(y.load())
         return x
 
-    structure_python_nodes = tree_structure(python_nodes)
+    structure_python_nodes = tree_structure(carry_over_products)
     structure_produces = tree_structure(task.produces)
     # strict must be false when none is leaf.
     if structure_produces.is_prefix(structure_python_nodes, strict=False):
-        task.produces = tree_map(_update_python_node, task.produces, python_nodes)  # type: ignore[assignment]
+        task.produces = tree_map(
+            _update_carry_over_node, task.produces, carry_over_products
+        )  # type: ignore[assignment]
 
 
 @define(kw_only=True)

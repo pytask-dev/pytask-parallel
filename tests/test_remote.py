@@ -25,6 +25,47 @@ def _setup_remote_backend(tmp_path):
 
 
 @pytest.mark.end_to_end()
+def test_python_node(runner, tmp_path):
+    source = """
+    from pathlib import Path
+    from typing_extensions import Annotated
+    from pytask import PythonNode, Product
+
+    first_part = PythonNode()
+
+    def task_first(node: Annotated[PythonNode, first_part, Product]):
+        node.save("Hello ")
+
+    full_text = PythonNode()
+
+    def task_second(
+        first_part: Annotated[str, first_part]
+    ) -> Annotated[str, full_text]:
+        return first_part + "World!"
+
+    def task_third(
+        full_text: Annotated[str, full_text]
+    ) -> Annotated[str, Path("output.txt")]:
+        return full_text
+    """
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
+
+    result = runner.invoke(
+        cli,
+        [
+            tmp_path.as_posix(),
+            "--parallel-backend",
+            "custom",
+            "--hook-module",
+            tmp_path.joinpath("config.py").as_posix(),
+        ],
+    )
+    assert result.exit_code == ExitCode.OK
+    assert "3  Succeeded" in result.output
+    assert tmp_path.joinpath("output.txt").read_text() == "Hello World!"
+
+
+@pytest.mark.end_to_end()
 def test_local_path_as_input(runner, tmp_path):
     source = """
     from pathlib import Path

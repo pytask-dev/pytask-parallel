@@ -115,7 +115,7 @@ def create_kwargs_for_task(task: PTask, *, remote: bool) -> dict[str, PyTree[Any
                 x,
                 task,
                 is_product=False,
-                remote=remote,  # noqa: B023
+                remote=remote,
             ),
             value,
         )

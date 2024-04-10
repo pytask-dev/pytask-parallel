@@ -319,3 +319,59 @@ def test_task_partialed(runner, tmp_path, parallel_backend):
     )
     assert result.exit_code == ExitCode.OK
     assert tmp_path.joinpath("file.txt").exists()
+
+
+@pytest.mark.end_to_end()
+@pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
+def test_execute_tasks_and_pass_values_by_python_node_return(
+    runner, tmp_path, parallel_backend
+):
+    source = """
+    from pytask import PythonNode
+    from typing_extensions import Annotated
+    from pathlib import Path
+
+    node_text = PythonNode(name="text")
+
+    def task_create_text() -> Annotated[int, node_text]:
+        return "This is the text."
+
+    def task_create_file(
+        text: Annotated[int, node_text]
+    ) -> Annotated[str, Path("file.txt")]:
+        return text
+    """
+    tmp_path.joinpath("task_module.py").write_text(textwrap.dedent(source))
+    result = runner.invoke(
+        cli, [tmp_path.as_posix(), "--parallel-backend", parallel_backend]
+    )
+    assert result.exit_code == ExitCode.OK
+    assert tmp_path.joinpath("file.txt").read_text() == "This is the text."
+
+
+@pytest.mark.end_to_end()
+@pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
+def test_execute_tasks_and_pass_values_by_python_node_product(
+    runner, tmp_path, parallel_backend
+):
+    source = """
+    from pytask import PythonNode, Product
+    from typing_extensions import Annotated
+    from pathlib import Path
+
+    node_text = PythonNode(name="text")
+
+    def task_create_text(node: Annotated[PythonNode, Product] = node_text):
+        node.save("This is the text.")
+
+    def task_create_file(
+        text: Annotated[int, node_text]
+    ) -> Annotated[str, Path("file.txt")]:
+        return text
+    """
+    tmp_path.joinpath("task_module.py").write_text(textwrap.dedent(source))
+    result = runner.invoke(
+        cli, [tmp_path.as_posix(), "--parallel-backend", parallel_backend]
+    )
+    assert result.exit_code == ExitCode.OK
+    assert tmp_path.joinpath("file.txt").read_text() == "This is the text."

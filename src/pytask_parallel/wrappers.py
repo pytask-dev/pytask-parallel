@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from attrs import define
+from pytask import PNode
+from pytask import PPathNode
 from pytask import PTask
 from pytask import PythonNode
 from pytask import Traceback
@@ -19,9 +21,10 @@ from pytask import console
 from pytask import parse_warning_filter
 from pytask import warning_record_to_str
 from pytask.tree_util import PyTree
-from pytask.tree_util import tree_leaves
-from pytask.tree_util import tree_map
+from pytask.tree_util import tree_map_with_path
 from pytask.tree_util import tree_structure
+
+from pytask_parallel.utils import is_local_path
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -35,33 +38,11 @@ __all__ = ["wrap_task_in_process", "wrap_task_in_thread"]
 
 @define(kw_only=True)
 class WrapperResult:
-    python_nodes: PyTree[PythonNode | None]
+    carry_over_products: PyTree[PythonNode | None]
     warning_reports: list[WarningReport]
     exc_info: tuple[type[BaseException], BaseException, TracebackType | str] | None
     stdout: str
     stderr: str
-
-
-def _handle_task_function_return(task: PTask, out: Any) -> None:
-    """Handle the return value of a task function."""
-    if "return" not in task.produces:
-        return
-
-    structure_out = tree_structure(out)
-    structure_return = tree_structure(task.produces["return"])
-    # strict must be false when none is leaf.
-    if not structure_return.is_prefix(structure_out, strict=False):
-        msg = (
-            "The structure of the return annotation is not a subtree of "
-            "the structure of the function return.\n\nFunction return: "
-            f"{structure_out}\n\nReturn annotation: {structure_return}"
-        )
-        raise ValueError(msg)
-
-    nodes = tree_leaves(task.produces["return"])
-    values = structure_return.flatten_up_to(out)
-    for node, value in zip(nodes, values):
-        node.save(value)
 
 
 def wrap_task_in_thread(task: PTask, **kwargs: Any) -> WrapperResult:
@@ -78,19 +59,25 @@ def wrap_task_in_thread(task: PTask, **kwargs: Any) -> WrapperResult:
     except Exception:  # noqa: BLE001
         exc_info = sys.exc_info()
     else:
-        _handle_task_function_return(task, out)
+        _handle_function_products(task, out, remote=False)
         exc_info = None
     return WrapperResult(
-        python_nodes=None, warning_reports=[], exc_info=exc_info, stdout="", stderr=""
+        carry_over_products=None,
+        warning_reports=[],
+        exc_info=exc_info,
+        stdout="",
+        stderr="",
     )
 
 
 def wrap_task_in_process(  # noqa: PLR0913
     task: PTask,
-    kwargs: dict[str, Any],
-    show_locals: bool,  # noqa: FBT001
+    *,
     console_options: ConsoleOptions,
+    kwargs: dict[str, Any],
+    remote: bool,
     session_filterwarnings: tuple[str, ...],
+    show_locals: bool,
     task_filterwarnings: tuple[Mark, ...],
 ) -> WrapperResult:
     """Unserialize and execute task.
@@ -128,9 +115,10 @@ def wrap_task_in_process(  # noqa: PLR0913
             processed_exc_info = _render_traceback_to_string(
                 exc_info, show_locals, console_options
             )
+            products = None
         else:
             # Save products.
-            _handle_task_function_return(task, out)
+            products = _handle_function_products(task, out, remote=remote)
             processed_exc_info = None
 
         task_display_name = getattr(task, "display_name", task.name)
@@ -152,13 +140,8 @@ def wrap_task_in_process(  # noqa: PLR0913
     captured_stdout_buffer.close()
     captured_stderr_buffer.close()
 
-    # Collect all PythonNodes that are products to pass values back to the main process.
-    python_nodes = tree_map(
-        lambda x: x if isinstance(x, PythonNode) else None, task.produces
-    )
-
     return WrapperResult(
-        python_nodes=python_nodes,
+        carry_over_products=products,
         warning_reports=warning_reports,
         exc_info=processed_exc_info,
         stdout=captured_stdout,
@@ -199,3 +182,67 @@ def _render_traceback_to_string(
     segments = console.render(traceback, options=console_options)
     text = "".join(segment.text for segment in segments)
     return (*exc_info[:2], text)
+
+
+def _handle_function_products(
+    task: PTask, out: Any, *, remote: bool
+) -> PyTree[PythonNode | None]:
+    """Handle the products of the task.
+
+    The functions first responsibility is to push the returns of the function to the
+    defined nodes.
+
+    Secondly, the function collects two kinds of products that need to be carried over
+    to the main process for storing them.
+
+    1. Any product that is a :class:`~pytask.PythonNode` needs to be carried over to the
+       main process as otherwise their value would be lost.
+    2. If the function is executed remotely and the return value should be stored in a
+       node with a local path like :class:`pytask.PickleNode`, we need to carry over the
+       value to the main process again and, then, save the value to the node as the
+       local path does not exist remotely.
+
+    """
+    # Check that the return value has the correct structure.
+    if "return" in task.produces:
+        structure_out = tree_structure(out)
+        structure_return = tree_structure(task.produces["return"])
+        # strict must be false when none is leaf.
+        if not structure_return.is_prefix(structure_out, strict=False):
+            msg = (
+                "The structure of the return annotation is not a subtree of "
+                "the structure of the function return.\n\nFunction return: "
+                f"{structure_out}\n\nReturn annotation: {structure_return}"
+            )
+            raise ValueError(msg)
+
+    def _save_and_carry_over_product(
+        path: tuple[Any, ...], node: PNode
+    ) -> PythonNode | None:
+        argument = path[0]
+
+        if argument != "return":
+            if isinstance(node, PythonNode):
+                return node
+            return None
+
+        value = out
+        for p in path[1:]:
+            value = value[p]
+
+        # If the node is a PythonNode, we need to carry it over to the main process.
+        if isinstance(node, PythonNode):
+            node.save(value)
+            return node
+
+        # If the path is local and we are remote, we need to carry over the value to
+        # the main process as a PythonNode and save it later.
+        if remote and isinstance(node, PPathNode) and is_local_path(node.path):
+            return PythonNode(value=value)
+
+        # If no condition applies, we save the value and do not carry it over. Like a
+        # remote path to S3.
+        node.save(value)
+        return None
+
+    return tree_map_with_path(_save_and_carry_over_product, task.produces)

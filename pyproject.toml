@@ -17,7 +17,6 @@ dependencies = [
     "pluggy>=1.0.0",
     "pytask>=0.4.5",
     "rich",
-    "project @ file:///home/tobia/git/pytask-workspace/pytask-parallel/example",
 ]
 dynamic = ["version"]
 

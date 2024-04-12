@@ -63,13 +63,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         while session.scheduler.is_active():
             try:
                 newly_collected_reports = []
-                n_new_tasks = session.config["n_workers"] - len(running_tasks)
-
-                ready_tasks = (
-                    list(session.scheduler.get_ready(n_new_tasks))
-                    if n_new_tasks >= 1
-                    else []
-                )
+                ready_tasks = list(session.scheduler.get_ready(10_000))
 
                 for task_name in ready_tasks:
                     task = session.dag.nodes[task_name]["task"]

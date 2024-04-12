@@ -47,5 +47,5 @@ def pytask_post_parse(config: dict[str, Any]) -> None:
         return
 
     # Register parallel execute and logging hook.
-    config["pm"].register(logging)
     config["pm"].register(execute)
+    config["pm"].register(logging)

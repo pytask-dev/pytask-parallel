@@ -23,6 +23,7 @@ pytask-parallel allows to execute workflows defined with
 maxdepth: 1
 ---
 quickstart
+coiled
 dask
 custom_executors
 developers_guide

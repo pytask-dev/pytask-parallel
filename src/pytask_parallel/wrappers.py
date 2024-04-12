@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import sys
 import warnings
 from contextlib import redirect_stderr
@@ -24,6 +25,7 @@ from pytask.tree_util import PyTree
 from pytask.tree_util import tree_map_with_path
 from pytask.tree_util import tree_structure
 
+from pytask_parallel.utils import CoiledFunction
 from pytask_parallel.utils import is_local_path
 
 if TYPE_CHECKING:
@@ -80,7 +82,7 @@ def wrap_task_in_process(  # noqa: PLR0913
     show_locals: bool,
     task_filterwarnings: tuple[Mark, ...],
 ) -> WrapperResult:
-    """Unserialize and execute task.
+    """Execute a task in a spawned process.
 
     This function receives bytes and unpickles them to a task which is them execute in a
     spawned process or thread.
@@ -146,6 +148,12 @@ def wrap_task_in_process(  # noqa: PLR0913
         exc_info=processed_exc_info,
         stdout=captured_stdout,
         stderr=captured_stderr,
+    )
+
+
+def rewrap_task_with_coiled_function(task: PTask) -> CoiledFunction:
+    return functools.wraps(wrap_task_in_process)(
+        CoiledFunction(wrap_task_in_process, **task.attributes["coiled_kwargs"])
     )
 
 

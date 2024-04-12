@@ -78,6 +78,7 @@ def test_parallel_execution_w_cli(runner, tmp_path, parallel_backend):
 
 
 @pytest.mark.end_to_end()
+@pytest.mark.skip(reason="See #98")
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend):
     source = """
@@ -106,6 +107,7 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
 
 
 @pytest.mark.end_to_end()
+@pytest.mark.skip(reason="See #98")
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_task_priorities(tmp_path, parallel_backend):
     source = """

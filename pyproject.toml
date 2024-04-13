@@ -1,7 +1,3 @@
-[build-system]
-build-backend = "setuptools.build_meta"
-requires = ["setuptools>=64", "setuptools_scm[toml]>=8"]
-
 [project]
 name = "pytask_parallel"
 description = "Parallelize the execution of tasks with pytask."
@@ -20,7 +16,7 @@ dependencies = [
     "loky",
     "pluggy>=1.0.0",
     "pytask>=0.4.5",
-    "rich"
+    "rich",
 ]
 dynamic = ["version"]
 
@@ -29,19 +25,20 @@ name = "Tobias Raabe"
 email = "raabe@posteo.de"
 
 [project.optional-dependencies]
+coiled = ["coiled>=0.9.4"]
 dask = ["dask[complete]", "distributed"]
 docs = [
-  "furo",
-  "ipython",
-  "matplotlib",
-  "myst-parser",
-  "nbsphinx",
-  "sphinx",
-  "sphinx-click",
-  "sphinx-copybutton",
-  "sphinx-design>=0.3",
-  "sphinx-toolbox",
-  "sphinxext-opengraph",
+    "furo",
+    "ipython",
+    "matplotlib",
+    "myst-parser",
+    "nbsphinx",
+    "sphinx",
+    "sphinx-click",
+    "sphinx-copybutton",
+    "sphinx-design>=0.3",
+    "sphinx-toolbox",
+    "sphinxext-opengraph",
 ]
 test = [
     "pytask-parallel[all]",
@@ -76,15 +73,36 @@ ignore = ["src/pytask_parallel/_version.py"]
 [project.entry-points.pytask]
 pytask_parallel = "pytask_parallel.plugin"
 
-[tool.setuptools.package-dir]
-"" = "src"
+[build-system]
+requires = ["hatchling", "hatch_vcs"]
+build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
-where = ["src"]
-namespaces = false
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "s3fs>=2024.3.1",
+]
 
-[tool.setuptools_scm]
-version_file = "src/pytask_parallel/_version.py"
+[tool.rye.scripts]
+clean-docs = { cmd = "rm -rf docs/build" }
+build-docs = { cmd = "sphinx-build -b html docs/source docs/build" }
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/pytask_parallel/_version.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["tests"]
+only-packages = true
+
+[tool.hatch.build.targets.wheel]
+exclude = ["tests"]
+only-packages = true
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.mypy]
 files = ["src", "tests"]
@@ -108,9 +126,7 @@ unsafe-fixes = true
 
 [tool.ruff.lint]
 extend-ignore = [
-    # Others.
     "ANN101",  # type annotating self
-    "ANN102",  # type annotating cls
     "ANN401",  # flake8-annotate typing.Any
     "COM812",  # Comply with ruff-format.
     "ISC001",  # Comply with ruff-format.
@@ -120,6 +136,7 @@ select = ["ALL"]
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D", "ANN", "PLR2004", "S101"]
 "docs/source/conf.py" = ["INP001"]
+"docs_src/*" = ["ARG001", "D", "INP001", "S301"]
 
 [tool.ruff.lint.isort]
 force-single-line = true

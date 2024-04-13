@@ -87,8 +87,9 @@ def test_local_path_as_input(runner, tmp_path):
             tmp_path.joinpath("config.py").as_posix(),
         ],
     )
-    assert result.exit_code == ExitCode.FAILED
-    assert "You cannot use a local path" in result.output
+    assert result.exit_code == ExitCode.OK
+    assert "1  Succeeded" in result.output
+    assert tmp_path.joinpath("output.txt").read_text() == "Hello World!"
 
 
 @pytest.mark.end_to_end()
@@ -113,8 +114,9 @@ def test_local_path_as_product(runner, tmp_path):
             tmp_path.joinpath("config.py").as_posix(),
         ],
     )
-    assert result.exit_code == ExitCode.FAILED
-    assert "You cannot use a local path" in result.output
+    assert result.exit_code == ExitCode.OK
+    assert "1  Succeeded" in result.output
+    assert tmp_path.joinpath("output.txt").read_text() == "Hello World!"
 
 
 @pytest.mark.end_to_end()

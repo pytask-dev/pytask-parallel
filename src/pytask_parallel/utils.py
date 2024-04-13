@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import inspect
 from functools import partial
-from pathlib import PosixPath
-from pathlib import WindowsPath
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
@@ -16,7 +14,9 @@ from pytask import PNode
 from pytask import PProvisionalNode
 from pytask.tree_util import PyTree
 from pytask.tree_util import tree_map_with_path
-from upath.implementations.local import FilePath
+
+from pytask_parallel.nodes import RemotePathNode
+from pytask_parallel.typing import is_local_path
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -39,8 +39,6 @@ __all__ = [
     "create_kwargs_for_task",
     "get_module",
     "parse_future_result",
-    "is_local_path",
-    "is_coiled_function",
 ]
 
 
@@ -78,29 +76,14 @@ def _safe_load(
     # Get the argument name like "path" or "return" for function returns.
     argument = path[0]
 
-    # Raise an error if a PPathNode with a local path is used as a dependency or product
-    # (except as a return value).
+    # Replace local path nodes with remote path nodes if necessary.
     if (
         remote
         and argument != "return"
         and isinstance(node, PathNode)
         and is_local_path(node.path)
     ):
-        if is_product:
-            msg = (
-                f"You cannot use a local path as a product in argument {argument!r} "
-                "with a remote backend. Either return the content that should be saved "
-                "in the file with a return annotation "
-                "(https://tinyurl.com/pytask-return) or use a nonlocal path to store "
-                "the file in S3 or their like https://tinyurl.com/pytask-remote."
-            )
-            raise NodeLoadError(msg)
-        msg = (
-            f"You cannot use a local path as a dependency in argument {argument!r} "
-            "with a remote backend. Upload the file to a remote storage like S3 "
-            "and use the remote path instead: https://tinyurl.com/pytask-remote."
-        )
-        raise NodeLoadError(msg)
+        return RemotePathNode.from_path_node(node, is_product=is_product)
 
     try:
         return node.load(is_product=is_product)
@@ -167,13 +150,3 @@ def get_module(func: Callable[..., Any], path: Path | None) -> ModuleType:
     if path:
         return inspect.getmodule(func, path.as_posix())
     return inspect.getmodule(func)
-
-
-def is_local_path(path: Path) -> bool:
-    """Check if a path is local."""
-    return isinstance(path, (FilePath, PosixPath, WindowsPath))
-
-
-def is_coiled_function(task: PTask) -> bool:
-    """Check if a function is a coiled function."""
-    return "coiled_kwargs" in task.attributes

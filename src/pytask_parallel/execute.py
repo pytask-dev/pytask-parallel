@@ -24,14 +24,15 @@ from pytask.tree_util import tree_structure
 
 from pytask_parallel.backends import WorkerType
 from pytask_parallel.backends import registry
+from pytask_parallel.typing import is_coiled_function
 from pytask_parallel.utils import create_kwargs_for_task
 from pytask_parallel.utils import get_module
-from pytask_parallel.utils import is_coiled_function
 from pytask_parallel.utils import parse_future_result
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
+    from pytask_parallel.nodes import RemotePathNode
     from pytask_parallel.wrappers import WrapperResult
 
 
@@ -189,7 +190,6 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             task=task,
             console_options=console.options,
             kwargs=kwargs,
-            remote=True,
             session_filterwarnings=session.config["filterwarnings"],
             show_locals=session.config["show_locals"],
             task_filterwarnings=get_marks(task, "filterwarnings"),
@@ -212,7 +212,6 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             task=task,
             console_options=console.options,
             kwargs=kwargs,
-            remote=remote,
             session_filterwarnings=session.config["filterwarnings"],
             show_locals=session.config["show_locals"],
             task_filterwarnings=get_marks(task, "filterwarnings"),
@@ -235,19 +234,21 @@ def pytask_unconfigure() -> None:
 
 
 def _update_carry_over_products(
-    task: PTask, carry_over_products: PyTree[PythonNode | None] | None
+    task: PTask, carry_over_products: PyTree[PythonNode | RemotePathNode | None] | None
 ) -> None:
     """Update products carry over from a another process or remote worker."""
 
-    def _update_carry_over_node(x: PNode, y: PythonNode | None) -> PNode:
+    def _update_carry_over_node(
+        x: PNode, y: PythonNode | RemotePathNode | None
+    ) -> PNode:
         if y:
             x.save(y.load())
         return x
 
-    structure_python_nodes = tree_structure(carry_over_products)
+    structure_carry_over_products = tree_structure(carry_over_products)
     structure_produces = tree_structure(task.produces)
     # strict must be false when none is leaf.
-    if structure_produces.is_prefix(structure_python_nodes, strict=False):
+    if structure_produces.is_prefix(structure_carry_over_products, strict=False):
         task.produces = tree_map(
             _update_carry_over_node, task.produces, carry_over_products
         )  # type: ignore[assignment]

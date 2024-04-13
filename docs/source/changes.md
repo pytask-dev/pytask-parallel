@@ -22,6 +22,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 - {pull}`99` changes that all tasks that are ready are being scheduled. It improves
   interactions with adaptive scaling. {issue}`98` does handle the resulting issues: no
   strong adherence to priorities, no pending status.
+- {pull}`100` adds project management with rye.
 
 ## 0.4.1 - 2024-01-12
 

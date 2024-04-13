@@ -26,6 +26,7 @@ from pytask_parallel.backends import WorkerType
 from pytask_parallel.backends import registry
 from pytask_parallel.utils import create_kwargs_for_task
 from pytask_parallel.utils import get_module
+from pytask_parallel.utils import is_coiled_function
 from pytask_parallel.utils import parse_future_result
 
 if TYPE_CHECKING:
@@ -169,6 +170,30 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
     remote = parallel_backend.remote
 
     kwargs = create_kwargs_for_task(task, remote=remote)
+
+    if is_coiled_function(task):
+        # Prevent circular import for coiled backend.
+        from pytask_parallel.wrappers import rewrap_task_with_coiled_function
+
+        wrapper_func = rewrap_task_with_coiled_function(task)
+
+        # Task modules are dynamically loaded and added to `sys.modules`. Thus,
+        # cloudpickle believes the module of the task function is also importable in the
+        # child process. We have to register the module as dynamic again, so that
+        # cloudpickle will pickle it with the function. See cloudpickle#417, pytask#373
+        # and pytask#374.
+        task_module = get_module(task.function, getattr(task, "path", None))
+        cloudpickle.register_pickle_by_value(task_module)
+
+        return wrapper_func.submit(
+            task=task,
+            console_options=console.options,
+            kwargs=kwargs,
+            remote=True,
+            session_filterwarnings=session.config["filterwarnings"],
+            show_locals=session.config["show_locals"],
+            task_filterwarnings=get_marks(task, "filterwarnings"),
+        )
 
     if worker_type == WorkerType.PROCESSES:
         # Prevent circular import for loky backend.

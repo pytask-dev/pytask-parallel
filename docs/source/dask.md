@@ -81,48 +81,17 @@ You can find more information in the documentation for
 [`dask.distributed`](https://distributed.dask.org/en/stable/).
 ```
 
-## Remote - Using cloud providers with coiled
+## Remote
+
+You can learn how to deploy your tasks to a remote dask cluster in [this
+guide](https://docs.dask.org/en/stable/deploying.html). They recommend to use coiled for
+deployment to cloud providers.
 
 [coiled](https://www.coiled.io/) is a product built on top of dask that eases the
 deployment of your workflow to many cloud providers like AWS, GCP, and Azure.
 
-They offer a [free monthly tier](https://www.coiled.io/pricing) where you only
-need to pay the costs for your cloud provider and you can get started without a credit
-card.
+If you want to run the tasks in your project on a cluster managed by coiled read
+{ref}`this guide <coiled-clusters>`.
 
-Furthermore, they offer the following benefits which are especially helpful to people
-who are not familiar with cloud providers or remote computing.
-
-- A [four step short process](https://docs.coiled.io/user_guide/setup/index.html) to set
-  up your local environment and configure your cloud provider.
-- coiled manages your resources by spawning workers if you need them and shutting them
-  down if they are idle.
-- Synchronization of your local environment to remote workers.
-
-So, how can you run your pytask workflow on a cloud infrastructure with coiled?
-
-1. Follow their [guide on getting
-   started](https://docs.coiled.io/user_guide/setup/index.html) by creating a coiled
-   account and syncing it with your cloud provider.
-
-1. Register a function that builds an executor using {class}`coiled.Cluster`.
-
-   ```python
-   import coiled
-   from pytask_parallel import ParallelBackend
-   from pytask_parallel import registry
-   from concurrent.futures import Executor
-
-
-   def _build_coiled_executor(n_workers: int) -> Executor:
-       return coiled.Cluster(n_workers=n_workers).get_client().get_executor()
-
-
-   registry.register_parallel_backend(ParallelBackend.CUSTOM, _build_coiled_executor)
-   ```
-
-1. Execute your workflow with
-
-   ```console
-   pytask --parallel-backend custom
-   ```
+Otherwise, follow the instructions in [dask's
+guide](https://docs.dask.org/en/stable/deploying.html).

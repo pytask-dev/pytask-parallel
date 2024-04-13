@@ -28,12 +28,19 @@ if TYPE_CHECKING:
 
     from pytask_parallel.wrappers import WrapperResult
 
+try:
+    from coiled.function import Function as CoiledFunction
+except ImportError:
+
+    class CoiledFunction: ...  # type: ignore[no-redef]
+
 
 __all__ = [
     "create_kwargs_for_task",
     "get_module",
     "parse_future_result",
     "is_local_path",
+    "is_coiled_function",
 ]
 
 
@@ -165,3 +172,8 @@ def get_module(func: Callable[..., Any], path: Path | None) -> ModuleType:
 def is_local_path(path: Path) -> bool:
     """Check if a path is local."""
     return isinstance(path, (FilePath, PosixPath, WindowsPath))
+
+
+def is_coiled_function(task: PTask) -> bool:
+    """Check if a function is a coiled function."""
+    return "coiled_kwargs" in task.attributes

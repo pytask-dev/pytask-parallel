@@ -15,19 +15,12 @@ In some cases, adding a new backend can be as easy as registering a builder func
 that receives some arguments (currently only `n_workers`) and returns the instantiated
 executor.
 
-```python
-from concurrent.futures import Executor
-from my_project.executor import CustomExecutor
-
-from pytask_parallel import ParallelBackend, registry
-
-
-def build_custom_executor(n_workers: int) -> Executor:
-    return CustomExecutor(max_workers=n_workers)
-
-
-registry.register_parallel_backend(ParallelBackend.CUSTOM, build_custom_executor)
+```{literalinclude} ../../docs_src/custom_executors.py
 ```
+
+Given {class}`pytask_parallel.WorkerType` pytask applies automatic wrappers around the
+task function to collect tracebacks, capture stdout/stderr and their like. The `remote`
+keyword allows pytask to handle local paths automatically for remote clusters.
 
 Now, build the project requesting your custom backend.
 
@@ -35,23 +28,6 @@ Now, build the project requesting your custom backend.
 pytask --parallel-backend custom
 ```
 
-Realistically, it is not the only necessary adjustment for a nice user experience. There
-are two other important things. pytask-parallel does not implement them by default since
-it seems more tightly coupled to your backend.
-
-1. A wrapper for the executed function that captures warnings, catches exceptions and
-   saves products of the task (within the child process!).
-
-   As an example, see
-   [`def _execute_task()`](https://github.com/pytask-dev/pytask-parallel/blob/c441dbb75fa6ab3ab17d8ad5061840c802dc1c41/src/pytask_parallel/processes.py#L91-L155)
-   that does all that for the processes and loky backend.
-
-1. To apply the wrapper, you need to write a custom hook implementation for
-   `def pytask_execute_task()`. See
-   [`def pytask_execute_task()`](https://github.com/pytask-dev/pytask-parallel/blob/c441dbb75fa6ab3ab17d8ad5061840c802dc1c41/src/pytask_parallel/processes.py#L41-L65)
-   for an example. Use the
-   [`hook_module`](https://pytask-dev.readthedocs.io/en/stable/how_to_guides/extending_pytask.html#using-hook-module-and-hook-module)
-   configuration value to register your implementation.
-
-Another example of an implementation can be found as a
-[test](https://github.com/pytask-dev/pytask-parallel/blob/c441dbb75fa6ab3ab17d8ad5061840c802dc1c41/tests/test_backends.py#L35-L78).
+```{important}
+pytask applies automatic wrappers
+```

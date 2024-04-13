@@ -190,6 +190,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             task=task,
             console_options=console.options,
             kwargs=kwargs,
+            remote=True,
             session_filterwarnings=session.config["filterwarnings"],
             show_locals=session.config["show_locals"],
             task_filterwarnings=get_marks(task, "filterwarnings"),
@@ -212,6 +213,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             task=task,
             console_options=console.options,
             kwargs=kwargs,
+            remote=remote,
             session_filterwarnings=session.config["filterwarnings"],
             show_locals=session.config["show_locals"],
             task_filterwarnings=get_marks(task, "filterwarnings"),
@@ -221,7 +223,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         from pytask_parallel.wrappers import wrap_task_in_thread
 
         return session.config["_parallel_executor"].submit(
-            wrap_task_in_thread, task=task, **kwargs
+            wrap_task_in_thread, task=task, remote=remote, **kwargs
         )
     msg = f"Unknown worker type {worker_type}"
     raise ValueError(msg)
@@ -234,7 +236,7 @@ def pytask_unconfigure() -> None:
 
 
 def _update_carry_over_products(
-    task: PTask, carry_over_products: PyTree[PythonNode | RemotePathNode | None] | None
+    task: PTask, carry_over_products: PyTree[PythonNode | None] | None
 ) -> None:
     """Update products carry over from a another process or remote worker."""
 

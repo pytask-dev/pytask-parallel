@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from attrs import define
+from pytask import PathNode
 from pytask import PNode
 from pytask import PTask
 from pytask import PythonNode
@@ -26,6 +27,7 @@ from pytask.tree_util import tree_map_with_path
 from pytask.tree_util import tree_structure
 
 from pytask_parallel.nodes import RemotePathNode
+from pytask_parallel.typing import is_local_path
 from pytask_parallel.utils import CoiledFunction
 
 if TYPE_CHECKING:
@@ -40,14 +42,14 @@ __all__ = ["wrap_task_in_process", "wrap_task_in_thread"]
 
 @define(kw_only=True)
 class WrapperResult:
-    carry_over_products: PyTree[PythonNode | RemotePathNode | None]
+    carry_over_products: PyTree[PythonNode | None]
     warning_reports: list[WarningReport]
     exc_info: tuple[type[BaseException], BaseException, TracebackType | str] | None
     stdout: str
     stderr: str
 
 
-def wrap_task_in_thread(task: PTask, **kwargs: Any) -> WrapperResult:
+def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperResult:
     """Mock execution function such that it returns the same as for processes.
 
     The function for processes returns ``warning_reports`` and an ``exception``. With
@@ -61,7 +63,7 @@ def wrap_task_in_thread(task: PTask, **kwargs: Any) -> WrapperResult:
     except Exception:  # noqa: BLE001
         exc_info = sys.exc_info()
     else:
-        _handle_function_products(task, out)
+        _handle_function_products(task, {}, out, remote=remote)
         exc_info = None
     return WrapperResult(
         carry_over_products=None,
@@ -77,6 +79,7 @@ def wrap_task_in_process(  # noqa: PLR0913
     *,
     console_options: ConsoleOptions,
     kwargs: dict[str, Any],
+    remote: bool,
     session_filterwarnings: tuple[str, ...],
     show_locals: bool,
     task_filterwarnings: tuple[Mark, ...],
@@ -109,10 +112,10 @@ def wrap_task_in_process(  # noqa: PLR0913
             for arg in mark.args:
                 warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
 
-        kwargs = _resolve_kwargs(kwargs)  # type: ignore[arg-type, assignment]
+        resolved_kwargs = _resolve_kwargs(kwargs)
 
         try:
-            out = task.execute(**kwargs)
+            out = task.execute(**resolved_kwargs)
         except Exception:  # noqa: BLE001
             exc_info = sys.exc_info()
             processed_exc_info = _render_traceback_to_string(
@@ -121,7 +124,9 @@ def wrap_task_in_process(  # noqa: PLR0913
             products = None
         else:
             # Save products.
-            products = _handle_function_products(task, out)
+            products = _handle_function_products(
+                task, resolved_kwargs, out, remote=remote
+            )
             processed_exc_info = None
 
         task_display_name = getattr(task, "display_name", task.name)
@@ -193,9 +198,9 @@ def _render_traceback_to_string(
     return (*exc_info[:2], text)
 
 
-def _handle_function_products(
-    task: PTask, out: Any
-) -> PyTree[PythonNode | RemotePathNode | None]:
+def _handle_function_products(  # noqa: C901
+    task: PTask, resolved_kwargs: Any, out: Any, *, remote: bool = False
+) -> PyTree[PythonNode | None]:
     """Handle the products of the task.
 
     The functions first responsibility is to push the returns of the function to the
@@ -232,8 +237,14 @@ def _handle_function_products(
 
         # Handle the case when it is not a return annotation product.
         if argument != "return":
-            if isinstance(node, (PythonNode, RemotePathNode)):
+            if isinstance(node, PythonNode):
                 return node
+
+            if isinstance(node, PathNode) and is_local_path(node.path) and remote:
+                input_ = resolved_kwargs
+                for p in path:
+                    input_ = input_[p]
+                return PythonNode(value=input_.read_bytes())
             return None
 
         # If it is a return value annotation, index the return until we get the value.
@@ -242,12 +253,14 @@ def _handle_function_products(
             value = value[p]
 
         # If the node is a PythonNode, we need to carry it over to the main process.
+        if isinstance(node, PythonNode):
+            node.save(value=value)
+            return node
 
         # If the path is local and we are remote, we need to carry over the value to
         # the main process as a PythonNode and save it later.
-        if isinstance(node, (PythonNode, RemotePathNode)):
-            node.save(value)
-            return node
+        if isinstance(node, PathNode) and is_local_path(node.path) and remote:
+            return PythonNode(value=value)
 
         # If no condition applies, we save the value and do not carry it over. Like a
         # remote path to S3.
@@ -257,11 +270,11 @@ def _handle_function_products(
     return tree_map_with_path(_save_and_carry_over_product, task.produces)
 
 
-def _resolve_kwargs(kwargs: PyTree[Any]) -> PyTree[Any]:
+def _resolve_kwargs(kwargs: dict[str, PyTree[Any]]) -> dict[str, PyTree[Any]]:
     """Resolve kwargs.
 
     The main process pushed over kwargs that might contain RemotePathNodes. These need
     to be resolved.
 
     """
-    return tree_map(lambda x: x.load() if isinstance(x, RemotePathNode) else x, kwargs)
+    return tree_map(lambda x: x.load() if isinstance(x, RemotePathNode) else x, kwargs)  # type: ignore[return-value]

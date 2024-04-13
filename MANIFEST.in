@@ -1,4 +1,5 @@
 prune docs
+prune docs_src
 prune tests
 
 exclude *.md

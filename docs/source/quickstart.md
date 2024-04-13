@@ -18,7 +18,9 @@ $ conda install -c conda-forge pytask-parallel
 When the plugin is only installed and pytask executed, the tasks are not run in
 parallel.
 
-For parallelization with the default backend [loky](https://loky.readthedocs.io/), you need to launch multiple workers.
+For parallelization with the default backend [loky](https://loky.readthedocs.io/), you
+need to launch multiple workers or specify the parallel backend explicitly. Here, is how
+you launch multiple workers.
 
 `````{tab-set}
 ````{tab-item} CLI
@@ -45,8 +47,8 @@ n_workers = "auto"
 ````
 `````
 
-To use a different backend, pass the `--parallel-backend` option. The following command
-will execute the workflow with one worker and the loky backend.
+To specify the parallel backend, pass the `--parallel-backend` option. The following
+command will execute the workflow with one worker and the loky backend.
 
 `````{tab-set}
 ````{tab-item} CLI
@@ -72,23 +74,32 @@ parallel_backend = "loky"
 It is not possible to combine parallelization with debugging. That is why `--pdb` or
 `--trace` deactivate parallelization.
 
-If you parallelize the execution of your tasks using two or more workers, do not use
-`breakpoint()` or `import pdb; pdb.set_trace()` since both will cause exceptions.
+If you parallelize the execution of your tasks, do not use `breakpoint()` or
+`import pdb; pdb.set_trace()` since both will cause exceptions.
 ```
 
 ### loky
 
 There are multiple backends available. The default is the backend provided by loky which
-aims to be a more robust implementation of {class}`~multiprocessing.pool.Pool` and in
+is a more robust implementation of {class}`~multiprocessing.pool.Pool` and in
 {class}`~concurrent.futures.ProcessPoolExecutor`.
 
 ```console
 pytask --parallel-backend loky
 ```
 
-As it spawns workers in new processes to run the tasks, it is especially suited for
-CPU-bound tasks. ([Here](https://stackoverflow.com/a/868577/7523785) is an
-explanation of what CPU- or IO-bound means.)
+A parallel backend with processes is especially suited for CPU-bound tasks as it spawns
+workers in new processes to run the tasks.
+([Here](https://stackoverflow.com/a/868577/7523785) is an explanation of what CPU- or
+IO-bound means.)
+
+### coiled
+
+pytask-parallel integrates with coiled allowing to run tasks in virtual machines of AWS,
+Azure and GCP. You can decide whether to run only some selected tasks or the whole
+project in the cloud.
+
+Read more about coiled in [this guide](coiled.md).
 
 ### `concurrent.futures`
 
@@ -141,11 +152,10 @@ Capturing warnings is not thread-safe. Therefore, warnings cannot be captured re
 when tasks are parallelized with `--parallel-backend threads`.
 ```
 
-### dask + coiled
+### dask
 
-dask and coiled together provide the option to execute your workflow on cloud providers
-like AWS, GCP or Azure. Check out the [dedicated guide](dask.md) if you are interested
-in that.
+dask allows to run your workflows on many different kinds of clusters like cloud
+clusters and traditional HPC.
 
 Using the default mode, dask will spawn multiple local workers to process the tasks.
 

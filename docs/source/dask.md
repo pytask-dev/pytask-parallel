@@ -81,10 +81,17 @@ You can find more information in the documentation for
 [`dask.distributed`](https://distributed.dask.org/en/stable/).
 ```
 
-## Remote - Using cloud providers with coiled
+## Remote
+
+You can learn how to deploy your tasks to a remote dask cluster in [this
+guide](https://docs.dask.org/en/stable/deploying.html). They recommend to use coiled for
+deployment to cloud providers.
 
 [coiled](https://www.coiled.io/) is a product built on top of dask that eases the
 deployment of your workflow to many cloud providers like AWS, GCP, and Azure.
 
 If you want to run the tasks in your project on a cluster managed by coiled read
 {ref}`this guide <coiled-clusters>`.
+
+Otherwise, follow the instructions in [dask's
+guide](https://docs.dask.org/en/stable/deploying.html).

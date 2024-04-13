@@ -1,5 +1,11 @@
 # coiled
 
+```{caution}
+Currently, the coiled backend can only be used if your workflow code is organized in a
+package due to how pytask imports your code and dask serializes task functions
+([issue](https://github.com/dask/distributed/issues/8607)).
+```
+
 [coiled](https://www.coiled.io/) is a product built on top of dask that eases the
 deployment of your workflow to many cloud providers like AWS, GCP, and Azure.
 
@@ -12,7 +18,10 @@ familiar with cloud providers or remote computing.
 
 - coiled manages your resources by spawning workers if you need them and shutting them
   down if they are idle.
-- Synchronization of your local environment to remote workers.
+- [Synchronization](https://docs.coiled.io/user_guide/software/sync.html) of your local
+  environment to remote workers.
+- [Adaptive scaling](https://docs.dask.org/en/latest/adaptive.html) if your workflow
+  takes a long time to finish.
 
 There are two ways how you can use coiled with pytask and pytask-parallel.
 
@@ -50,8 +59,9 @@ pytask --parallel-backend loky
 ```
 
 When you apply the {func}`@task <pytask.task>` decorator to the task, make sure the
-`@coiled.function` decorator is applied first, or is closer to the function. Otherwise,
-it will be ignored.
+{func}`@coiled.function <coiled.function>` decorator is applied first, or is closer to
+the function. Otherwise, it will be ignored. Add more arguments to the decorator to
+configure the hardware and software environment.
 
 ```{literalinclude} ../../docs_src/coiled/coiled_functions_task.py
 ```
@@ -65,30 +75,29 @@ Serverless functions are more thoroughly explained in
 
 ## Running a cluster
 
-So, how can you run your pytask workflow on a cloud infrastructure with coiled?
+It is also possible to launch a cluster and run each task in a worker provided by
+coiled. Usually, it is not necessary and you are better off using coiled's serverless
+functions.
 
-1. Follow their [guide on getting
-   started](https://docs.coiled.io/user_guide/setup/index.html) by creating a coiled
-   account and syncing it with your cloud provider.
+If you want to launch a cluster managed by coiled, register a function that builds an
+executor using {class}`coiled.Cluster`.
 
-1. Register a function that builds an executor using {class}`coiled.Cluster`.
-
-   ```python
-   import coiled
-   from pytask_parallel import ParallelBackend
-   from pytask_parallel import registry
-   from concurrent.futures import Executor
-
-
-   def _build_coiled_executor(n_workers: int) -> Executor:
-       return coiled.Cluster(n_workers=n_workers).get_client().get_executor()
+```python
+import coiled
+from pytask_parallel import ParallelBackend
+from pytask_parallel import registry
+from concurrent.futures import Executor
 
 
-   registry.register_parallel_backend(ParallelBackend.CUSTOM, _build_coiled_executor)
-   ```
+def _build_coiled_executor(n_workers: int) -> Executor:
+    return coiled.Cluster(n_workers=n_workers).get_client().get_executor()
 
-1. Execute your workflow with
 
-   ```console
-   pytask --parallel-backend custom
-   ```
+registry.register_parallel_backend(ParallelBackend.CUSTOM, _build_coiled_executor)
+```
+
+Then, execute your workflow with
+
+```console
+pytask --parallel-backend custom
+```

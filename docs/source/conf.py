@@ -87,6 +87,7 @@ intersphinx_mapping = {
     "coiled": ("https://docs.coiled.io/", None),
     "dask": ("https://docs.dask.org/en/stable/", None),
     "distributed": ("https://distributed.dask.org/en/stable/", None),
+    "pytask": ("https://pytask-dev.readthedocs.io/en/stable/", None),
     "python": ("https://docs.python.org/3.10", None),
 }
 

@@ -32,7 +32,6 @@ from pytask_parallel.utils import parse_future_result
 if TYPE_CHECKING:
     from concurrent.futures import Future
 
-    from pytask_parallel.nodes import RemotePathNode
     from pytask_parallel.wrappers import WrapperResult
 
 
@@ -223,7 +222,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         from pytask_parallel.wrappers import wrap_task_in_thread
 
         return session.config["_parallel_executor"].submit(
-            wrap_task_in_thread, task=task, remote=remote, **kwargs
+            wrap_task_in_thread, task=task, remote=False, **kwargs
         )
     msg = f"Unknown worker type {worker_type}"
     raise ValueError(msg)
@@ -238,11 +237,15 @@ def pytask_unconfigure() -> None:
 def _update_carry_over_products(
     task: PTask, carry_over_products: PyTree[PythonNode | None] | None
 ) -> None:
-    """Update products carry over from a another process or remote worker."""
+    """Update products carry over from a another process or remote worker.
 
-    def _update_carry_over_node(
-        x: PNode, y: PythonNode | RemotePathNode | None
-    ) -> PNode:
+    The python node can be a regular one passing the value to another python node.
+
+    In other instances the python holds a string or bytes from a RemotePathNode.
+
+    """
+
+    def _update_carry_over_node(x: PNode, y: PythonNode | None) -> PNode:
         if y:
             x.save(y.load())
         return x

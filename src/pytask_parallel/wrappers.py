@@ -112,7 +112,7 @@ def wrap_task_in_process(  # noqa: PLR0913
             for arg in mark.args:
                 warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
 
-        resolved_kwargs = _resolve_kwargs(kwargs)
+        resolved_kwargs = _write_local_files_to_remote(kwargs)
 
         try:
             out = task.execute(**resolved_kwargs)
@@ -232,7 +232,7 @@ def _handle_function_products(  # noqa: C901
 
     def _save_and_carry_over_product(
         path: tuple[Any, ...], node: PNode
-    ) -> PythonNode | RemotePathNode | None:
+    ) -> PythonNode | None:
         argument = path[0]
 
         # Handle the case when it is not a return annotation product.
@@ -240,6 +240,8 @@ def _handle_function_products(  # noqa: C901
             if isinstance(node, PythonNode):
                 return node
 
+            # If the product was a local path and we are remote, we load the file
+            # content as bytes and carry it over.
             if isinstance(node, PathNode) and is_local_path(node.path) and remote:
                 input_ = resolved_kwargs
                 for p in path:
@@ -270,8 +272,10 @@ def _handle_function_products(  # noqa: C901
     return tree_map_with_path(_save_and_carry_over_product, task.produces)
 
 
-def _resolve_kwargs(kwargs: dict[str, PyTree[Any]]) -> dict[str, PyTree[Any]]:
-    """Resolve kwargs.
+def _write_local_files_to_remote(
+    kwargs: dict[str, PyTree[Any]],
+) -> dict[str, PyTree[Any]]:
+    """Write local files to remote.
 
     The main process pushed over kwargs that might contain RemotePathNodes. These need
     to be resolved.

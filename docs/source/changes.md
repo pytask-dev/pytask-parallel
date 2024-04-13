@@ -23,6 +23,8 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
   interactions with adaptive scaling. {issue}`98` does handle the resulting issues: no
   strong adherence to priorities, no pending status.
 - {pull}`100` adds project management with rye.
+- {pull}`101` adds syncing for local paths as dependencies or products in remote
+  environments with the same OS.
 
 ## 0.4.1 - 2024-01-12
 

@@ -8,12 +8,15 @@ import warnings
 from contextlib import redirect_stderr
 from contextlib import redirect_stdout
 from io import StringIO
+from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
 
 from attrs import define
 from pytask import PathNode
+from pytask import PickleNode
 from pytask import PNode
+from pytask import PPathNode
 from pytask import PTask
 from pytask import PythonNode
 from pytask import Traceback
@@ -129,6 +132,8 @@ def wrap_task_in_process(  # noqa: PLR0913
             )
             processed_exc_info = None
 
+        _delete_local_files_on_remote(kwargs)
+
         task_display_name = getattr(task, "display_name", task.name)
         warning_reports = []
         for warning_message in log:
@@ -230,7 +235,7 @@ def _handle_function_products(  # noqa: C901
             )
             raise ValueError(msg)
 
-    def _save_and_carry_over_product(
+    def _save_and_carry_over_product(  # noqa: C901, PLR0911
         path: tuple[Any, ...], node: PNode
     ) -> PythonNode | None:
         argument = path[0]
@@ -242,11 +247,14 @@ def _handle_function_products(  # noqa: C901
 
             # If the product was a local path and we are remote, we load the file
             # content as bytes and carry it over.
-            if isinstance(node, PathNode) and is_local_path(node.path) and remote:
+            if isinstance(node, PPathNode) and is_local_path(node.path) and remote:
                 input_ = resolved_kwargs
                 for p in path:
                     input_ = input_[p]
-                return PythonNode(value=input_.read_bytes())
+                if isinstance(node, PathNode):
+                    return PythonNode(value=input_.read_bytes())
+                if isinstance(node, PickleNode):
+                    return input_
             return None
 
         # If it is a return value annotation, index the return until we get the value.
@@ -258,6 +266,9 @@ def _handle_function_products(  # noqa: C901
         if isinstance(node, PythonNode):
             node.save(value=value)
             return node
+
+        if isinstance(node, PickleNode) and is_local_path(node.path) and remote:
+            return PythonNode(value=value)
 
         # If the path is local and we are remote, we need to carry over the value to
         # the main process as a PythonNode and save it later.
@@ -282,3 +293,18 @@ def _write_local_files_to_remote(
 
     """
     return tree_map(lambda x: x.load() if isinstance(x, RemotePathNode) else x, kwargs)  # type: ignore[return-value]
+
+
+def _delete_local_files_on_remote(kwargs: dict[str, PyTree[Any]]) -> None:
+    """Delete local files on remote.
+
+    Local files were copied over to the remote via RemotePathNodes. We need to delete
+    them after the task is executed.
+
+    """
+
+    def _delete(potential_node: Any) -> None:
+        if isinstance(potential_node, RemotePathNode):
+            Path(potential_node.remote_path).unlink(missing_ok=True)
+
+    tree_map(_delete, kwargs)

@@ -28,7 +28,7 @@ class RemotePathNode(PNode):
 
     @classmethod
     def from_path_node(cls, node: PathNode, *, is_product: bool) -> RemotePathNode:
-        """Instantiate class from path to file."""
+        """Instantiate class from path node."""
         if not is_local_path(node.path):
             msg = "Path is not a local path and does not need to be fixed"
             raise ValueError(msg)
@@ -43,12 +43,9 @@ class RemotePathNode(PNode):
         )
 
     def state(self) -> str | None:
-        """Calculate the state of the node.
-
-        The state is given by the modification timestamp.
-
-        """
-        raise NotImplementedError
+        """Calculate the state of the node."""
+        msg = "RemotePathNode does not implement .state()."
+        raise NotImplementedError(msg)
 
     def load(self, is_product: bool = False) -> Path:  # noqa: FBT001, FBT002
         """Load the value."""

@@ -10,8 +10,11 @@ from typing import Callable
 
 from pytask import NodeLoadError
 from pytask import PathNode
+from pytask import PickleNode
 from pytask import PNode
+from pytask import PPathNode
 from pytask import PProvisionalNode
+from pytask import PythonNode
 from pytask.tree_util import PyTree
 from pytask.tree_util import tree_map_with_path
 
@@ -80,10 +83,15 @@ def _safe_load(
     if (
         remote
         and argument != "return"
-        and isinstance(node, PathNode)
+        and isinstance(node, PPathNode)
         and is_local_path(node.path)
     ):
-        return RemotePathNode.from_path_node(node, is_product=is_product)
+        if isinstance(node, PathNode):
+            return RemotePathNode.from_path_node(node, is_product=is_product)
+        if isinstance(node, PickleNode):
+            if is_product:
+                return PythonNode()
+            return node.load()
 
     try:
         return node.load(is_product=is_product)

@@ -6,8 +6,9 @@ import functools
 import os
 import sys
 import warnings
-from contextlib import redirect_stderr, suppress
+from contextlib import redirect_stderr
 from contextlib import redirect_stdout
+from contextlib import suppress
 from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING

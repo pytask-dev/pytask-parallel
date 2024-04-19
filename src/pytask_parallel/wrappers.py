@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import functools
+import os
 import sys
 import warnings
 from contextlib import redirect_stderr
 from contextlib import redirect_stdout
+from contextlib import suppress
 from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -305,6 +307,8 @@ def _delete_local_files_on_remote(kwargs: dict[str, PyTree[Any]]) -> None:
 
     def _delete(potential_node: Any) -> None:
         if isinstance(potential_node, RemotePathNode):
-            Path(potential_node.remote_path).unlink(missing_ok=True)
+            with suppress(OSError):
+                os.close(potential_node.fd)
+                Path(potential_node.remote_path).unlink(missing_ok=True)
 
     tree_map(_delete, kwargs)

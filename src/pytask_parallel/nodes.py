@@ -25,6 +25,7 @@ class RemotePathNode(PNode):
     signature: str
     value: str | bytes
     remote_path: str = ""
+    fd: int = -1
 
     @classmethod
     def from_path_node(cls, node: PathNode, *, is_product: bool) -> RemotePathNode:
@@ -51,7 +52,7 @@ class RemotePathNode(PNode):
         """Load the value."""
         # Create a temporary file to store the value.
         ext = os.path.splitext(self.local_path)[1]  # noqa: PTH122
-        _, self.remote_path = tempfile.mkstemp(suffix=ext)
+        self.fd, self.remote_path = tempfile.mkstemp(suffix=ext)
 
         # If the file is a dependency, store the value in the file.
         path = Path(self.remote_path)

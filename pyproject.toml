@@ -55,9 +55,9 @@ content-type = "text/markdown"
 text = "MIT"
 
 [project.urls]
-Homepage = "https://github.com/pytask-dev/pytask-parallel"
-Changelog = "https://github.com/pytask-dev/pytask-parallel/blob/main/CHANGES.md"
-Documentation = "https://github.com/pytask-dev/pytask-parallel"
+Homepage = "https://pytask-parallel.readthedocs.io/"
+Changelog = "https://pytask-parallel.readthedocs.io/en/latest/changes.html"
+Documentation = "https://pytask-parallel.readthedocs.io/"
 Github = "https://github.com/pytask-dev/pytask-parallel"
 Tracker = "https://github.com/pytask-dev/pytask-parallel/issues"
 

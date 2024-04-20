@@ -41,7 +41,7 @@ docs = [
     "sphinxext-opengraph",
 ]
 test = [
-    "pytask-parallel[all]",
+    "pytask-parallel[coiled,dask]",
     "nbmake",
     "pytest",
     "pytest-cov",

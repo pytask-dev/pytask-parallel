@@ -3,6 +3,7 @@
 from pathlib import Path
 from pathlib import PosixPath
 from pathlib import WindowsPath
+from typing import NamedTuple
 
 from pytask import PTask
 from upath.implementations.local import FilePath
@@ -18,3 +19,7 @@ def is_coiled_function(task: PTask) -> bool:
 def is_local_path(path: Path) -> bool:
     """Check if a path is local."""
     return isinstance(path, (FilePath, PosixPath, WindowsPath))
+
+
+class CarryOverPath(NamedTuple):
+    content: bytes

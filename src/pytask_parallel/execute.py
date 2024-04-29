@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 import cloudpickle
+from _pytask.node_protocols import PPathNode
 from attrs import define
 from attrs import field
 from pytask import ExecutionReport
@@ -24,6 +25,7 @@ from pytask.tree_util import tree_structure
 
 from pytask_parallel.backends import WorkerType
 from pytask_parallel.backends import registry
+from pytask_parallel.typing import CarryOverPath
 from pytask_parallel.typing import is_coiled_function
 from pytask_parallel.utils import create_kwargs_for_task
 from pytask_parallel.utils import get_module
@@ -235,7 +237,7 @@ def pytask_unconfigure() -> None:
 
 
 def _update_carry_over_products(
-    task: PTask, carry_over_products: PyTree[PythonNode | None] | None
+    task: PTask, carry_over_products: PyTree[CarryOverPath | PythonNode | None] | None
 ) -> None:
     """Update products carry over from a another process or remote worker.
 
@@ -245,10 +247,18 @@ def _update_carry_over_products(
 
     """
 
-    def _update_carry_over_node(x: PNode, y: PythonNode | None) -> PNode:
-        if y:
+    def _update_carry_over_node(
+        x: PNode, y: CarryOverPath | PythonNode | None
+    ) -> PNode:
+        if y is None:
+            return x
+        if isinstance(x, PPathNode) and isinstance(y, CarryOverPath):
+            x.path.write_bytes(y.content)
+            return x
+        if isinstance(y, PythonNode):
             x.save(y.load())
-        return x
+            return x
+        raise NotImplementedError
 
     structure_carry_over_products = tree_structure(carry_over_products)
     structure_produces = tree_structure(task.produces)

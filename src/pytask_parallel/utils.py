@@ -9,12 +9,9 @@ from typing import Any
 from typing import Callable
 
 from pytask import NodeLoadError
-from pytask import PathNode
-from pytask import PickleNode
 from pytask import PNode
 from pytask import PPathNode
 from pytask import PProvisionalNode
-from pytask import PythonNode
 from pytask.tree_util import PyTree
 from pytask.tree_util import tree_map_with_path
 
@@ -57,7 +54,7 @@ def parse_future_result(
 
         exc_info = _parse_future_exception(future_exception)
         return WrapperResult(
-            carry_over_products=None,
+            carry_over_products=None,  # type: ignore[arg-type]
             warning_reports=[],
             exc_info=exc_info,
             stdout="",
@@ -86,12 +83,7 @@ def _safe_load(
         and isinstance(node, PPathNode)
         and is_local_path(node.path)
     ):
-        if isinstance(node, PathNode):
-            return RemotePathNode.from_path_node(node, is_product=is_product)
-        if isinstance(node, PickleNode):
-            if is_product:
-                return PythonNode()
-            return node.load()
+        return RemotePathNode.from_path_node(node, is_product=is_product)
 
     try:
         return node.load(is_product=is_product)
@@ -136,7 +128,7 @@ def create_kwargs_for_task(task: PTask, *, remote: bool) -> dict[str, PyTree[Any
 
 def _parse_future_exception(
     exc: BaseException | None,
-) -> tuple[type[BaseException], BaseException, TracebackType] | None:
+) -> tuple[type[BaseException], BaseException, TracebackType | None] | None:
     """Parse a future exception into the format of ``sys.exc_info``."""
     return None if exc is None else (type(exc), exc, exc.__traceback__)
 
@@ -156,5 +148,5 @@ def get_module(func: Callable[..., Any], path: Path | None) -> ModuleType:
         func = func.func
 
     if path:
-        return inspect.getmodule(func, path.as_posix())
-    return inspect.getmodule(func)
+        return inspect.getmodule(func, path.as_posix())  # type: ignore[return-value]
+    return inspect.getmodule(func)  # type: ignore[return-value]

@@ -59,24 +59,6 @@ repos:
   rev: v2.2.6
   hooks:
     -   id: codespell
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v1.9.0'
-    hooks:
-    -   id: mypy
-        args: [
-            --no-strict-optional,
-            --ignore-missing-imports,
-        ]
-        additional_dependencies: [
-            attrs,
-            cloudpickle,
-            loky,
-            "git+https://github.com/pytask-dev/pytask.git@main",
-            rich,
-            types-click,
-            types-setuptools,
-        ]
-        pass_filenames: false
 -   repo: meta
     hooks:
     -   id: check-hooks-apply

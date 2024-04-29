@@ -15,8 +15,6 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from attrs import define
-from pytask import PathNode
-from pytask import PickleNode
 from pytask import PNode
 from pytask import PPathNode
 from pytask import PTask
@@ -32,6 +30,7 @@ from pytask.tree_util import tree_map_with_path
 from pytask.tree_util import tree_structure
 
 from pytask_parallel.nodes import RemotePathNode
+from pytask_parallel.typing import CarryOverPath
 from pytask_parallel.typing import is_local_path
 from pytask_parallel.utils import CoiledFunction
 
@@ -47,9 +46,11 @@ __all__ = ["wrap_task_in_process", "wrap_task_in_thread"]
 
 @define(kw_only=True)
 class WrapperResult:
-    carry_over_products: PyTree[PythonNode | None]
+    carry_over_products: PyTree[CarryOverPath | PythonNode | None]
     warning_reports: list[WarningReport]
-    exc_info: tuple[type[BaseException], BaseException, TracebackType | str] | None
+    exc_info: (
+        tuple[type[BaseException], BaseException, TracebackType | str | None] | None
+    )
     stdout: str
     stderr: str
 
@@ -68,12 +69,12 @@ def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperR
     except Exception:  # noqa: BLE001
         exc_info = sys.exc_info()
     else:
-        _handle_function_products(task, {}, out, remote=remote)
-        exc_info = None
+        _handle_function_products(task, out, remote=remote)
+        exc_info = None  # type: ignore[assignment]
     return WrapperResult(
-        carry_over_products=None,
+        carry_over_products=None,  # type: ignore[arg-type]
         warning_reports=[],
-        exc_info=exc_info,
+        exc_info=exc_info,  # type: ignore[arg-type]
         stdout="",
         stderr="",
     )
@@ -117,21 +118,21 @@ def wrap_task_in_process(  # noqa: PLR0913
             for arg in mark.args:
                 warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
 
-        resolved_kwargs = _write_local_files_to_remote(kwargs)
+        processed_exc_info: tuple[type[BaseException], BaseException, str] | None
 
         try:
+            resolved_kwargs = _write_local_files_to_remote(kwargs)
             out = task.execute(**resolved_kwargs)
         except Exception:  # noqa: BLE001
             exc_info = sys.exc_info()
             processed_exc_info = _render_traceback_to_string(
-                exc_info, show_locals, console_options
+                exc_info,
+                show_locals,
+                console_options,  # type: ignore[arg-type]
             )
             products = None
         else:
-            # Save products.
-            products = _handle_function_products(
-                task, resolved_kwargs, out, remote=remote
-            )
+            products = _handle_function_products(task, out, remote=remote)
             processed_exc_info = None
 
         _delete_local_files_on_remote(kwargs)
@@ -156,7 +157,7 @@ def wrap_task_in_process(  # noqa: PLR0913
     captured_stderr_buffer.close()
 
     return WrapperResult(
-        carry_over_products=products,
+        carry_over_products=products,  # type: ignore[arg-type]
         warning_reports=warning_reports,
         exc_info=processed_exc_info,
         stdout=captured_stdout,
@@ -205,23 +206,16 @@ def _render_traceback_to_string(
     return (*exc_info[:2], text)
 
 
-def _handle_function_products(  # noqa: C901
-    task: PTask, resolved_kwargs: Any, out: Any, *, remote: bool = False
-) -> PyTree[PythonNode | None]:
+def _handle_function_products(
+    task: PTask, out: Any, *, remote: bool = False
+) -> PyTree[CarryOverPath | PythonNode | None]:
     """Handle the products of the task.
 
     The functions first responsibility is to push the returns of the function to the
     defined nodes.
 
-    Secondly, the function collects two kinds of products that need to be carried over
-    to the main process for storing them.
-
-    1. Any product that is a :class:`~pytask.PythonNode` needs to be carried over to the
-       main process as otherwise their value would be lost.
-    2. If the function is executed remotely and the return value should be stored in a
-       node with a local path like :class:`pytask.PickleNode`, we need to carry over the
-       value to the main process again and, then, save the value to the node as the
-       local path does not exist remotely.
+    Its second responsibility is to carry over products from remote to local
+    environments if the product is a :class:`PPathNode` with a local path.
 
     """
     # Check that the return value has the correct structure.
@@ -237,9 +231,9 @@ def _handle_function_products(  # noqa: C901
             )
             raise ValueError(msg)
 
-    def _save_and_carry_over_product(  # noqa: C901, PLR0911
+    def _save_and_carry_over_product(
         path: tuple[Any, ...], node: PNode
-    ) -> PythonNode | None:
+    ) -> CarryOverPath | PythonNode | None:
         argument = path[0]
 
         # Handle the case when it is not a return annotation product.
@@ -250,13 +244,7 @@ def _handle_function_products(  # noqa: C901
             # If the product was a local path and we are remote, we load the file
             # content as bytes and carry it over.
             if isinstance(node, PPathNode) and is_local_path(node.path) and remote:
-                input_ = resolved_kwargs
-                for p in path:
-                    input_ = input_[p]
-                if isinstance(node, PathNode):
-                    return PythonNode(value=input_.read_bytes())
-                if isinstance(node, PickleNode):
-                    return input_
+                return CarryOverPath(content=node.path.read_bytes())
             return None
 
         # If it is a return value annotation, index the return until we get the value.
@@ -269,12 +257,9 @@ def _handle_function_products(  # noqa: C901
             node.save(value=value)
             return node
 
-        if isinstance(node, PickleNode) and is_local_path(node.path) and remote:
-            return PythonNode(value=value)
-
         # If the path is local and we are remote, we need to carry over the value to
         # the main process as a PythonNode and save it later.
-        if isinstance(node, PathNode) and is_local_path(node.path) and remote:
+        if isinstance(node, PPathNode) and is_local_path(node.path) and remote:
             return PythonNode(value=value)
 
         # If no condition applies, we save the value and do not carry it over. Like a

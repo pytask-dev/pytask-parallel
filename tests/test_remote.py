@@ -229,11 +229,3 @@ def test_pickle_node_with_local_path_as_return(runner, tmp_path):
     assert result.exit_code == ExitCode.OK
     assert "1  Succeeded" in result.output
     assert pickle.loads(tmp_path.joinpath("data.pkl").read_bytes()) == "Hello World!"  # noqa: S301
-
-
-def test_ppathnode_injecting_path():
-    raise NotImplementedError
-
-
-def test_ppathnode_injecting_value():
-    raise NotImplementedError

@@ -87,7 +87,7 @@ def _safe_load(
 
     try:
         return node.load(is_product=is_product)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         msg = f"Exception while loading node {node.name!r} of task {task.name!r}"
         raise NodeLoadError(msg) from e
 

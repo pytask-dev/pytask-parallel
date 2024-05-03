@@ -44,17 +44,18 @@ repos:
             mdformat-black,
             mdformat-pyproject,
         ]
+        args: [--wrap, "88"]
         files: (docs/.)
-# Conflicts with admonitions.
-# -   repo: https://github.com/executablebooks/mdformat
-#     rev: 0.7.17
-#     hooks:
-#     -   id: mdformat
-#         additional_dependencies: [
-#             mdformat-gfm,
-#             mdformat-black,
-#         ]
-#         args: [--wrap, "88"]
+-   repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.17
+    hooks:
+    -   id: mdformat
+        additional_dependencies: [
+            mdformat-gfm,
+            mdformat-black,
+        ]
+        args: [--wrap, "88"]
+        files: (README\.md)
 - repo: https://github.com/codespell-project/codespell
   rev: v2.2.6
   hooks:

@@ -18,20 +18,20 @@ on:
 
 jobs:
 
-  build-package:
-    name: Build & verify package
+  run-type-checking:
+
+    name: Run tests for type-checking
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          fetch-depth: 0
-
-      - uses: hynek/build-and-inspect-python-package@v2
-        id: baipp
-
-    outputs:
-      python-versions: ${{ steps.baipp.outputs.supported_python_classifiers_json_array }}
+          python-version-file: .python-version
+          allow-prereleases: true
+          cache: pip
+      - run: pip install tox-uv
+      - run: tox -e typing
 
   run-tests:
 
@@ -59,16 +59,16 @@ jobs:
         shell: bash -l {0}
         run: tox -e test -- tests -m "unit or (not integration and not end_to_end)" --cov=src --cov=tests --cov-report=xml
 
-      - name: Upload coverage report for unit tests and doctests.
-        if: runner.os == 'Linux' && matrix.python-version == '3.10'
-        shell: bash -l {0}
-        run: bash <(curl -s https://codecov.io/bash) -F unit -c
+      - name: Upload unit test coverage reports to Codecov with GitHub Action
+        uses: codecov/codecov-action@v4
+        with:
+          flags: unit
 
       - name: Run end-to-end tests.
         shell: bash -l {0}
         run: tox -e test -- tests -m end_to_end --cov=src --cov=tests --cov-report=xml
 
-      - name: Upload coverage reports of end-to-end tests.
-        if: runner.os == 'Linux' && matrix.python-version == '3.10'
-        shell: bash -l {0}
-        run: bash <(curl -s https://codecov.io/bash) -F end_to_end -c
+      - name: Upload end_to_end test coverage reports to Codecov with GitHub Action
+        uses: codecov/codecov-action@v4
+        with:
+          flags: end_to_end

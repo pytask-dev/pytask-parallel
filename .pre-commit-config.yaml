@@ -14,7 +14,7 @@ repos:
     -   id: no-commit-to-branch
         args: [--branch, main]
 -   repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.10.0  # Use the ref you want to point at
+    rev: v1.10.0
     hooks:
     -   id: python-check-blanket-noqa
     -   id: python-check-mock-methods
@@ -44,39 +44,22 @@ repos:
             mdformat-black,
             mdformat-pyproject,
         ]
+        args: [--wrap, "88"]
         files: (docs/.)
-# Conflicts with admonitions.
-# -   repo: https://github.com/executablebooks/mdformat
-#     rev: 0.7.17
-#     hooks:
-#     -   id: mdformat
-#         additional_dependencies: [
-#             mdformat-gfm,
-#             mdformat-black,
-#         ]
-#         args: [--wrap, "88"]
+-   repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.17
+    hooks:
+    -   id: mdformat
+        additional_dependencies: [
+            mdformat-gfm,
+            mdformat-black,
+        ]
+        args: [--wrap, "88"]
+        files: (README\.md)
 - repo: https://github.com/codespell-project/codespell
   rev: v2.2.6
   hooks:
     -   id: codespell
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v1.10.0'
-    hooks:
-    -   id: mypy
-        args: [
-            --no-strict-optional,
-            --ignore-missing-imports,
-        ]
-        additional_dependencies: [
-            attrs,
-            cloudpickle,
-            loky,
-            "git+https://github.com/pytask-dev/pytask.git@main",
-            rich,
-            types-click,
-            types-setuptools,
-        ]
-        pass_filenames: false
 -   repo: meta
     hooks:
     -   id: check-hooks-apply

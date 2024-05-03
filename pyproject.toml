@@ -55,20 +55,11 @@ content-type = "text/markdown"
 text = "MIT"
 
 [project.urls]
-Homepage = "https://github.com/pytask-dev/pytask-parallel"
-Changelog = "https://github.com/pytask-dev/pytask-parallel/blob/main/CHANGES.md"
-Documentation = "https://github.com/pytask-dev/pytask-parallel"
+Homepage = "https://pytask-parallel.readthedocs.io/"
+Changelog = "https://pytask-parallel.readthedocs.io/en/latest/changes.html"
+Documentation = "https://pytask-parallel.readthedocs.io/"
 Github = "https://github.com/pytask-dev/pytask-parallel"
 Tracker = "https://github.com/pytask-dev/pytask-parallel/issues"
-
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-platforms = ["any"]
-license-files = ["LICENSE"]
-
-[tool.check-manifest]
-ignore = ["src/pytask_parallel/_version.py"]
 
 [project.entry-points.pytask]
 pytask_parallel = "pytask_parallel.plugin"
@@ -113,6 +104,7 @@ disallow_untyped_defs = true
 no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"
@@ -127,6 +119,7 @@ unsafe-fixes = true
 [tool.ruff.lint]
 extend-ignore = [
     "ANN101",  # type annotating self
+    "ANN102",  # type annotating cls
     "ANN401",  # flake8-annotate typing.Any
     "COM812",  # Comply with ruff-format.
     "ISC001",  # Comply with ruff-format.

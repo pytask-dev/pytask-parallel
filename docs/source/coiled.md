@@ -66,6 +66,14 @@ configure the hardware and software environment.
 ```{literalinclude} ../../docs_src/coiled/coiled_functions_task.py
 ```
 
+By default, {func}`@coiled.function <coiled.function>`
+[scales adaptively](https://docs.coiled.io/user_guide/usage/functions/index.html#adaptive-scaling)
+to the workload. It means that coiled infers from the number of submitted tasks and
+previous runtimes, how many additional remote workers it should deploy to handle the
+workload. It provides a convenient mechanism to scale without intervention. Also,
+workers launched by {func}`@coiled.function <coiled.function>` will shutdown quicker
+than a cluster.
+
 ```{seealso}
 Serverless functions are more thoroughly explained in
 [coiled's guide](https://docs.coiled.io/user_guide/usage/functions/index.html).

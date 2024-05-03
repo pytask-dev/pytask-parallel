@@ -46,10 +46,11 @@ class _CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
 
 def _get_dask_executor(n_workers: int) -> Executor:
     """Get an executor from a dask client."""
-    _rich_traceback_omit = True
+    _rich_traceback_guard = True
     from pytask import import_optional_dependency
 
     distributed = import_optional_dependency("distributed")
+    assert distributed  # noqa: S101
     try:
         client = distributed.Client.current()
     except ValueError:

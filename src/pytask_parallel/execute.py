@@ -16,6 +16,7 @@ from pytask import PNode
 from pytask import PTask
 from pytask import PythonNode
 from pytask import Session
+from pytask import TaskExecutionStatus
 from pytask import console
 from pytask import get_marks
 from pytask import hookimpl
@@ -53,6 +54,9 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     reports = session.execution_reports
     running_tasks: dict[str, Future[Any]] = {}
 
+    # Get the live execution manager from the registry if it exists.
+    live_execution = session.config["pm"].get_plugin("live_execution")
+
     # The executor can only be created after the collection to give users the
     # possibility to inject their own executors.
     session.config["_parallel_executor"] = registry.get_parallel_backend(
@@ -68,17 +72,17 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                 newly_collected_reports = []
                 ready_tasks = list(session.scheduler.get_ready(10_000))
 
-                for task_name in ready_tasks:
-                    task = session.dag.nodes[task_name]["task"]
+                for task_signature in ready_tasks:
+                    task = session.dag.nodes[task_signature]["task"]
                     session.hook.pytask_execute_task_log_start(
-                        session=session, task=task
+                        session=session, task=task, status=TaskExecutionStatus.PENDING
                     )
                     try:
                         session.hook.pytask_execute_task_setup(
                             session=session, task=task
                         )
-                        running_tasks[task_name] = session.hook.pytask_execute_task(
-                            session=session, task=task
+                        running_tasks[task_signature] = (
+                            session.hook.pytask_execute_task(session=session, task=task)
                         )
                         sleeper.reset()
                     except Exception:  # noqa: BLE001
@@ -86,13 +90,13 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             task, sys.exc_info()
                         )
                         newly_collected_reports.append(report)
-                        session.scheduler.done(task_name)
+                        session.scheduler.done(task_signature)
 
                 if not ready_tasks:
                     sleeper.increment()
 
-                for task_name in list(running_tasks):
-                    future = running_tasks[task_name]
+                for task_signature in list(running_tasks):
+                    future = running_tasks[task_signature]
 
                     if future.done():
                         wrapper_result = parse_future_result(future)
@@ -108,17 +112,17 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             )
 
                         if wrapper_result.exc_info is not None:
-                            task = session.dag.nodes[task_name]["task"]
+                            task = session.dag.nodes[task_signature]["task"]
                             newly_collected_reports.append(
                                 ExecutionReport.from_task_and_exception(
                                     task,
                                     wrapper_result.exc_info,  # type: ignore[arg-type]
                                 )
                             )
-                            running_tasks.pop(task_name)
-                            session.scheduler.done(task_name)
+                            running_tasks.pop(task_signature)
+                            session.scheduler.done(task_signature)
                         else:
-                            task = session.dag.nodes[task_name]["task"]
+                            task = session.dag.nodes[task_signature]["task"]
                             _update_carry_over_products(
                                 task, wrapper_result.carry_over_products
                             )
@@ -134,9 +138,14 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             else:
                                 report = ExecutionReport.from_task(task)
 
-                            running_tasks.pop(task_name)
+                            running_tasks.pop(task_signature)
                             newly_collected_reports.append(report)
-                            session.scheduler.done(task_name)
+                            session.scheduler.done(task_signature)
+
+                    elif live_execution and future.running():
+                        live_execution.update_task(
+                            task_signature, status=TaskExecutionStatus.RUNNING
+                        )
 
                 for report in newly_collected_reports:
                     session.hook.pytask_execute_task_process_report(

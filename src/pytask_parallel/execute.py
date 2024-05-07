@@ -5,6 +5,7 @@ from __future__ import annotations
 import multiprocessing
 import sys
 import time
+from contextlib import ExitStack
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -64,9 +65,10 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         ParallelBackend.THREADS,
         ParallelBackend.LOKY,
     ):
-        session.config["_shared_memory"] = multiprocessing.Manager().dict()
+        manager_cls = multiprocessing.Manager
         start_execution_state = TaskExecutionStatus.PENDING
     else:
+        manager_cls = ExitStack
         start_execution_state = TaskExecutionStatus.RUNNING
 
     # Get the live execution manager from the registry if it exists.
@@ -77,7 +79,14 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     session.config["_parallel_executor"] = registry.get_parallel_backend(
         session.config["parallel_backend"], n_workers=session.config["n_workers"]
     )
-    with session.config["_parallel_executor"]:
+    with session.config["_parallel_executor"], manager_cls() as manager:
+        if session.config["parallel_backend"] in (
+            ParallelBackend.PROCESSES,
+            ParallelBackend.THREADS,
+            ParallelBackend.LOKY,
+        ):
+            session.config["_shared_memory"] = manager.dict()
+
         i = 0
         while session.scheduler.is_active():
             try:

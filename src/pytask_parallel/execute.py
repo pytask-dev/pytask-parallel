@@ -235,7 +235,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             kwargs=kwargs,
             remote=remote,
             session_filterwarnings=session.config["filterwarnings"],
-            shared_memory=session.config["_shared_memory"],
+            shared_memory=session.config.get("_shared_memory"),
             show_locals=session.config["show_locals"],
             task_filterwarnings=get_marks(task, "filterwarnings"),
         )
@@ -247,7 +247,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             wrap_task_in_thread,
             task=task,
             remote=False,
-            shared_memory=session.config["_shared_memory"],
+            shared_memory=session.config.get("_shared_memory"),
             **kwargs,
         )
     msg = f"Unknown worker type {worker_type}"

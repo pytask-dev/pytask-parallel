@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import multiprocessing
 import sys
 import time
 from contextlib import ExitStack
+from multiprocessing import Manager
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Callable
 
 import cloudpickle
 from _pytask.node_protocols import PPathNode
@@ -37,6 +38,7 @@ from pytask_parallel.utils import parse_future_result
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
+    from multiprocessing.managers import SyncManager
 
     from pytask_parallel.wrappers import WrapperResult
 
@@ -65,7 +67,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         ParallelBackend.THREADS,
         ParallelBackend.LOKY,
     ):
-        manager_cls = multiprocessing.Manager
+        manager_cls: Callable[[], SyncManager] | type[ExitStack] = Manager
         start_execution_state = TaskExecutionStatus.PENDING
     else:
         manager_cls = ExitStack
@@ -85,7 +87,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
             ParallelBackend.THREADS,
             ParallelBackend.LOKY,
         ):
-            session.config["_shared_memory"] = manager.dict()
+            session.config["_shared_memory"] = manager.dict()  # type: ignore[union-attr]
 
         i = 0
         while session.scheduler.is_active():

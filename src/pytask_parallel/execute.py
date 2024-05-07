@@ -62,7 +62,6 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     session.config["_parallel_executor"] = registry.get_parallel_backend(
         session.config["parallel_backend"], n_workers=session.config["n_workers"]
     )
-
     with session.config["_parallel_executor"]:
         sleeper = _Sleeper()
 
@@ -142,10 +141,14 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             newly_collected_reports.append(report)
                             session.scheduler.done(task_signature)
 
-                    elif live_execution and future.running():
-                        live_execution.update_task(
-                            task_signature, status=TaskExecutionStatus.RUNNING
+                    elif not future.done():
+                        pass
+                    elif live_execution:
+                        status = _get_status_from_undone_task(
+                            task_signature, future, session.config["_parallel_executor"]
                         )
+                        if status == TaskExecutionStatus.RUNNING:
+                            live_execution.update_task(task_signature, status=status)
 
                 for report in newly_collected_reports:
                     session.hook.pytask_execute_task_process_report(
@@ -299,3 +302,15 @@ class _Sleeper:
 
     def sleep(self) -> None:
         time.sleep(self.timings[self.timing_idx])
+
+
+def _get_status_from_undone_task(
+    task_signature: str, future: Future, executor: Any
+) -> TaskExecutionStatus:
+    """Get the status of a task that is undone."""
+    if hasattr(future, "_state"):
+        status = future._state
+        if status == "RUNNING":
+            breakpoint()
+            return TaskExecutionStatus.RUNNING
+    return TaskExecutionStatus.PENDING

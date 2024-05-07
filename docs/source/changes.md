@@ -25,7 +25,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 - {pull}`100` adds project management with rye.
 - {pull}`101` adds syncing for local paths as dependencies or products in remote
   environments with the same OS.
-- {pull}`103` fixes {pull}`99` such that only when there are coiled functions, all ready
+- {pull}`106` fixes {pull}`99` such that only when there are coiled functions, all ready
   tasks are submitted.
 
 ## 0.4.1 - 2024-01-12

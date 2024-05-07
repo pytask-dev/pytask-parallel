@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import multiprocessing
 import sys
 import time
 from typing import TYPE_CHECKING
@@ -24,6 +25,7 @@ from pytask.tree_util import PyTree
 from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
 
+from pytask_parallel.backends import ParallelBackend
 from pytask_parallel.backends import WorkerType
 from pytask_parallel.backends import registry
 from pytask_parallel.typing import CarryOverPath
@@ -53,6 +55,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     __tracebackhide__ = True
     reports = session.execution_reports
     running_tasks: dict[str, Future[Any]] = {}
+    sleeper = _Sleeper()
 
     # Get the live execution manager from the registry if it exists.
     live_execution = session.config["pm"].get_plugin("live_execution")
@@ -63,7 +66,14 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         session.config["parallel_backend"], n_workers=session.config["n_workers"]
     )
     with session.config["_parallel_executor"]:
-        sleeper = _Sleeper()
+        # Create a shared memory object to differentiate between running and pending
+        # tasks.
+        if session.config["parallel_backend"] in (
+            ParallelBackend.PROCESSES,
+            ParallelBackend.THREADS,
+            ParallelBackend.LOKY,
+        ):
+            session.config["_shared_memory"] = multiprocessing.Manager().dict()
 
         i = 0
         while session.scheduler.is_active():
@@ -141,14 +151,11 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             newly_collected_reports.append(report)
                             session.scheduler.done(task_signature)
 
-                    elif not future.done():
-                        pass
-                    elif live_execution:
-                        status = _get_status_from_undone_task(
-                            task_signature, future, session.config["_parallel_executor"]
-                        )
-                        if status == TaskExecutionStatus.RUNNING:
-                            live_execution.update_task(task_signature, status=status)
+                    elif live_execution and "_shared_memory" in session.config:
+                        if task_signature in session.config["_shared_memory"]:
+                            live_execution.update_task(
+                                task_signature, status=TaskExecutionStatus.RUNNING
+                            )
 
                 for report in newly_collected_reports:
                     session.hook.pytask_execute_task_process_report(
@@ -228,6 +235,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             kwargs=kwargs,
             remote=remote,
             session_filterwarnings=session.config["filterwarnings"],
+            shared_memory=session.config["_shared_memory"],
             show_locals=session.config["show_locals"],
             task_filterwarnings=get_marks(task, "filterwarnings"),
         )
@@ -236,7 +244,11 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         from pytask_parallel.wrappers import wrap_task_in_thread
 
         return session.config["_parallel_executor"].submit(
-            wrap_task_in_thread, task=task, remote=False, **kwargs
+            wrap_task_in_thread,
+            task=task,
+            remote=False,
+            shared_memory=session.config["_shared_memory"],
+            **kwargs,
         )
     msg = f"Unknown worker type {worker_type}"
     raise ValueError(msg)
@@ -302,15 +314,3 @@ class _Sleeper:
 
     def sleep(self) -> None:
         time.sleep(self.timings[self.timing_idx])
-
-
-def _get_status_from_undone_task(
-    task_signature: str, future: Future, executor: Any
-) -> TaskExecutionStatus:
-    """Get the status of a task that is undone."""
-    if hasattr(future, "_state"):
-        status = future._state
-        if status == "RUNNING":
-            breakpoint()
-            return TaskExecutionStatus.RUNNING
-    return TaskExecutionStatus.PENDING

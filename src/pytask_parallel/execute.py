@@ -57,6 +57,18 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     running_tasks: dict[str, Future[Any]] = {}
     sleeper = _Sleeper()
 
+    # Create a shared memory object to differentiate between running and pending
+    # tasks for some parallel backends.
+    if session.config["parallel_backend"] in (
+        ParallelBackend.PROCESSES,
+        ParallelBackend.THREADS,
+        ParallelBackend.LOKY,
+    ):
+        session.config["_shared_memory"] = multiprocessing.Manager().dict()
+        start_execution_state = TaskExecutionStatus.PENDING
+    else:
+        start_execution_state = TaskExecutionStatus.RUNNING
+
     # Get the live execution manager from the registry if it exists.
     live_execution = session.config["pm"].get_plugin("live_execution")
 
@@ -66,15 +78,6 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         session.config["parallel_backend"], n_workers=session.config["n_workers"]
     )
     with session.config["_parallel_executor"]:
-        # Create a shared memory object to differentiate between running and pending
-        # tasks.
-        if session.config["parallel_backend"] in (
-            ParallelBackend.PROCESSES,
-            ParallelBackend.THREADS,
-            ParallelBackend.LOKY,
-        ):
-            session.config["_shared_memory"] = multiprocessing.Manager().dict()
-
         i = 0
         while session.scheduler.is_active():
             try:
@@ -84,7 +87,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                 for task_signature in ready_tasks:
                     task = session.dag.nodes[task_signature]["task"]
                     session.hook.pytask_execute_task_log_start(
-                        session=session, task=task, status=TaskExecutionStatus.PENDING
+                        session=session, task=task, status=start_execution_state
                     )
                     try:
                         session.hook.pytask_execute_task_setup(

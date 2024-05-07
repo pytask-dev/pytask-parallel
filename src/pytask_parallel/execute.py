@@ -16,6 +16,7 @@ from pytask import PNode
 from pytask import PTask
 from pytask import PythonNode
 from pytask import Session
+from pytask import TaskExecutionStatus
 from pytask import console
 from pytask import get_marks
 from pytask import hookimpl
@@ -52,6 +53,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     __tracebackhide__ = True
     reports = session.execution_reports
     running_tasks: dict[str, Future[Any]] = {}
+    any_coiled_task = any(is_coiled_function(task) for task in session.tasks)
 
     # The executor can only be created after the collection to give users the
     # possibility to inject their own executors.
@@ -66,12 +68,31 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         while session.scheduler.is_active():
             try:
                 newly_collected_reports = []
-                ready_tasks = list(session.scheduler.get_ready(10_000))
+
+                # If there is any coiled function, the user probably wants to exploit
+                # adaptive scaling. Thus, we need to submit all ready tasks.
+                # Unfortunately, all submitted tasks are shown as running although some
+                # are pending.
+                #
+                # Without coiled functions, we submit as many tasks as there are
+                # available workers since we cannot reliably detect a pending status.
+                #
+                # See #98 for more information.
+                if any_coiled_task:
+                    n_new_tasks = 10_000
+                else:
+                    n_new_tasks = session.config["n_workers"] - len(running_tasks)
+
+                ready_tasks = (
+                    list(session.scheduler.get_ready(n_new_tasks))
+                    if n_new_tasks >= 1
+                    else []
+                )
 
                 for task_name in ready_tasks:
                     task = session.dag.nodes[task_name]["task"]
                     session.hook.pytask_execute_task_log_start(
-                        session=session, task=task
+                        session=session, task=task, status=TaskExecutionStatus.RUNNING
                     )
                     try:
                         session.hook.pytask_execute_task_setup(

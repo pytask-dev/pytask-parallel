@@ -16,7 +16,6 @@ from pytask import PNode
 from pytask import PTask
 from pytask import PythonNode
 from pytask import Session
-from pytask import TaskExecutionStatus
 from pytask import console
 from pytask import get_marks
 from pytask import hookimpl
@@ -92,7 +91,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                 for task_name in ready_tasks:
                     task = session.dag.nodes[task_name]["task"]
                     session.hook.pytask_execute_task_log_start(
-                        session=session, task=task, status=TaskExecutionStatus.RUNNING
+                        session=session, task=task
                     )
                     try:
                         session.hook.pytask_execute_task_setup(

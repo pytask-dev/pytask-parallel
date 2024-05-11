@@ -27,6 +27,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
   environments with the same OS.
 - {pull}`106` fixes {pull}`99` such that only when there are coiled functions, all ready
   tasks are submitted.
+- {pull}`107` removes status from `pytask_execute_task_log_start` hook call.
 
 ## 0.4.1 - 2024-01-12
 

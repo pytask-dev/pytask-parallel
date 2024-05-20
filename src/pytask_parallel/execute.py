@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 
 
 @hookimpl
-def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR0915
+def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR0912, PLR0915
     """Execute tasks with a parallel backend.
 
     There are three phases while the scheduler has tasks which need to be executed.
@@ -75,6 +75,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
     # Get the live execution manager from the registry if it exists.
     live_execution = session.config["pm"].get_plugin("live_execution")
+    any_coiled_task = any(is_coiled_function(task) for task in session.tasks)
 
     # The executor can only be created after the collection to give users the
     # possibility to inject their own executors.
@@ -93,7 +94,26 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         while session.scheduler.is_active():
             try:
                 newly_collected_reports = []
-                ready_tasks = list(session.scheduler.get_ready(10_000))
+
+                # If there is any coiled function, the user probably wants to exploit
+                # adaptive scaling. Thus, we need to submit all ready tasks.
+                # Unfortunately, all submitted tasks are shown as running although some
+                # are pending.
+                #
+                # Without coiled functions, we submit as many tasks as there are
+                # available workers since we cannot reliably detect a pending status.
+                #
+                # See #98 for more information.
+                if any_coiled_task:
+                    n_new_tasks = 10_000
+                else:
+                    n_new_tasks = session.config["n_workers"] - len(running_tasks)
+
+                ready_tasks = (
+                    list(session.scheduler.get_ready(n_new_tasks))
+                    if n_new_tasks >= 1
+                    else []
+                )
 
                 for task_signature in ready_tasks:
                     task = session.dag.nodes[task_signature]["task"]

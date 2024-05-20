@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 
 
 @hookimpl
-def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR0915
+def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR0912, PLR0915
     """Execute tasks with a parallel backend.
 
     There are three phases while the scheduler has tasks which need to be executed.

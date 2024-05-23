@@ -39,7 +39,6 @@ docs = [
     "sphinx-design>=0.3",
     "sphinx-toolbox",
     "sphinxext-opengraph",
-    "enum-tools",
 ]
 test = [
     "pytask-parallel[coiled,dask]",

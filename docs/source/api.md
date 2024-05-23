@@ -6,7 +6,7 @@
 .. autoclass:: ParallelBackend
 .. autoclass:: ParallelBackendRegistry
    :members:
-.. autoenum:: WorkerType
+.. autoclass:: WorkerType
 .. autodata:: registry
 
    An instantiated :class:`~pytask_parallel.ParallelBackendRegistry` to register or

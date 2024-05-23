@@ -83,10 +83,26 @@ def _get_thread_pool_executor(n_workers: int) -> Executor:
 
 
 class ParallelBackend(Enum):
-    """Choices for parallel backends."""
+    """Choices for parallel backends.
+
+    Attributes
+    ----------
+    NONE
+        No parallel backend.
+    CUSTOM
+        A custom parallel backend.
+    DASK
+        A dask parallel backend.
+    LOKY
+        A loky parallel backend.
+    PROCESSES
+        A process pool parallel backend.
+    THREADS
+        A thread pool parallel backend.
+
+    """
 
     NONE = "none"
-
     CUSTOM = "custom"
     DASK = "dask"
     LOKY = "loky"
@@ -95,7 +111,16 @@ class ParallelBackend(Enum):
 
 
 class WorkerType(Enum):
-    """A type for workers that either spawned as threads or processes."""
+    """A type for workers that either spawned as threads or processes.
+
+    Attributes
+    ----------
+    THREADS
+        Workers are threads.
+    PROCESSES
+        Workers are processes.
+
+    """
 
     THREADS = "threads"
     PROCESSES = "processes"

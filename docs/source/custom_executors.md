@@ -12,9 +12,9 @@ In some cases, adding a new backend can be as easy as registering a builder func
 that receives `n_workers` and returns the instantiated executor.
 
 ```{important}
-Place the code in any module that will be imported when you are executing pytask.
-For example, the `src/project/config.py` in your project, the `src/project/__init__.py`
-or the task module directly.
+Place the following code in any module that will be imported when you are executing
+pytask. For example, the `src/project/config.py` in your project, the
+`src/project/__init__.py` or the task module directly.
 ```
 
 ```{literalinclude} ../../docs_src/custom_executors.py
@@ -25,8 +25,8 @@ wrappers around the task function to collect tracebacks, capture stdout/stderr a
 like. Possible values are `WorkerType.PROCESSES` (default) or `WorkerType.THREADS`.
 
 The `remote` keyword signals pytask that tasks are executed in remote workers without
-access to the local filesytem. pytask will then automatically sync local files to the
-workers. By default, pytask assumes workers have access to the local filesytem.
+access to the local filesystem. pytask will then automatically sync local files to the
+workers. By default, pytask assumes workers have access to the local filesystem.
 
 Now, build the project with your custom backend.
 

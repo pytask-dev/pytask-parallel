@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pytask_parallel.backends import ParallelBackend
+from pytask_parallel.backends import ParallelBackendRegistry
 from pytask_parallel.backends import WorkerType
 from pytask_parallel.backends import registry
 
@@ -14,4 +15,10 @@ except ImportError:
     __version__ = "unknown"
 
 
-__all__ = ["ParallelBackend", "__version__", "registry", "WorkerType"]
+__all__ = [
+    "ParallelBackend",
+    "ParallelBackendRegistry",
+    "WorkerType",
+    "__version__",
+    "registry",
+]

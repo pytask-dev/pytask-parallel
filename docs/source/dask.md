@@ -8,15 +8,15 @@ package due to how pytask imports your code and dask serializes task functions
 
 Dask is a flexible library for parallel and distributed computing. You probably know it
 from its {class}`dask.dataframe` that allows lazy processing of big data. Here, we use
-{mod}`distributed` that provides an interface similar to
-{class}`~concurrent.futures.Executor` to parallelize our execution.
+distributed that provides an interface similar to {class}`concurrent.futures.Executor`
+to parallelize our execution.
 
-There are a couple of ways in how we can use dask.
+There are a couple of ways in which we can use dask.
 
 ## Local
 
-By default, using dask as the parallel backend will launch a
-{class}`distributed.LocalCluster` with processes on your local machine.
+Using dask as the parallel backend will launch a {class}`distributed.LocalCluster` with
+processes on your local machine.
 
 `````{tab-set}
 ````{tab-item} CLI
@@ -53,10 +53,13 @@ terminals to launch as many dask workers as you like with
 dask worker <scheduler-ip>
 ```
 
-Finally, write a function to build the dask client and register it as the dask backend.
-Place the code somewhere in your codebase, preferably, where you store the main
-configuration of your project in `config.py` or another module that will be imported
-during execution.
+Finally, write a function to build the dask client and register it as the backend.
+
+```{important}
+Place the following code in any module that will be imported when you are executing
+pytask. For example, the `src/project/config.py` in your project, the
+`src/project/__init__.py` or the task module directly.
+```
 
 ```python
 from pytask_parallel import ParallelBackend
@@ -73,7 +76,7 @@ registry.register_parallel_backend(ParallelBackend.DASK, _build_dask_executor)
 ```
 
 You can also register it as the custom executor using
-{class}`pytask_parallel.ParallelBackend.CUSTOM` to switch back to the default dask
+{obj}`pytask_parallel.ParallelBackend.CUSTOM` to switch back to the default dask
 executor quickly.
 
 ```{seealso}
@@ -84,7 +87,7 @@ You can find more information in the documentation for
 ## Remote
 
 You can learn how to deploy your tasks to a remote dask cluster in
-[this guide](https://docs.dask.org/en/stable/deploying.html). They recommend to use
+[this guide](https://docs.dask.org/en/stable/deploying.html). They recommend using
 coiled for deployment to cloud providers.
 
 [coiled](https://www.coiled.io/) is a product built on top of dask that eases the

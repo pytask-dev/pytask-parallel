@@ -59,7 +59,7 @@ pytask --parallel-backend loky
 ```
 
 When you apply the {func}`@task <pytask.task>` decorator to the task, make sure the
-{func}`@coiled.function <coiled.function>` decorator is applied first, or is closer to
+{func}`@coiled.function <coiled.function>` decorator is applied first or is closer to
 the function. Otherwise, it will be ignored. Add more arguments to the decorator to
 configure the hardware and software environment.
 

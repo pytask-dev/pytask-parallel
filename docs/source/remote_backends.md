@@ -21,12 +21,6 @@ to run their projects.
 
 ## Local files
 
-Avoid using local files with remote backends and use storages like S3 for dependencies
-and products. The reason is that every local file needs to be send to the remote workers
-and when your internet connection is slow you will face a hefty penalty on runtime.
-
-## Local paths
-
 In most projects you are using local paths to refer to dependencies and products of your
 tasks. This becomes an interesting problem with remote workers since your local files
 are not necessarily available in the remote machine.

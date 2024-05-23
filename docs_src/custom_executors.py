@@ -15,5 +15,5 @@ registry.register_parallel_backend(
     build_custom_executor,
     # Optional defaults.
     worker_type=WorkerType.PROCESSES,
-    remote=False
+    remote=False,
 )

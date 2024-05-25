@@ -58,6 +58,11 @@ pytask -n 2
 pytask --parallel-backend loky
 ```
 
+```{note}
+When you build a project using coiled, you will see a message after pytask's startup
+that coiled is creating the remote software environment which takes 1-2m.
+```
+
 When you apply the {func}`@task <pytask.task>` decorator to the task, make sure the
 {func}`@coiled.function <coiled.function>` decorator is applied first or is closer to
 the function. Otherwise, it will be ignored. Add more arguments to the decorator to
@@ -71,7 +76,7 @@ By default, {func}`@coiled.function <coiled.function>`
 to the workload. It means that coiled infers from the number of submitted tasks and
 previous runtimes, how many additional remote workers it should deploy to handle the
 workload. It provides a convenient mechanism to scale without intervention. Also,
-workers launched by {func}`@coiled.function <coiled.function>` will shutdown quicker
+workers launched by {func}`@coiled.function <coiled.function>` will shut down quicker
 than a cluster.
 
 ```{seealso}
@@ -88,7 +93,8 @@ coiled. Usually, it is not necessary and you are better off using coiled's serve
 functions.
 
 If you want to launch a cluster managed by coiled, register a function that builds an
-executor using {class}`coiled.Cluster`.
+executor using {class}`coiled.Cluster`. Assign a name to the cluster to reuse it when
+you build your project again and the cluster has not been shut down.
 
 ```python
 import coiled
@@ -98,7 +104,11 @@ from concurrent.futures import Executor
 
 
 def _build_coiled_executor(n_workers: int) -> Executor:
-    return coiled.Cluster(n_workers=n_workers).get_client().get_executor()
+    return (
+        coiled.Cluster(n_workers=n_workers, name="coiled-project")
+        .get_client()
+        .get_executor()
+    )
 
 
 registry.register_parallel_backend(ParallelBackend.CUSTOM, _build_coiled_executor)
@@ -109,3 +119,12 @@ Then, execute your workflow with
 ```console
 pytask --parallel-backend custom
 ```
+
+## Tips
+
+When you are changing your project during executions and your cluster is still up and
+running, the local and the remote software environment can get out of sync. Then, you
+see errors in remote workers you have fixed locally.
+
+A quick solution is to stop the cluster in the coiled dashboard and create a new one
+with the next `pytask build`.

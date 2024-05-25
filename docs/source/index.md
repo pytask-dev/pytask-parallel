@@ -27,6 +27,7 @@ coiled
 dask
 custom_executors
 remote_backends
+api
 developers_guide
 changes
 On Github <https://github.com/pytask-dev/pytask-parallel>

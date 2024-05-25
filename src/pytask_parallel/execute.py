@@ -239,6 +239,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             show_locals=session.config["show_locals"],
             task_filterwarnings=get_marks(task, "filterwarnings"),
         )
+
     if worker_type == WorkerType.THREADS:
         # Prevent circular import for loky backend.
         from pytask_parallel.wrappers import wrap_task_in_thread
@@ -246,6 +247,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         return session.config["_parallel_executor"].submit(
             wrap_task_in_thread, task=task, remote=False, **kwargs
         )
+
     msg = f"Unknown worker type {worker_type}"
     raise ValueError(msg)
 

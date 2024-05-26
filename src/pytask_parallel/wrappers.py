@@ -55,7 +55,9 @@ class WrapperResult:
     stderr: str
 
 
-def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperResult:
+def wrap_task_in_thread(
+    task: PTask, *, remote: bool, shared_memory: dict[str, bool] | None, **kwargs: Any
+) -> WrapperResult:
     """Mock execution function such that it returns the same as for processes.
 
     The function for processes returns ``warning_reports`` and an ``exception``. With
@@ -64,6 +66,11 @@ def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperR
 
     """
     __tracebackhide__ = True
+
+    # Add task to shared memory to indicate that it is currently being executed.
+    if shared_memory is not None:
+        shared_memory[task.signature] = True
+
     try:
         out = task.function(**kwargs)
     except Exception:  # noqa: BLE001
@@ -71,6 +78,11 @@ def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperR
     else:
         _handle_function_products(task, out, remote=remote)
         exc_info = None  # type: ignore[assignment]
+
+    # Remove task from shared memory to indicate that it is no longer being executed.
+    if shared_memory is not None:
+        shared_memory.pop(task.signature)
+
     return WrapperResult(
         carry_over_products=None,  # type: ignore[arg-type]
         warning_reports=[],
@@ -87,6 +99,7 @@ def wrap_task_in_process(  # noqa: PLR0913
     kwargs: dict[str, Any],
     remote: bool,
     session_filterwarnings: tuple[str, ...],
+    shared_memory: dict[str, bool] | None,
     show_locals: bool,
     task_filterwarnings: tuple[Mark, ...],
 ) -> WrapperResult:
@@ -98,6 +111,10 @@ def wrap_task_in_process(  # noqa: PLR0913
     """
     # Hide this function from tracebacks.
     __tracebackhide__ = True
+
+    # Add task to shared memory to indicate that it is currently being executed.
+    if shared_memory is not None:
+        shared_memory[task.signature] = True
 
     # Patch set_trace and breakpoint to show a better error message.
     _patch_set_trace_and_breakpoint()
@@ -155,6 +172,10 @@ def wrap_task_in_process(  # noqa: PLR0913
     captured_stderr = captured_stderr_buffer.read()
     captured_stdout_buffer.close()
     captured_stderr_buffer.close()
+
+    # Remove task from shared memory to indicate that it is no longer being executed.
+    if shared_memory is not None:
+        shared_memory.pop(task.signature)
 
     return WrapperResult(
         carry_over_products=products,  # type: ignore[arg-type]

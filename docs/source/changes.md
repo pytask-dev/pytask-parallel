@@ -5,7 +5,7 @@ chronological order. Releases follow [semantic versioning](https://semver.org/) 
 releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel).
 
-## 0.5.0 - 2024-xx-xx
+## 0.5.0 - 2024-05-26
 
 - {pull}`85` simplifies code since loky is a dependency.
 - {pull}`86` adds support for dask.
@@ -29,6 +29,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
   tasks are submitted.
 - {pull}`107` removes status from `pytask_execute_task_log_start` hook call.
 - {pull}`109` improves the documentation.
+- {pull}`110` prepares the release of v0.5.
 
 ## 0.4.1 - 2024-01-12
 

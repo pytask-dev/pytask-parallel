@@ -24,7 +24,7 @@ def _setup_remote_backend(tmp_path):
     tmp_path.joinpath("config.py").write_text(textwrap.dedent(source))
 
 
-@pytest.mark.end_to_end()
+@pytest.mark.end_to_end
 def test_python_node(runner, tmp_path):
     source = """
     from pathlib import Path
@@ -65,7 +65,7 @@ def test_python_node(runner, tmp_path):
     assert tmp_path.joinpath("output.txt").read_text() == "Hello World!"
 
 
-@pytest.mark.end_to_end()
+@pytest.mark.end_to_end
 def test_local_path_as_input(runner, tmp_path):
     source = """
     from pathlib import Path
@@ -92,7 +92,7 @@ def test_local_path_as_input(runner, tmp_path):
     assert tmp_path.joinpath("output.txt").read_text() == "Hello World!"
 
 
-@pytest.mark.end_to_end()
+@pytest.mark.end_to_end
 def test_local_path_as_product(runner, tmp_path):
     source = """
     from pytask import Product
@@ -119,7 +119,7 @@ def test_local_path_as_product(runner, tmp_path):
     assert tmp_path.joinpath("output.txt").read_text() == "Hello World!"
 
 
-@pytest.mark.end_to_end()
+@pytest.mark.end_to_end
 def test_local_path_as_return(runner, tmp_path):
     source = """
     from pathlib import Path
@@ -145,7 +145,7 @@ def test_local_path_as_return(runner, tmp_path):
     assert tmp_path.joinpath("output.txt").read_text() == "Hello World!"
 
 
-@pytest.mark.end_to_end()
+@pytest.mark.end_to_end
 def test_pickle_node_with_local_path_as_input(runner, tmp_path):
     source = """
     from pytask import PickleNode
@@ -175,7 +175,7 @@ def test_pickle_node_with_local_path_as_input(runner, tmp_path):
     assert tmp_path.joinpath("output.txt").read_text() == "Hello World!"
 
 
-@pytest.mark.end_to_end()
+@pytest.mark.end_to_end
 def test_pickle_node_with_local_path_as_product(runner, tmp_path):
     source = """
     from pytask import PickleNode, Product
@@ -204,7 +204,7 @@ def test_pickle_node_with_local_path_as_product(runner, tmp_path):
     assert pickle.loads(tmp_path.joinpath("data.pkl").read_bytes()) == "Hello World!"  # noqa: S301
 
 
-@pytest.mark.end_to_end()
+@pytest.mark.end_to_end
 def test_pickle_node_with_local_path_as_return(runner, tmp_path):
     source = """
     from pytask import PickleNode

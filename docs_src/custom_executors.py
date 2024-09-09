@@ -1,6 +1,7 @@
 from concurrent.futures import Executor
 
 from my_project.executor import CustomExecutor
+
 from pytask_parallel import ParallelBackend
 from pytask_parallel import WorkerType
 from pytask_parallel import registry

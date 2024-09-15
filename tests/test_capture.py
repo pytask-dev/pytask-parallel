@@ -3,10 +3,11 @@ import textwrap
 import pytest
 from pytask import ExitCode
 from pytask import cli
+
 from pytask_parallel import ParallelBackend
 
 
-@pytest.mark.end_to_end()
+@pytest.mark.end_to_end
 @pytest.mark.parametrize(
     "parallel_backend",
     [

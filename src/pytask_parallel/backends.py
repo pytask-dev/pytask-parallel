@@ -29,10 +29,10 @@ def _deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:
 class _CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
     """Patches the standard executor to serialize functions with cloudpickle."""
 
-    # The type signature is wrong for Python >3.8. Fix when support is dropped.
-    def submit(  # type: ignore[override]
+    def submit(
         self,
         fn: Callable[..., Any],
+        /,
         *args: Any,  # noqa: ARG002
         **kwargs: Any,
     ) -> Future[Any]:

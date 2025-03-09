@@ -21,3 +21,4 @@ tests/test_jupyter/*.txt
 .pytest_cache
 .ruff_cache
 .venv
+uv.lock

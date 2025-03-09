@@ -5,6 +5,10 @@ chronological order. Releases follow [semantic versioning](https://semver.org/) 
 releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel).
 
+## 0.5.1 - 2025-03-09
+
+- {pull}`114` drops support for Python 3.8 and adds support for Python 3.13.
+
 ## 0.5.0 - 2024-05-26
 
 - {pull}`85` simplifies code since loky is a dependency.

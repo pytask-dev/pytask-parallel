@@ -6,16 +6,16 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only"
+    "Programming Language :: Python :: 3 :: Only",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "attrs>=21.3.0",
     "click",
     "cloudpickle",
     "loky",
     "pluggy>=1.0.0",
-    "pytask>=0.5.0",
+    "pytask>=0.5.2",
     "rich",
 ]
 dynamic = ["version"]
@@ -40,12 +40,7 @@ docs = [
     "sphinx-toolbox",
     "sphinxext-opengraph",
 ]
-test = [
-    "pytask-parallel[coiled,dask]",
-    "nbmake",
-    "pytest",
-    "pytest-cov",
-]
+test = ["pytask-parallel[coiled,dask]", "nbmake", "pytest", "pytest-cov"]
 
 [project.readme]
 file = "README.md"
@@ -70,9 +65,7 @@ build-backend = "hatchling.build"
 
 [tool.rye]
 managed = true
-dev-dependencies = [
-    "s3fs>=2024.3.1",
-]
+dev-dependencies = ["s3fs>=2024.3.1", "tox-uv>=1.7.0"]
 
 [tool.rye.scripts]
 clean-docs = { cmd = "rm -rf docs/build" }
@@ -112,17 +105,17 @@ disallow_untyped_defs = false
 ignore_errors = true
 
 [tool.ruff]
-target-version = "py38"
+target-version = "py39"
 fix = true
 unsafe-fixes = true
 
 [tool.ruff.lint]
 extend-ignore = [
-    "ANN101",  # type annotating self
-    "ANN102",  # type annotating cls
-    "ANN401",  # flake8-annotate typing.Any
-    "COM812",  # Comply with ruff-format.
-    "ISC001",  # Comply with ruff-format.
+    "ANN101", # type annotating self
+    "ANN102", # type annotating cls
+    "ANN401", # flake8-annotate typing.Any
+    "COM812", # Comply with ruff-format.
+    "ISC001", # Comply with ruff-format.
 ]
 select = ["ALL"]
 

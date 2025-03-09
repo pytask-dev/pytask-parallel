@@ -106,9 +106,11 @@ def wrap_task_in_process(  # noqa: PLR0913
     captured_stderr_buffer = StringIO()
 
     # Catch warnings and store them in a list.
-    with warnings.catch_warnings(record=True) as log, redirect_stdout(
-        captured_stdout_buffer
-    ), redirect_stderr(captured_stderr_buffer):
+    with (
+        warnings.catch_warnings(record=True) as log,
+        redirect_stdout(captured_stdout_buffer),
+        redirect_stderr(captured_stderr_buffer),
+    ):
         # Apply global filterwarnings.
         for arg in session_filterwarnings:
             warnings.filterwarnings(*parse_warning_filter(arg, escape=False))

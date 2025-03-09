@@ -1,4 +1,4 @@
-"""Contains code relevant to logging."""
+"""Contains code relevant to logging."""  # noqa: A005
 
 from __future__ import annotations
 

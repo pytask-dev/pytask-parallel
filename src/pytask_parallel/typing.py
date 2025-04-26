@@ -1,4 +1,4 @@
-"""Contains functions related to typing."""  # noqa: A005
+"""Contains functions related to typing."""
 
 from pathlib import Path
 from pathlib import PosixPath

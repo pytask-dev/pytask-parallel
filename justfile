@@ -3,8 +3,16 @@ install:
     uv sync --all-groups
 
 # Run tests
-test:
-    uv run --group test pytest --cov=src --cov=tests --cov-report=xml
+test *args="":
+    uv run --group test pytest --cov=src --cov=tests --cov-report=xml --timeout=30 {{args}}
+
+# Run tests with lowest dependency resolution
+test-lowest *args="":
+    uv run --group test --resolution lowest-direct pytest --timeout=30 {{args}}
+
+# Run tests with highest dependency resolution
+test-highest *args="":
+    uv run --group test --resolution highest pytest --timeout=30 {{args}}
 
 # Run type checking
 typing:
@@ -24,11 +32,3 @@ docs-serve:
 
 # Run all checks (format, lint, typing, test)
 check: lint typing test
-
-# Run tests with lowest dependency resolution
-test-lowest:
-    uv run --group test --resolution lowest-direct pytest
-
-# Run tests with highest dependency resolution
-test-highest:
-    uv run --group test --resolution highest pytest

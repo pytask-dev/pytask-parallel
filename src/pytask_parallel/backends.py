@@ -8,7 +8,7 @@ from concurrent.futures import Future
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from typing import Callable
 from typing import ClassVar
 

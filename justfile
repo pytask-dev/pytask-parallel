@@ -8,7 +8,7 @@ test:
 
 # Run type checking
 typing:
-    uv run --group typing --group test ty check
+    uv run --group typing ty check
 
 # Run linting and formatting
 lint:

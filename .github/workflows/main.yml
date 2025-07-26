@@ -5,8 +5,6 @@ concurrency:
   group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-env:
-  CONDA_EXE: mamba
 
 on:
   push:
@@ -25,14 +23,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version-file: .python-version
-          allow-prereleases: true
-          cache: pip
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      - name: Set up Python
+        run: uv python install
       - name: Install just
         uses: extractions/setup-just@v2
-      - run: pip install tox-uv
       - name: Run type checking
         run: just typing
 
@@ -49,17 +45,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-          allow-prereleases: true
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
       - name: Install just
         uses: extractions/setup-just@v2
-      - run: pip install tox
-
       - name: Run tests
-        shell: bash -l {0}
         run: just test
 
       - name: Upload test coverage reports to Codecov with GitHub Action

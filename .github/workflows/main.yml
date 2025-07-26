@@ -30,8 +30,11 @@ jobs:
           python-version-file: .python-version
           allow-prereleases: true
           cache: pip
+      - name: Install just
+        uses: extractions/setup-just@v2
       - run: pip install tox-uv
-      - run: tox -e typing
+      - name: Run type checking
+        run: just typing
 
   run-tests:
 
@@ -51,24 +54,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
           allow-prereleases: true
+      - name: Install just
+        uses: extractions/setup-just@v2
       - run: pip install tox
 
-      # Unit, integration, and end-to-end tests.
-
-      - name: Run unit tests and doctests.
+      - name: Run tests
         shell: bash -l {0}
-        run: tox -e test -- tests -m "unit or (not integration and not end_to_end)" --cov=src --cov=tests --cov-report=xml
+        run: just test
 
-      - name: Upload unit test coverage reports to Codecov with GitHub Action
+      - name: Upload test coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v5
-        with:
-          flags: unit
-
-      - name: Run end-to-end tests.
-        shell: bash -l {0}
-        run: tox -e test -- tests -m end_to_end --cov=src --cov=tests --cov-report=xml
-
-      - name: Upload end_to_end test coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v5
-        with:
-          flags: end_to_end

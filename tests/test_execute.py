@@ -25,7 +25,6 @@ _IMPLEMENTED_BACKENDS = [
 ]
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_parallel_execution(tmp_path, parallel_backend):
     source = """
@@ -47,7 +46,6 @@ def test_parallel_execution(tmp_path, parallel_backend):
     assert tmp_path.joinpath("out_2.txt").exists()
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_parallel_execution_w_cli(runner, tmp_path, parallel_backend):
     source = """
@@ -77,7 +75,6 @@ def test_parallel_execution_w_cli(runner, tmp_path, parallel_backend):
     assert tmp_path.joinpath("out_2.txt").exists()
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend):
     source = """
@@ -105,7 +102,6 @@ def test_stop_execution_when_max_failures_is_reached(tmp_path, parallel_backend)
     assert len(session.execution_reports) == 2
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_task_priorities(tmp_path, parallel_backend):
     source = """
@@ -146,7 +142,6 @@ def test_task_priorities(tmp_path, parallel_backend):
     assert last_task_name.endswith(("task_2", "task_5"))
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 @pytest.mark.parametrize("show_locals", [True, False])
 def test_rendering_of_tracebacks_with_rich(
@@ -172,7 +167,6 @@ def test_rendering_of_tracebacks_with_rich(
     assert ("[0, 1, 2, 3, 4]" in result.output) is show_locals
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize(
     "parallel_backend",
     # Capturing warnings is not thread-safe.
@@ -207,7 +201,6 @@ def test_collect_warnings_from_parallelized_tasks(runner, tmp_path, parallel_bac
     assert "task_example.py::task_example[1]" in warnings_block
 
 
-@pytest.mark.unit
 def test_sleeper():
     sleeper = _Sleeper(timings=[1, 2, 3], timing_idx=0)
 
@@ -229,7 +222,6 @@ def test_sleeper():
     assert 1 <= end - start <= 2
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_task_that_return(runner, tmp_path, parallel_backend):
     source = """
@@ -249,7 +241,6 @@ def test_task_that_return(runner, tmp_path, parallel_backend):
     )
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
     source = """
@@ -270,7 +261,6 @@ def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
     )
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize("flag", ["--pdb", "--trace", "--dry-run"])
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_backend):
@@ -283,7 +273,6 @@ def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_back
     assert "Started 2 workers" not in result.output
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize("code", ["breakpoint()", "import pdb; pdb.set_trace()"])
 @pytest.mark.parametrize(
     "parallel_backend",
@@ -298,7 +287,6 @@ def test_raise_error_on_breakpoint(runner, tmp_path, code, parallel_backend):
     assert "You cannot use 'breakpoint()'" in result.output
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_task_partialed(runner, tmp_path, parallel_backend):
     source = """
@@ -321,7 +309,6 @@ def test_task_partialed(runner, tmp_path, parallel_backend):
     assert tmp_path.joinpath("file.txt").exists()
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_execute_tasks_and_pass_values_by_python_node_return(
     runner, tmp_path, parallel_backend
@@ -349,7 +336,6 @@ def test_execute_tasks_and_pass_values_by_python_node_return(
     assert tmp_path.joinpath("file.txt").read_text() == "This is the text."
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_execute_tasks_and_pass_values_by_python_node_product(
     runner, tmp_path, parallel_backend

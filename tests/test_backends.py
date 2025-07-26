@@ -1,6 +1,5 @@
 import textwrap
 
-import pytest
 from pytask import ExitCode
 from pytask import cli
 
@@ -8,7 +7,6 @@ from pytask_parallel import ParallelBackend
 from pytask_parallel import registry
 
 
-@pytest.mark.end_to_end
 def test_error_requesting_custom_backend_without_registration(runner, tmp_path):
     tmp_path.joinpath("task_example.py").write_text("def task_example(): pass")
     result = runner.invoke(cli, [tmp_path.as_posix(), "--parallel-backend", "custom"])
@@ -16,7 +14,6 @@ def test_error_requesting_custom_backend_without_registration(runner, tmp_path):
     assert "No registered parallel backend found" in result.output
 
 
-@pytest.mark.end_to_end
 def test_error_while_instantiating_custom_backend(runner, tmp_path):
     hook_source = """
     from pytask_parallel import ParallelBackend, registry
@@ -35,7 +32,6 @@ def test_error_while_instantiating_custom_backend(runner, tmp_path):
     assert "Could not instantiate parallel backend 'custom'." in result.output
 
 
-@pytest.mark.end_to_end
 def test_register_custom_backend(runner, tmp_path):
     source = """
     from loky import get_reusable_executor

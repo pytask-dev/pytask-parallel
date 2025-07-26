@@ -27,10 +27,6 @@ repos:
     hooks:
       - id: ruff
       - id: ruff-format
--   repo: https://github.com/dosisod/refurb
-    rev: v2.1.0
-    hooks:
-    -   id: refurb
 -   repo: https://github.com/kynan/nbstripout
     rev: 0.8.1
     hooks:

@@ -111,8 +111,6 @@ unsafe-fixes = true
 
 [tool.ruff.lint]
 extend-ignore = [
-    "ANN101", # type annotating self
-    "ANN102", # type annotating cls
     "ANN401", # flake8-annotate typing.Any
     "COM812", # Comply with ruff-format.
     "ISC001", # Comply with ruff-format.
@@ -123,6 +121,7 @@ select = ["ALL"]
 "tests/*" = ["D", "ANN", "PLR2004", "S101"]
 "docs/source/conf.py" = ["INP001"]
 "docs_src/*" = ["ARG001", "D", "INP001", "S301"]
+"src/pytask_parallel/*.py" = ["PLC0415"]
 
 [tool.ruff.lint.isort]
 force-single-line = true

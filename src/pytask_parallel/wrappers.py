@@ -192,8 +192,8 @@ def _patch_set_trace_and_breakpoint() -> None:
     import pdb  # noqa: PLC0415, T100
     import sys  # noqa: PLC0415
 
-    pdb.set_trace = _raise_exception_on_breakpoint
-    sys.breakpointhook = _raise_exception_on_breakpoint
+    pdb.set_trace = _raise_exception_on_breakpoint  # ty: ignore[invalid-assignment]
+    sys.breakpointhook = _raise_exception_on_breakpoint  # ty: ignore[invalid-assignment]
 
 
 def _render_traceback_to_string(
@@ -205,7 +205,7 @@ def _render_traceback_to_string(
     traceback = Traceback(exc_info, show_locals=show_locals)
     segments = console.render(traceback, options=console_options)
     text = "".join(segment.text for segment in segments)
-    return (*exc_info[:2], text)
+    return (*exc_info[:2], text)  # ty: ignore[invalid-return-type]
 
 
 def _handle_function_products(

@@ -1,6 +1,6 @@
 from concurrent.futures import Executor
 
-from my_project.executor import CustomExecutor
+from my_project.executor import CustomExecutor  # ty: ignore[unresolved-import]
 
 from pytask_parallel import ParallelBackend
 from pytask_parallel import WorkerType

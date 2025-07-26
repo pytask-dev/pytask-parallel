@@ -17,7 +17,7 @@ from pytask_parallel import ParallelBackend
         (True, 1, 1),
         (True, 2, 2),
         (False, 2, 2),
-        (False, "auto", os.cpu_count() - 1),
+        (False, "auto", (os.cpu_count() or 1) - 1),
     ],
 )
 def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expected):
@@ -65,6 +65,6 @@ def test_reading_values_from_config_file(
 
     assert session.exit_code == exit_code
     if value == "auto":
-        value = os.cpu_count() - 1
+        value = (os.cpu_count() or 1) - 1
     if value != "unknown_backend":
         assert session.config[configuration_option] == value

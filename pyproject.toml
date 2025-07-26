@@ -50,6 +50,8 @@ test = [
 typing = [
     "pytask-parallel",
     "ty",
+    {include-group = "coiled"},
+    {include-group = "dask"},
 ]
 
 [project.readme]

@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 import pytask_parallel
 
 if TYPE_CHECKING:
-    import sphinx
+    import sphinx  # ty: ignore[unresolved-import]
 
 
 # -- Project information ---------------------------------------------------------------
@@ -30,7 +30,7 @@ copyright = f"2020, {author}"  # noqa: A001
 # The version, including alpha/beta/rc tags, but not commit hash and datestamps
 release = version("pytask_parallel")
 # The short X.Y version.
-version = ".".join(release.split(".")[:2])
+version = ".".join(release.split(".")[:2])  # ty: ignore[invalid-assignment]
 
 # -- General configuration -------------------------------------------------------------
 
@@ -100,7 +100,7 @@ ogp_social_cards = {"image": "_static/images/pytask_w_text.png"}
 
 
 # Linkcode, based on numpy doc/source/conf.py
-def linkcode_resolve(domain: str, info: dict[str, str]) -> str:  # noqa: C901
+def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:  # noqa: C901
     """Determine the URL corresponding to Python object."""
     if domain != "py":
         return None
@@ -123,10 +123,10 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str:  # noqa: C901
             return None
 
     try:
-        fn = inspect.getsourcefile(inspect.unwrap(obj))
+        fn = inspect.getsourcefile(inspect.unwrap(obj))  # ty: ignore[invalid-argument-type]
     except TypeError:
         try:  # property
-            fn = inspect.getsourcefile(inspect.unwrap(obj.fget))
+            fn = inspect.getsourcefile(inspect.unwrap(obj.fget))  # ty: ignore[possibly-unbound-attribute,invalid-argument-type]
         except (AttributeError, TypeError):
             fn = None
     if not fn:
@@ -136,7 +136,7 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str:  # noqa: C901
         source, lineno = inspect.getsourcelines(obj)
     except TypeError:
         try:  # property
-            source, lineno = inspect.getsourcelines(obj.fget)
+            source, lineno = inspect.getsourcelines(obj.fget)  # ty: ignore[possibly-unbound-attribute]
         except (AttributeError, TypeError):
             lineno = None
     except OSError:
@@ -202,7 +202,7 @@ html_theme_options = {
 }
 
 
-def setup(app: sphinx.application.Sphinx) -> None:
+def setup(app: sphinx.application.Sphinx) -> None:  # ty: ignore[unresolved-attribute]
     """Configure sphinx."""
     app.add_object_type(
         "confval",

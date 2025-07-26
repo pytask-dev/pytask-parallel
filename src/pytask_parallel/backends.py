@@ -8,7 +8,7 @@ from concurrent.futures import Future
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from typing import Callable
 from typing import ClassVar
 
@@ -47,10 +47,13 @@ class _CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
 def _get_dask_executor(n_workers: int) -> Executor:
     """Get an executor from a dask client."""
     _rich_traceback_guard = True
-    from pytask import import_optional_dependency  # noqa: PLC0415
 
-    distributed = import_optional_dependency("distributed")
-    assert distributed  # noqa: S101
+    try:
+        import distributed  # noqa: PLC0415
+    except ImportError:
+        msg = "The distributed package is not installed. Please install it."
+        raise ImportError(msg) from None
+
     try:
         client = distributed.Client.current()
     except ValueError:

@@ -189,8 +189,8 @@ def _patch_set_trace_and_breakpoint() -> None:
     a subprocess and print a better exception message.
 
     """
-    import pdb  # noqa: T100
-    import sys
+    import pdb  # noqa: PLC0415, T100
+    import sys  # noqa: PLC0415
 
     pdb.set_trace = _raise_exception_on_breakpoint
     sys.breakpointhook = _raise_exception_on_breakpoint

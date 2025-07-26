@@ -195,7 +195,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
 
     if is_coiled_function(task):
         # Prevent circular import for coiled backend.
-        from pytask_parallel.wrappers import rewrap_task_with_coiled_function
+        from pytask_parallel.wrappers import rewrap_task_with_coiled_function  # noqa: PLC0415
 
         wrapper_func = rewrap_task_with_coiled_function(task)
 
@@ -219,7 +219,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
 
     if worker_type == WorkerType.PROCESSES:
         # Prevent circular import for loky backend.
-        from pytask_parallel.wrappers import wrap_task_in_process
+        from pytask_parallel.wrappers import wrap_task_in_process  # noqa: PLC0415
 
         # Task modules are dynamically loaded and added to `sys.modules`. Thus,
         # cloudpickle believes the module of the task function is also importable in the
@@ -242,7 +242,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
 
     if worker_type == WorkerType.THREADS:
         # Prevent circular import for loky backend.
-        from pytask_parallel.wrappers import wrap_task_in_thread
+        from pytask_parallel.wrappers import wrap_task_in_thread  # noqa: PLC0415
 
         return session.config["_parallel_executor"].submit(
             wrap_task_in_thread, task=task, remote=False, **kwargs

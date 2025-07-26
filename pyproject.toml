@@ -121,7 +121,6 @@ select = ["ALL"]
 "tests/*" = ["D", "ANN", "PLR2004", "S101"]
 "docs/source/conf.py" = ["INP001"]
 "docs_src/*" = ["ARG001", "D", "INP001", "S301"]
-"src/pytask_parallel/*.py" = ["PLC0415"]
 
 [tool.ruff.lint.isort]
 force-single-line = true

@@ -34,6 +34,7 @@ docs = [
     "myst-parser",
     "nbsphinx",
     "sphinx",
+    "sphinx-autobuild",
     "sphinx-click",
     "sphinx-copybutton",
     "sphinx-design>=0.3",
@@ -75,14 +76,6 @@ pytask_parallel = "pytask_parallel.plugin"
 requires = ["hatchling", "hatch_vcs"]
 build-backend = "hatchling.build"
 
-[tool.rye]
-managed = true
-dev-dependencies = ["s3fs>=2024.3.1", "tox-uv>=1.7.0"]
-
-[tool.rye.scripts]
-clean-docs = { cmd = "rm -rf docs/build" }
-build-docs = { cmd = "sphinx-build -b html docs/source docs/build" }
-
 [tool.hatch.build.hooks.vcs]
 version-file = "src/pytask_parallel/_version.py"
 
@@ -99,22 +92,6 @@ source = "vcs"
 
 [tool.hatch.metadata]
 allow-direct-references = true
-
-[tool.mypy]
-files = ["src", "tests"]
-check_untyped_defs = true
-disallow_any_generics = true
-disallow_incomplete_defs = true
-disallow_untyped_defs = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
-ignore_errors = true
 
 [tool.ruff]
 fix = true
@@ -143,10 +120,6 @@ convention = "numpy"
 addopts = ["--nbmake"]
 # Do not add src since it messes with the loading of pytask-parallel as a plugin.
 testpaths = ["tests"]
-markers = [
-    "wip: Tests that are work-in-progress.",
-]
-norecursedirs = [".idea", ".tox"]
 
 [tool.coverage.report]
 exclude_also = [

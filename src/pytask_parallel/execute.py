@@ -195,7 +195,9 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
 
     if is_coiled_function(task):
         # Prevent circular import for coiled backend.
-        from pytask_parallel.wrappers import rewrap_task_with_coiled_function
+        from pytask_parallel.wrappers import (  # noqa: PLC0415
+            rewrap_task_with_coiled_function,
+        )
 
         wrapper_func = rewrap_task_with_coiled_function(task)
 

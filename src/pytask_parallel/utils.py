@@ -50,7 +50,7 @@ def parse_future_result(
     future_exception = future.exception()
     if future_exception is not None:
         # Prevent circular import for loky backend.
-        from pytask_parallel.wrappers import WrapperResult
+        from pytask_parallel.wrappers import WrapperResult  # noqa: PLC0415
 
         exc_info = _parse_future_exception(future_exception)
         return WrapperResult(

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import textwrap
 from time import time
 
@@ -12,6 +11,7 @@ from pytask import cli
 from pytask_parallel import ParallelBackend
 from pytask_parallel.execute import _Sleeper
 from tests.conftest import restore_sys_path_and_module_after_test_execution
+from tests.conftest import skip_if_deadlock
 
 _IMPLEMENTED_BACKENDS = [
     pytest.param(
@@ -20,14 +20,7 @@ _IMPLEMENTED_BACKENDS = [
             reason="dask cannot handle dynamically imported modules."
         ),
     ),
-    pytest.param(
-        ParallelBackend.LOKY,
-        marks=pytest.mark.skipif(
-            (sys.version_info[:2] == (3, 12) and sys.platform == "win32")
-            or (sys.version_info[:2] == (3, 13) and sys.platform == "linux"),
-            reason="Deadlock in loky/backend/resource_tracker.py, line 181, maybe related to https://github.com/joblib/loky/pull/450",  # noqa: E501
-        ),
-    ),
+    pytest.param(ParallelBackend.LOKY, marks=skip_if_deadlock),
     ParallelBackend.PROCESSES,
     ParallelBackend.THREADS,
 ]

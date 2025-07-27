@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import sys
 import time
+from contextlib import ExitStack
+from multiprocessing import Manager
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Callable
 
 import cloudpickle
 from _pytask.node_protocols import PPathNode
@@ -16,6 +19,7 @@ from pytask import PNode
 from pytask import PTask
 from pytask import PythonNode
 from pytask import Session
+from pytask import TaskExecutionStatus
 from pytask import console
 from pytask import get_marks
 from pytask import hookimpl
@@ -23,6 +27,7 @@ from pytask.tree_util import PyTree
 from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
 
+from pytask_parallel.backends import ParallelBackend
 from pytask_parallel.backends import WorkerType
 from pytask_parallel.backends import registry
 from pytask_parallel.typing import CarryOverPath
@@ -33,6 +38,7 @@ from pytask_parallel.utils import parse_future_result
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
+    from multiprocessing.managers import SyncManager
 
     from pytask_parallel.wrappers import WrapperResult
 
@@ -52,6 +58,23 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     __tracebackhide__ = True
     reports = session.execution_reports
     running_tasks: dict[str, Future[Any]] = {}
+    sleeper = _Sleeper()
+
+    # Create a shared memory object to differentiate between running and pending
+    # tasks for some parallel backends.
+    if session.config["parallel_backend"] in (
+        ParallelBackend.PROCESSES,
+        ParallelBackend.THREADS,
+        ParallelBackend.LOKY,
+    ):
+        manager_cls: Callable[[], SyncManager] | type[ExitStack] = Manager
+        start_execution_state = TaskExecutionStatus.PENDING
+    else:
+        manager_cls = ExitStack
+        start_execution_state = TaskExecutionStatus.RUNNING
+
+    # Get the live execution manager from the registry if it exists.
+    live_execution = session.config["pm"].get_plugin("live_execution")
     any_coiled_task = any(is_coiled_function(task) for task in session.tasks)
 
     # The executor can only be created after the collection to give users the
@@ -59,9 +82,13 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     session.config["_parallel_executor"] = registry.get_parallel_backend(
         session.config["parallel_backend"], n_workers=session.config["n_workers"]
     )
-
-    with session.config["_parallel_executor"]:
-        sleeper = _Sleeper()
+    with session.config["_parallel_executor"], manager_cls() as manager:
+        if session.config["parallel_backend"] in (
+            ParallelBackend.PROCESSES,
+            ParallelBackend.THREADS,
+            ParallelBackend.LOKY,
+        ):
+            session.config["_shared_memory"] = manager.dict()  # type: ignore[union-attr]
 
         i = 0
         while session.scheduler.is_active():
@@ -73,14 +100,15 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                 # Unfortunately, all submitted tasks are shown as running although some
                 # are pending.
                 #
-                # Without coiled functions, we submit as many tasks as there are
-                # available workers since we cannot reliably detect a pending status.
+                # For all other backends, at least four more tasks are submitted and
+                # otherwise 10% more. This is a heuristic to avoid submitting too few
+                # tasks.
                 #
                 # See #98 for more information.
                 if any_coiled_task:
                     n_new_tasks = 10_000
                 else:
-                    n_new_tasks = session.config["n_workers"] - len(running_tasks)
+                    n_new_tasks = max(4, int(session.config["n_workers"] * 0.1))
 
                 ready_tasks = (
                     list(session.scheduler.get_ready(n_new_tasks))
@@ -88,17 +116,17 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                     else []
                 )
 
-                for task_name in ready_tasks:
-                    task = session.dag.nodes[task_name]["task"]
+                for task_signature in ready_tasks:
+                    task = session.dag.nodes[task_signature]["task"]
                     session.hook.pytask_execute_task_log_start(
-                        session=session, task=task
+                        session=session, task=task, status=start_execution_state
                     )
                     try:
                         session.hook.pytask_execute_task_setup(
                             session=session, task=task
                         )
-                        running_tasks[task_name] = session.hook.pytask_execute_task(
-                            session=session, task=task
+                        running_tasks[task_signature] = (
+                            session.hook.pytask_execute_task(session=session, task=task)
                         )
                         sleeper.reset()
                     except Exception:  # noqa: BLE001
@@ -106,13 +134,13 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             task, sys.exc_info()
                         )
                         newly_collected_reports.append(report)
-                        session.scheduler.done(task_name)
+                        session.scheduler.done(task_signature)
 
                 if not ready_tasks:
                     sleeper.increment()
 
-                for task_name in list(running_tasks):
-                    future = running_tasks[task_name]
+                for task_signature in list(running_tasks):
+                    future = running_tasks[task_signature]
 
                     if future.done():
                         wrapper_result = parse_future_result(future)
@@ -128,17 +156,17 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             )
 
                         if wrapper_result.exc_info is not None:
-                            task = session.dag.nodes[task_name]["task"]
+                            task = session.dag.nodes[task_signature]["task"]
                             newly_collected_reports.append(
                                 ExecutionReport.from_task_and_exception(
                                     task,
                                     wrapper_result.exc_info,  # type: ignore[arg-type]
                                 )
                             )
-                            running_tasks.pop(task_name)
-                            session.scheduler.done(task_name)
+                            running_tasks.pop(task_signature)
+                            session.scheduler.done(task_signature)
                         else:
-                            task = session.dag.nodes[task_name]["task"]
+                            task = session.dag.nodes[task_signature]["task"]
                             _update_carry_over_products(
                                 task, wrapper_result.carry_over_products
                             )
@@ -154,9 +182,17 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             else:
                                 report = ExecutionReport.from_task(task)
 
-                            running_tasks.pop(task_name)
+                            running_tasks.pop(task_signature)
                             newly_collected_reports.append(report)
-                            session.scheduler.done(task_name)
+                            session.scheduler.done(task_signature)
+
+                    # Check if tasks are not pending but running and update the live
+                    # status.
+                    elif live_execution and "_shared_memory" in session.config:
+                        if task_signature in session.config["_shared_memory"]:
+                            live_execution.update_task(
+                                task_signature, status=TaskExecutionStatus.RUNNING
+                            )
 
                 for report in newly_collected_reports:
                     session.hook.pytask_execute_task_process_report(
@@ -238,6 +274,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             kwargs=kwargs,
             remote=remote,
             session_filterwarnings=session.config["filterwarnings"],
+            shared_memory=session.config.get("_shared_memory"),
             show_locals=session.config["show_locals"],
             task_filterwarnings=get_marks(task, "filterwarnings"),
         )
@@ -247,7 +284,11 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         from pytask_parallel.wrappers import wrap_task_in_thread  # noqa: PLC0415
 
         return session.config["_parallel_executor"].submit(
-            wrap_task_in_thread, task=task, remote=False, **kwargs
+            wrap_task_in_thread,
+            task=task,
+            remote=False,
+            shared_memory=session.config.get("_shared_memory"),
+            **kwargs,
         )
 
     msg = f"Unknown worker type {worker_type}"

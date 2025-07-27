@@ -1,7 +1,7 @@
 # coiled
 
 ```{caution}
-Currently, the coiled backend can only be used if your workflow code is organized in a
+Currently, the coiled backend can only be used if your workflow code is organized as a
 package due to how pytask imports your code and dask serializes task functions
 ([issue](https://github.com/dask/distributed/issues/8607)).
 ```

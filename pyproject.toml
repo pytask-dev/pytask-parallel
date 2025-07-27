@@ -6,16 +6,16 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only"
+    "Programming Language :: Python :: 3 :: Only",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "attrs>=21.3.0",
-    "click",
+    "click>=8.1.8,!=8.2.0",
     "cloudpickle",
     "loky",
     "pluggy>=1.0.0",
-    "pytask>=0.4.5",
+    "pytask>=0.5.2",
     "rich",
 ]
 dynamic = ["version"]
@@ -24,7 +24,7 @@ dynamic = ["version"]
 name = "Tobias Raabe"
 email = "raabe@posteo.de"
 
-[project.optional-dependencies]
+[dependency-groups]
 coiled = ["coiled>=0.9.4"]
 dask = ["dask[complete]", "distributed"]
 docs = [
@@ -34,6 +34,7 @@ docs = [
     "myst-parser",
     "nbsphinx",
     "sphinx",
+    "sphinx-autobuild",
     "sphinx-click",
     "sphinx-copybutton",
     "sphinx-design>=0.3",
@@ -41,10 +42,17 @@ docs = [
     "sphinxext-opengraph",
 ]
 test = [
-    "pytask-parallel[coiled,dask]",
     "nbmake",
-    "pytest",
-    "pytest-cov",
+    "pytest>=8.4.0",
+    "pytest-cov>=5.0.0",
+    {include-group = "coiled"},
+    {include-group = "dask"},
+]
+typing = [
+    "pytask-parallel",
+    "ty",
+    {include-group = "coiled"},
+    {include-group = "dask"},
 ]
 
 [project.readme]
@@ -68,16 +76,6 @@ pytask_parallel = "pytask_parallel.plugin"
 requires = ["hatchling", "hatch_vcs"]
 build-backend = "hatchling.build"
 
-[tool.rye]
-managed = true
-dev-dependencies = [
-    "s3fs>=2024.3.1",
-]
-
-[tool.rye.scripts]
-clean-docs = { cmd = "rm -rf docs/build" }
-build-docs = { cmd = "sphinx-build -b html docs/source docs/build" }
-
 [tool.hatch.build.hooks.vcs]
 version-file = "src/pytask_parallel/_version.py"
 
@@ -95,34 +93,15 @@ source = "vcs"
 [tool.hatch.metadata]
 allow-direct-references = true
 
-[tool.mypy]
-files = ["src", "tests"]
-check_untyped_defs = true
-disallow_any_generics = true
-disallow_incomplete_defs = true
-disallow_untyped_defs = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
-ignore_errors = true
-
 [tool.ruff]
-target-version = "py38"
 fix = true
 unsafe-fixes = true
 
 [tool.ruff.lint]
 extend-ignore = [
-    "ANN101",  # type annotating self
-    "ANN102",  # type annotating cls
-    "ANN401",  # flake8-annotate typing.Any
-    "COM812",  # Comply with ruff-format.
-    "ISC001",  # Comply with ruff-format.
+    "ANN401", # flake8-annotate typing.Any
+    "COM812", # Comply with ruff-format.
+    "ISC001", # Comply with ruff-format.
 ]
 select = ["ALL"]
 
@@ -141,13 +120,6 @@ convention = "numpy"
 addopts = ["--nbmake"]
 # Do not add src since it messes with the loading of pytask-parallel as a plugin.
 testpaths = ["tests"]
-markers = [
-    "wip: Tests that are work-in-progress.",
-    "unit: Flag for unit tests which target mainly a single function.",
-    "integration: Flag for integration tests which may comprise of multiple unit tests.",
-    "end_to_end: Flag for tests that cover the whole program.",
-]
-norecursedirs = [".idea", ".tox"]
 
 [tool.coverage.report]
 exclude_also = [

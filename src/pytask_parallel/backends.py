@@ -29,10 +29,10 @@ def _deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:
 class _CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
     """Patches the standard executor to serialize functions with cloudpickle."""
 
-    # The type signature is wrong for Python >3.8. Fix when support is dropped.
-    def submit(  # type: ignore[override]
+    def submit(
         self,
         fn: Callable[..., Any],
+        /,
         *args: Any,  # noqa: ARG002
         **kwargs: Any,
     ) -> Future[Any]:
@@ -47,10 +47,13 @@ class _CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
 def _get_dask_executor(n_workers: int) -> Executor:
     """Get an executor from a dask client."""
     _rich_traceback_guard = True
-    from pytask import import_optional_dependency
 
-    distributed = import_optional_dependency("distributed")
-    assert distributed  # noqa: S101
+    try:
+        import distributed  # noqa: PLC0415
+    except ImportError:
+        msg = "The distributed package is not installed. Please install it."
+        raise ImportError(msg) from None
+
     try:
         client = distributed.Client.current()
     except ValueError:
@@ -83,10 +86,26 @@ def _get_thread_pool_executor(n_workers: int) -> Executor:
 
 
 class ParallelBackend(Enum):
-    """Choices for parallel backends."""
+    """Choices for parallel backends.
+
+    Attributes
+    ----------
+    NONE
+        No parallel backend.
+    CUSTOM
+        A custom parallel backend.
+    DASK
+        A dask parallel backend.
+    LOKY
+        A loky parallel backend.
+    PROCESSES
+        A process pool parallel backend.
+    THREADS
+        A thread pool parallel backend.
+
+    """
 
     NONE = "none"
-
     CUSTOM = "custom"
     DASK = "dask"
     LOKY = "loky"
@@ -95,7 +114,16 @@ class ParallelBackend(Enum):
 
 
 class WorkerType(Enum):
-    """A type for workers that either spawned as threads or processes."""
+    """A type for workers that either spawned as threads or processes.
+
+    Attributes
+    ----------
+    THREADS
+        Workers are threads.
+    PROCESSES
+        Workers are processes.
+
+    """
 
     THREADS = "threads"
     PROCESSES = "processes"

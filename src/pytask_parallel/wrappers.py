@@ -123,9 +123,11 @@ def wrap_task_in_process(  # noqa: PLR0913
     captured_stderr_buffer = StringIO()
 
     # Catch warnings and store them in a list.
-    with warnings.catch_warnings(record=True) as log, redirect_stdout(
-        captured_stdout_buffer
-    ), redirect_stderr(captured_stderr_buffer):
+    with (
+        warnings.catch_warnings(record=True) as log,
+        redirect_stdout(captured_stdout_buffer),
+        redirect_stderr(captured_stderr_buffer),
+    ):
         # Apply global filterwarnings.
         for arg in session_filterwarnings:
             warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
@@ -208,11 +210,11 @@ def _patch_set_trace_and_breakpoint() -> None:
     a subprocess and print a better exception message.
 
     """
-    import pdb  # noqa: T100
-    import sys
+    import pdb  # noqa: PLC0415, T100
+    import sys  # noqa: PLC0415
 
-    pdb.set_trace = _raise_exception_on_breakpoint
-    sys.breakpointhook = _raise_exception_on_breakpoint
+    pdb.set_trace = _raise_exception_on_breakpoint  # ty: ignore[invalid-assignment]
+    sys.breakpointhook = _raise_exception_on_breakpoint  # ty: ignore[invalid-assignment]
 
 
 def _render_traceback_to_string(
@@ -224,7 +226,7 @@ def _render_traceback_to_string(
     traceback = Traceback(exc_info, show_locals=show_locals)
     segments = console.render(traceback, options=console_options)
     text = "".join(segment.text for segment in segments)
-    return (*exc_info[:2], text)
+    return (*exc_info[:2], text)  # ty: ignore[invalid-return-type]
 
 
 def _handle_function_products(
@@ -288,7 +290,7 @@ def _handle_function_products(
         node.save(value)
         return None
 
-    return tree_map_with_path(_save_and_carry_over_product, task.produces)
+    return tree_map_with_path(_save_and_carry_over_product, task.produces)  # type: ignore[arg-type]
 
 
 def _write_local_files_to_remote(
@@ -300,7 +302,7 @@ def _write_local_files_to_remote(
     to be resolved.
 
     """
-    return tree_map(lambda x: x.load() if isinstance(x, RemotePathNode) else x, kwargs)  # type: ignore[return-value]
+    return tree_map(lambda x: x.load() if isinstance(x, RemotePathNode) else x, kwargs)  # type: ignore[arg-type, return-value]
 
 
 def _delete_local_files_on_remote(kwargs: dict[str, PyTree[Any]]) -> None:
@@ -317,4 +319,4 @@ def _delete_local_files_on_remote(kwargs: dict[str, PyTree[Any]]) -> None:
                 os.close(potential_node.fd)
                 Path(potential_node.remote_path).unlink(missing_ok=True)
 
-    tree_map(_delete, kwargs)
+    tree_map(_delete, kwargs)  # type: ignore[arg-type]

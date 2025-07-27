@@ -69,7 +69,7 @@ class CustomCliRunner(CliRunner):
             return super().invoke(*args, **kwargs)
 
 
-@pytest.fixture()
+@pytest.fixture
 def runner():
     return CustomCliRunner()
 
@@ -79,3 +79,10 @@ def pytest_collection_modifyitems(session, config, items) -> None:  # noqa: ARG0
     for item in items:
         if isinstance(item, NotebookItem):
             item.add_marker(pytest.mark.xfail(reason="The tests are flaky."))
+
+
+skip_if_deadlock = pytest.mark.skipif(
+    (sys.version_info[:2] in [(3, 12), (3, 13)] and sys.platform == "win32")
+    or (sys.version_info[:2] == (3, 13) and sys.platform == "linux"),
+    reason="Deadlock in loky/backend/resource_tracker.py, line 181, maybe related to https://github.com/joblib/loky/pull/450",
+)

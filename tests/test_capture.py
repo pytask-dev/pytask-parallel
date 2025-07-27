@@ -3,10 +3,11 @@ import textwrap
 import pytest
 from pytask import ExitCode
 from pytask import cli
+
 from pytask_parallel import ParallelBackend
+from tests.conftest import skip_if_deadlock
 
 
-@pytest.mark.end_to_end()
 @pytest.mark.parametrize(
     "parallel_backend",
     [
@@ -16,7 +17,7 @@ from pytask_parallel import ParallelBackend
                 reason="dask cannot handle dynamically imported modules."
             ),
         ),
-        ParallelBackend.LOKY,
+        pytest.param(ParallelBackend.LOKY, marks=skip_if_deadlock),
         ParallelBackend.PROCESSES,
     ],
 )

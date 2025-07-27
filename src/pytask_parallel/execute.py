@@ -228,7 +228,9 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
 
     if is_coiled_function(task):
         # Prevent circular import for coiled backend.
-        from pytask_parallel.wrappers import rewrap_task_with_coiled_function
+        from pytask_parallel.wrappers import (  # noqa: PLC0415
+            rewrap_task_with_coiled_function,
+        )
 
         wrapper_func = rewrap_task_with_coiled_function(task)
 
@@ -240,7 +242,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         task_module = get_module(task.function, getattr(task, "path", None))
         cloudpickle.register_pickle_by_value(task_module)
 
-        return wrapper_func.submit(
+        return wrapper_func.submit(  # ty: ignore[possibly-unbound-attribute,invalid-return-type]
             task=task,
             console_options=console.options,
             kwargs=kwargs,
@@ -252,7 +254,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
 
     if worker_type == WorkerType.PROCESSES:
         # Prevent circular import for loky backend.
-        from pytask_parallel.wrappers import wrap_task_in_process
+        from pytask_parallel.wrappers import wrap_task_in_process  # noqa: PLC0415
 
         # Task modules are dynamically loaded and added to `sys.modules`. Thus,
         # cloudpickle believes the module of the task function is also importable in the
@@ -273,9 +275,10 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             show_locals=session.config["show_locals"],
             task_filterwarnings=get_marks(task, "filterwarnings"),
         )
+
     if worker_type == WorkerType.THREADS:
         # Prevent circular import for loky backend.
-        from pytask_parallel.wrappers import wrap_task_in_thread
+        from pytask_parallel.wrappers import wrap_task_in_thread  # noqa: PLC0415
 
         return session.config["_parallel_executor"].submit(
             wrap_task_in_thread,
@@ -284,6 +287,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             shared_memory=session.config.get("_shared_memory"),
             **kwargs,
         )
+
     msg = f"Unknown worker type {worker_type}"
     raise ValueError(msg)
 
@@ -318,12 +322,14 @@ def _update_carry_over_products(
             return x
         raise NotImplementedError
 
-    structure_carry_over_products = tree_structure(carry_over_products)
-    structure_produces = tree_structure(task.produces)
+    structure_carry_over_products = tree_structure(carry_over_products)  # type: ignore[arg-type]
+    structure_produces = tree_structure(task.produces)  # type: ignore[arg-type]
     # strict must be false when none is leaf.
     if structure_produces.is_prefix(structure_carry_over_products, strict=False):
         task.produces = tree_map(
-            _update_carry_over_node, task.produces, carry_over_products
+            _update_carry_over_node,
+            task.produces,  # type: ignore[arg-type]
+            carry_over_products,  # type: ignore[arg-type]
         )  # type: ignore[assignment]
 
 

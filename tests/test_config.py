@@ -8,9 +8,9 @@ from pytask import ExitCode
 from pytask import build
 
 from pytask_parallel import ParallelBackend
+from tests.conftest import skip_if_deadlock
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize(
     ("pdb", "n_workers", "expected"),
     [
@@ -18,7 +18,7 @@ from pytask_parallel import ParallelBackend
         (True, 1, 1),
         (True, 2, 2),
         (False, 2, 2),
-        (False, "auto", os.cpu_count() - 1),
+        (False, "auto", (os.cpu_count() or 1) - 1),
     ],
 )
 def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expected):
@@ -26,7 +26,6 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
     assert session.config["n_workers"] == expected
 
 
-@pytest.mark.end_to_end
 @pytest.mark.parametrize(
     ("configuration_option", "value", "exit_code"),
     [
@@ -34,16 +33,14 @@ def test_interplay_between_debugging_and_parallel(tmp_path, pdb, n_workers, expe
         ("n_workers", 1, ExitCode.OK),
         ("n_workers", 2, ExitCode.OK),
         ("parallel_backend", "unknown_backend", ExitCode.CONFIGURATION_FAILED),
-    ]
-    + [
-        ("parallel_backend", parallel_backend, ExitCode.OK)
-        for parallel_backend in (
+        pytest.param(
+            "parallel_backend",
             ParallelBackend.LOKY,
-            ParallelBackend.PROCESSES,
-            ParallelBackend.THREADS,
-        )
-    ]
-    + [
+            ExitCode.OK,
+            marks=skip_if_deadlock,
+        ),
+        ("parallel_backend", ParallelBackend.PROCESSES, ExitCode.OK),
+        ("parallel_backend", ParallelBackend.THREADS, ExitCode.OK),
         pytest.param(
             "parallel_backend",
             "dask",
@@ -67,6 +64,6 @@ def test_reading_values_from_config_file(
 
     assert session.exit_code == exit_code
     if value == "auto":
-        value = os.cpu_count() - 1
+        value = (os.cpu_count() or 1) - 1
     if value != "unknown_backend":
         assert session.config[configuration_option] == value

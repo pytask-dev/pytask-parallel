@@ -5,8 +5,6 @@ concurrency:
   group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-env:
-  CONDA_EXE: mamba
 
 on:
   push:
@@ -25,13 +23,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version-file: .python-version
-          allow-prereleases: true
-          cache: pip
-      - run: pip install tox-uv
-      - run: tox -e typing
+          enable-cache: true
+      - name: Install just
+        uses: extractions/setup-just@v2
+      - name: Run type checking
+        run: just typing
 
   run-tests:
 
@@ -46,29 +44,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
-          cache: pip
-          allow-prereleases: true
-      - run: pip install tox
+          enable-cache: true
+      - name: Install just
+        uses: extractions/setup-just@v2
+      - name: Run tests
+        run: just test
 
-      # Unit, integration, and end-to-end tests.
-
-      - name: Run unit tests and doctests.
-        shell: bash -l {0}
-        run: tox -e test -- tests -m "unit or (not integration and not end_to_end)" --cov=src --cov=tests --cov-report=xml
-
-      - name: Upload unit test coverage reports to Codecov with GitHub Action
+      - name: Upload test coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v5
-        with:
-          flags: unit
-
-      - name: Run end-to-end tests.
-        shell: bash -l {0}
-        run: tox -e test -- tests -m end_to_end --cov=src --cov=tests --cov-report=xml
-
-      - name: Upload end_to_end test coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v5
-        with:
-          flags: end_to_end

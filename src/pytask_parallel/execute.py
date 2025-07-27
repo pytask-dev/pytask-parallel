@@ -209,7 +209,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         task_module = get_module(task.function, getattr(task, "path", None))
         cloudpickle.register_pickle_by_value(task_module)
 
-        return wrapper_func.submit(
+        return wrapper_func.submit(  # ty: ignore[possibly-unbound-attribute,invalid-return-type]
             task=task,
             console_options=console.options,
             kwargs=kwargs,

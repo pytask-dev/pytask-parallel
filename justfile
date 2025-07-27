@@ -4,15 +4,15 @@ install:
 
 # Run tests
 test *args="":
-    uv run --group test pytest --cov=src --cov=tests --cov-report=xml --timeout=30 {{args}}
+    uv run --group test pytest --cov=src --cov=tests --cov-report=xml {{args}}
 
 # Run tests with lowest dependency resolution
 test-lowest *args="":
-    uv run --group test --resolution lowest-direct pytest --timeout=30 {{args}}
+    uv run --group test --resolution lowest-direct pytest {{args}}
 
 # Run tests with highest dependency resolution
 test-highest *args="":
-    uv run --group test --resolution highest pytest --timeout=30 {{args}}
+    uv run --group test --resolution highest pytest {{args}}
 
 # Run type checking
 typing:

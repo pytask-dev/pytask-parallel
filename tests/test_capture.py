@@ -1,3 +1,4 @@
+import sys
 import textwrap
 
 import pytest
@@ -16,7 +17,14 @@ from pytask_parallel import ParallelBackend
                 reason="dask cannot handle dynamically imported modules."
             ),
         ),
-        ParallelBackend.LOKY,
+        pytest.param(
+            ParallelBackend.LOKY,
+            marks=pytest.mark.skipif(
+                (sys.version_info[:2] == (3, 12) and sys.platform == "win32")
+                or (sys.version_info[:2] == (3, 13) and sys.platform == "linux"),
+                reason="Deadlock in loky/backend/resource_tracker.py, line 181, maybe related to https://github.com/joblib/loky/pull/450",  # noqa: E501
+            ),
+        ),
         ParallelBackend.PROCESSES,
     ],
 )

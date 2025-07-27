@@ -81,7 +81,7 @@ def wrap_task_in_thread(
 
     # Remove task from shared memory to indicate that it is no longer being executed.
     if shared_memory is not None:
-        shared_memory.pop(task.signature)
+        shared_memory.pop(task.signature, None)
 
     return WrapperResult(
         carry_over_products=None,  # type: ignore[arg-type]
@@ -177,7 +177,7 @@ def wrap_task_in_process(  # noqa: PLR0913
 
     # Remove task from shared memory to indicate that it is no longer being executed.
     if shared_memory is not None:
-        shared_memory.pop(task.signature)
+        shared_memory.pop(task.signature, None)
 
     return WrapperResult(
         carry_over_products=products,  # type: ignore[arg-type]

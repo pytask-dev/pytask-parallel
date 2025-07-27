@@ -100,14 +100,15 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                 # Unfortunately, all submitted tasks are shown as running although some
                 # are pending.
                 #
-                # Without coiled functions, we submit as many tasks as there are
-                # available workers since we cannot reliably detect a pending status.
+                # For all other backends, at least four more tasks are submitted and
+                # otherwise 10% more. This is a heuristic to avoid submitting too few
+                # tasks.
                 #
                 # See #98 for more information.
                 if any_coiled_task:
                     n_new_tasks = 10_000
                 else:
-                    n_new_tasks = session.config["n_workers"] - len(running_tasks)
+                    n_new_tasks = max(4, int(session.config["n_workers"] * 0.1))
 
                 ready_tasks = (
                     list(session.scheduler.get_ready(n_new_tasks))
@@ -185,6 +186,8 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             newly_collected_reports.append(report)
                             session.scheduler.done(task_signature)
 
+                    # Check if tasks are not pending but running and update the live
+                    # status.
                     elif live_execution and "_shared_memory" in session.config:
                         if task_signature in session.config["_shared_memory"]:
                             live_execution.update_task(

@@ -15,7 +15,7 @@ dependencies = [
     "cloudpickle",
     "loky",
     "pluggy>=1.0.0",
-    "git+https://github.com/pytask-dev/pytask@allow-setting-task-status",
+    "pytask>=0.5.2",
     "rich",
 ]
 dynamic = ["version"]
@@ -45,14 +45,14 @@ test = [
     "nbmake",
     "pytest>=8.4.0",
     "pytest-cov>=5.0.0",
-    {include-group = "coiled"},
-    {include-group = "dask"},
+    { include-group = "coiled" },
+    { include-group = "dask" },
 ]
 typing = [
     "pytask-parallel",
     "ty",
-    {include-group = "coiled"},
-    {include-group = "dask"},
+    { include-group = "coiled" },
+    { include-group = "dask" },
 ]
 
 [project.readme]
@@ -75,6 +75,9 @@ pytask_parallel = "pytask_parallel.plugin"
 [build-system]
 requires = ["hatchling", "hatch_vcs"]
 build-backend = "hatchling.build"
+
+[tool.uv.source]
+pytask = { git = "https://github.com/pytask-dev/pytask", rev = "allow-setting-task-status" }
 
 [tool.hatch.build.hooks.vcs]
 version-file = "src/pytask_parallel/_version.py"

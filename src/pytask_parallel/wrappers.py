@@ -203,7 +203,7 @@ def _render_traceback_to_string(
 ) -> tuple[type[BaseException], BaseException, str]:
     """Process the exception and convert the traceback to a string."""
     traceback = Traceback(exc_info, show_locals=show_locals)
-    segments = console.render(traceback, options=console_options)
+    segments = console.render(traceback, options=console_options)  # ty: ignore[invalid-argument-type]
     text = "".join(segment.text for segment in segments)
     return (*exc_info[:2], text)  # ty: ignore[invalid-return-type]
 

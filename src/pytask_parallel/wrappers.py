@@ -168,8 +168,8 @@ def wrap_task_in_process(  # noqa: PLR0913
 
 
 def rewrap_task_with_coiled_function(task: PTask) -> CoiledFunction:
-    return functools.wraps(wrap_task_in_process)(  # ty: ignore[invalid-return-type,invalid-argument-type]
-        CoiledFunction(wrap_task_in_process, **task.attributes["coiled_kwargs"])
+    return functools.wraps(wrap_task_in_process)(  # ty: ignore[invalid-return-type]
+        CoiledFunction(wrap_task_in_process, **task.attributes["coiled_kwargs"])  # ty: ignore[invalid-argument-type]
     )
 
 

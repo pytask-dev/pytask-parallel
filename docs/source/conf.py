@@ -144,7 +144,7 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:  # noqa: 
 
     linespec = f"#L{lineno}-L{lineno + len(source) - 1}" if lineno else ""
 
-    fn = os.path.relpath(fn, start=Path(pytask_parallel.__file__).parent)
+    fn = os.path.relpath(fn, start=Path(pytask_parallel.__file__).parent)  # ty: ignore[invalid-argument-type]
 
     if "+" in pytask_parallel.__version__:
         return f"https://github.com/pytask-dev/pytask-parallel/blob/main/src/pytask_parallel/{fn}{linespec}"

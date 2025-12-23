@@ -168,8 +168,8 @@ def wrap_task_in_process(  # noqa: PLR0913
 
 
 def rewrap_task_with_coiled_function(task: PTask) -> CoiledFunction:
-    return functools.wraps(wrap_task_in_process)(
-        CoiledFunction(wrap_task_in_process, **task.attributes["coiled_kwargs"])
+    return functools.wraps(wrap_task_in_process)(  # ty: ignore[invalid-return-type]
+        CoiledFunction(wrap_task_in_process, **task.attributes["coiled_kwargs"])  # ty: ignore[invalid-argument-type]
     )
 
 
@@ -203,7 +203,7 @@ def _render_traceback_to_string(
 ) -> tuple[type[BaseException], BaseException, str]:
     """Process the exception and convert the traceback to a string."""
     traceback = Traceback(exc_info, show_locals=show_locals)
-    segments = console.render(traceback, options=console_options)
+    segments = console.render(traceback, options=console_options)  # ty: ignore[invalid-argument-type]
     text = "".join(segment.text for segment in segments)
     return (*exc_info[:2], text)  # ty: ignore[invalid-return-type]
 

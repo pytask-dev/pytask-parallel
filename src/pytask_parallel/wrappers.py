@@ -13,7 +13,6 @@ from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
-from typing import Callable
 from typing import cast
 
 from attrs import define
@@ -37,6 +36,7 @@ from pytask_parallel.typing import is_local_path
 from pytask_parallel.utils import CoiledFunction
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import TracebackType
 
     from pytask import Mark

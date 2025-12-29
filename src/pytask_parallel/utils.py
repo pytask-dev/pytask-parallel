@@ -6,7 +6,6 @@ import inspect
 from functools import partial
 from typing import TYPE_CHECKING
 from typing import Any
-from typing import Callable
 
 from pytask import NodeLoadError
 from pytask import PNode
@@ -19,6 +18,7 @@ from pytask_parallel.nodes import RemotePathNode
 from pytask_parallel.typing import is_local_path
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from concurrent.futures import Future
     from pathlib import Path
     from types import ModuleType

@@ -14,10 +14,14 @@ import warnings
 from importlib.metadata import version
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import Any
+from typing import cast
 
 import pytask_parallel
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import sphinx  # ty: ignore[unresolved-import]
 
 
@@ -100,7 +104,9 @@ ogp_social_cards = {"image": "_static/images/pytask_w_text.png"}
 
 
 # Linkcode, based on numpy doc/source/conf.py
-def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:  # noqa: C901
+def linkcode_resolve(  # noqa: C901, PLR0911
+    domain: str, info: dict[str, str]
+) -> str | None:
     """Determine the URL corresponding to Python object."""
     if domain != "py":
         return None
@@ -122,11 +128,13 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:  # noqa: 
         except AttributeError:  # noqa: PERF203
             return None
 
-    try:
-        fn = inspect.getsourcefile(inspect.unwrap(obj))
-    except TypeError:
-        fget = getattr(obj, "fget", None)
-        fn = None if fget is None else inspect.getsourcefile(inspect.unwrap(fget))
+    obj_for_source = obj if callable(obj) else getattr(obj, "fget", None)
+    if not callable(obj_for_source):
+        return None
+
+    fn = inspect.getsourcefile(
+        inspect.unwrap(cast("Callable[..., Any]", obj_for_source))
+    )
     if not fn:
         return None
 

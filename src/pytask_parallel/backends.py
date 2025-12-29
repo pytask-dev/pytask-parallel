@@ -8,13 +8,16 @@ from concurrent.futures import Future
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
+from typing import TYPE_CHECKING
 from typing import Any
-from typing import Callable
 from typing import ClassVar
 
 import cloudpickle
 from attrs import define
 from loky import get_reusable_executor
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 __all__ = ["ParallelBackend", "ParallelBackendRegistry", "WorkerType", "registry"]
 

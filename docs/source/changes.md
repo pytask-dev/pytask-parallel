@@ -5,6 +5,12 @@ chronological order. Releases follow [semantic versioning](https://semver.org/) 
 releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel).
 
+## Unreleased
+
+- {pull}`129` drops support for Python 3.8 and 3.9 and adds support for Python 3.14.
+- {pull}`130` switches type checking to ty.
+- {pull}`131` updates pre-commit hooks.
+
 ## 0.5.1 - 2025-03-09
 
 - {pull}`114` drops support for Python 3.8 and adds support for Python 3.13.

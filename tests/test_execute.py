@@ -266,9 +266,11 @@ def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_backend):
     tmp_path.joinpath("task_example.py").write_text("def task_example(): pass")
+    input_ = "c\n" if flag == "--trace" else None
     result = runner.invoke(
         cli,
         [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend, flag],
+        input=input_,
     )
     assert result.exit_code == ExitCode.OK
     assert "Started 2 workers" not in result.output

@@ -9,6 +9,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 
 - {pull}`129` drops support for Python 3.8 and 3.9 and adds support for Python 3.14.
 - {pull}`130` switches type checking to ty.
+- {pull}`131` updates pre-commit hooks.
 
 ## 0.5.1 - 2025-03-09
 

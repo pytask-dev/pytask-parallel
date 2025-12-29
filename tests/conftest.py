@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import sys
 from contextlib import contextmanager
-from typing import Callable
+from typing import TYPE_CHECKING
 
 import pytest
 from click.testing import CliRunner
 from nbmake.pytest_items import NotebookItem
 from pytask import storage
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class SysPathsSnapshot:

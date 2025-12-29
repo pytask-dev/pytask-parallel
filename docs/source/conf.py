@@ -123,28 +123,32 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:  # noqa: 
             return None
 
     try:
-        fn = inspect.getsourcefile(inspect.unwrap(obj))  # ty: ignore[invalid-argument-type]
+        fn = inspect.getsourcefile(inspect.unwrap(obj))
     except TypeError:
-        try:  # property
-            fn = inspect.getsourcefile(inspect.unwrap(obj.fget))  # ty: ignore[possibly-unbound-attribute,invalid-argument-type]
-        except (AttributeError, TypeError):
-            fn = None
+        fget = getattr(obj, "fget", None)
+        fn = None if fget is None else inspect.getsourcefile(inspect.unwrap(fget))
     if not fn:
         return None
 
     try:
         source, lineno = inspect.getsourcelines(obj)
     except TypeError:
-        try:  # property
-            source, lineno = inspect.getsourcelines(obj.fget)  # ty: ignore[possibly-unbound-attribute]
-        except (AttributeError, TypeError):
+        fget = getattr(obj, "fget", None)
+        if fget is None:
             lineno = None
+        else:
+            try:
+                source, lineno = inspect.getsourcelines(fget)
+            except TypeError:
+                lineno = None
     except OSError:
         lineno = None
 
     linespec = f"#L{lineno}-L{lineno + len(source) - 1}" if lineno else ""
 
-    fn = os.path.relpath(fn, start=Path(pytask_parallel.__file__).parent)
+    package_file = pytask_parallel.__file__
+    package_root = Path(package_file).parent if package_file else Path.cwd()
+    fn = os.path.relpath(fn, start=package_root)
 
     if "+" in pytask_parallel.__version__:
         return f"https://github.com/pytask-dev/pytask-parallel/blob/main/src/pytask_parallel/{fn}{linespec}"

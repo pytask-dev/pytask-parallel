@@ -13,6 +13,8 @@ from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Callable
+from typing import cast
 
 from attrs import define
 from pytask import PNode
@@ -168,9 +170,11 @@ def wrap_task_in_process(  # noqa: PLR0913
 
 
 def rewrap_task_with_coiled_function(task: PTask) -> CoiledFunction:
-    return functools.wraps(wrap_task_in_process)(
-        CoiledFunction(wrap_task_in_process, **task.attributes["coiled_kwargs"])
+    wrapped = CoiledFunction(wrap_task_in_process, **task.attributes["coiled_kwargs"])
+    decorated = functools.wraps(wrap_task_in_process)(
+        cast("Callable[..., Any]", wrapped)
     )
+    return cast("CoiledFunction", decorated)
 
 
 def _raise_exception_on_breakpoint(*args: Any, **kwargs: Any) -> None:  # noqa: ARG001
@@ -203,7 +207,7 @@ def _render_traceback_to_string(
 ) -> tuple[type[BaseException], BaseException, str]:
     """Process the exception and convert the traceback to a string."""
     traceback = Traceback(exc_info, show_locals=show_locals)
-    segments = console.render(traceback, options=console_options)
+    segments = console.render(cast("Any", traceback), options=console_options)
     text = "".join(segment.text for segment in segments)
     return (*exc_info[:2], text)  # ty: ignore[invalid-return-type]
 

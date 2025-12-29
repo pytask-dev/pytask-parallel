@@ -6,6 +6,7 @@ import sys
 import time
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import cast
 
 import cloudpickle
 from _pytask.node_protocols import PPathNode
@@ -209,7 +210,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         task_module = get_module(task.function, getattr(task, "path", None))
         cloudpickle.register_pickle_by_value(task_module)
 
-        return wrapper_func.submit(  # ty: ignore[possibly-unbound-attribute,invalid-return-type]
+        return cast("Any", wrapper_func).submit(
             task=task,
             console_options=console.options,
             kwargs=kwargs,

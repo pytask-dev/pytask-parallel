@@ -116,6 +116,19 @@ force-single-line = true
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
+[tool.ty.rules]
+unused-ignore-comment = "error"
+
+[tool.ty.terminal]
+error-on-warning = true
+
+[[tool.ty.overrides]]
+include = ["src/**/_version.py"]
+
+[tool.ty.overrides.rules]
+invalid-type-form = "ignore"
+
+
 [tool.pytest.ini_options]
 addopts = ["--nbmake"]
 # Do not add src since it messes with the loading of pytask-parallel as a plugin.

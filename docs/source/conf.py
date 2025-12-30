@@ -214,7 +214,7 @@ html_theme_options = {
 }
 
 
-def setup(app: sphinx.application.Sphinx) -> None:  # ty: ignore[unresolved-attribute]
+def setup(app: sphinx.application.Sphinx) -> None:
     """Configure sphinx."""
     app.add_object_type(
         "confval",

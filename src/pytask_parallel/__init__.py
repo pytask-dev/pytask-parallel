@@ -8,9 +8,7 @@ from pytask_parallel.backends import WorkerType
 from pytask_parallel.backends import registry
 
 try:
-    from ._version import (
-        version as __version__,  # ty: ignore[unresolved-import, unused-ignore-comment]
-    )
+    from ._version import version as __version__  # ty: ignore[unresolved-import]
 except ImportError:
     # broken installation, we don't even try unknown only works because we do poor mans
     # version compare

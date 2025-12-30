@@ -72,7 +72,7 @@ def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperR
         exc_info = sys.exc_info()
     else:
         _handle_function_products(task, out, remote=remote)
-        exc_info = None  # type: ignore[assignment]
+        exc_info = None
     return WrapperResult(
         carry_over_products=None,  # type: ignore[arg-type]
         warning_reports=[],
@@ -273,7 +273,7 @@ def _handle_function_products(
         node.save(value)
         return None
 
-    return tree_map_with_path(_save_and_carry_over_product, task.produces)  # type: ignore[arg-type]
+    return tree_map_with_path(_save_and_carry_over_product, task.produces)
 
 
 def _write_local_files_to_remote(
@@ -285,7 +285,7 @@ def _write_local_files_to_remote(
     to be resolved.
 
     """
-    return tree_map(lambda x: x.load() if isinstance(x, RemotePathNode) else x, kwargs)  # type: ignore[arg-type, return-value]
+    return tree_map(lambda x: x.load() if isinstance(x, RemotePathNode) else x, kwargs)
 
 
 def _delete_local_files_on_remote(kwargs: dict[str, PyTree[Any]]) -> None:
@@ -302,4 +302,4 @@ def _delete_local_files_on_remote(kwargs: dict[str, PyTree[Any]]) -> None:
                 os.close(potential_node.fd)
                 Path(potential_node.remote_path).unlink(missing_ok=True)
 
-    tree_map(_delete, kwargs)  # type: ignore[arg-type]
+    tree_map(_delete, kwargs)

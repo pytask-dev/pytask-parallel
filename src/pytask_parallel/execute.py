@@ -285,15 +285,15 @@ def _update_carry_over_products(
             return x
         raise NotImplementedError
 
-    structure_carry_over_products = tree_structure(carry_over_products)  # type: ignore[arg-type]
-    structure_produces = tree_structure(task.produces)  # type: ignore[arg-type]
+    structure_carry_over_products = tree_structure(carry_over_products)
+    structure_produces = tree_structure(task.produces)
     # strict must be false when none is leaf.
     if structure_produces.is_prefix(structure_carry_over_products, strict=False):
         task.produces = tree_map(
             _update_carry_over_node,
-            task.produces,  # type: ignore[arg-type]
-            carry_over_products,  # type: ignore[arg-type]
-        )  # type: ignore[assignment]
+            task.produces,
+            carry_over_products,
+        )
 
 
 @define(kw_only=True)

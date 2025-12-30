@@ -32,7 +32,7 @@ try:
     from coiled.function import Function as CoiledFunction
 except ImportError:
 
-    class CoiledFunction: ...  # type: ignore[no-redef]
+    class CoiledFunction: ...
 
 
 __all__ = [

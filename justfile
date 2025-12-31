@@ -20,7 +20,7 @@ typing:
 
 # Run linting and formatting
 lint:
-    uvx --with pre-commit-uv pre-commit run -a
+    uvx prek run -a
 
 # Build documentation
 docs:

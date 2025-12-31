@@ -69,14 +69,22 @@ def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperR
     try:
         out = task.function(**kwargs)
     except Exception:  # noqa: BLE001
-        exc_info = sys.exc_info()
+        exc_info_raw = sys.exc_info()
+        exc_info = (
+            cast(
+                "tuple[type[BaseException], BaseException, TracebackType | str | None]",
+                exc_info_raw,
+            )
+            if exc_info_raw[0] is not None
+            else None
+        )
     else:
         _handle_function_products(task, out, remote=remote)
         exc_info = None
     return WrapperResult(
-        carry_over_products=None,  # type: ignore[arg-type]
+        carry_over_products=None,
         warning_reports=[],
-        exc_info=exc_info,  # type: ignore[arg-type]
+        exc_info=exc_info,
         stdout="",
         stderr="",
     )
@@ -161,7 +169,7 @@ def wrap_task_in_process(  # noqa: PLR0913
     captured_stderr_buffer.close()
 
     return WrapperResult(
-        carry_over_products=products,  # type: ignore[arg-type]
+        carry_over_products=products,
         warning_reports=warning_reports,
         exc_info=processed_exc_info,
         stdout=captured_stdout,

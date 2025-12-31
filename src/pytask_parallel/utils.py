@@ -54,7 +54,7 @@ def parse_future_result(
 
         exc_info = _parse_future_exception(future_exception)
         return WrapperResult(
-            carry_over_products=None,  # type: ignore[arg-type]
+            carry_over_products=None,
             warning_reports=[],
             exc_info=exc_info,
             stdout="",

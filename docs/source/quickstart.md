@@ -6,11 +6,11 @@ pytask-parallel is available on [PyPI](https://pypi.org/project/pytask-parallel)
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel). Install it with
 
 ```console
-$ pip install pytask-parallel
+$ uv add pytask-parallel
 
 # or
 
-$ conda install -c conda-forge pytask-parallel
+$ pixi add pytask-parallel
 ```
 
 ## Usage

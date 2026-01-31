@@ -8,7 +8,6 @@ from contextlib import ExitStack
 from multiprocessing import Manager
 from typing import TYPE_CHECKING
 from typing import Any
-from typing import Callable
 from typing import cast
 
 import cloudpickle
@@ -38,6 +37,7 @@ from pytask_parallel.utils import get_module
 from pytask_parallel.utils import parse_future_result
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from concurrent.futures import Future
     from multiprocessing.managers import SyncManager
 

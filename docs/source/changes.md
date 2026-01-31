@@ -11,6 +11,8 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 - {pull}`130` switches type checking to ty.
 - {pull}`131` updates pre-commit hooks.
 - {pull}`132` removes the tox configuration in favor of uv and just.
+- {pull}`137` fixes pickling errors in parallel workers when task modules contain
+  non-picklable globals. Fixes {issue}`136`.
 
 ## 0.5.1 - 2025-03-09
 

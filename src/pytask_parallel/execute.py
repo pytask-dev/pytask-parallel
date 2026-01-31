@@ -6,6 +6,7 @@ import os
 import queue
 import sys
 import time
+from collections import deque
 from contextlib import ExitStack
 from multiprocessing import Manager
 from typing import TYPE_CHECKING
@@ -61,6 +62,9 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     __tracebackhide__ = True
     reports = session.execution_reports
     running_tasks: dict[str, Future[Any]] = {}
+    running_try_last: set[str] = set()
+    queued_tasks: deque[str] = deque()
+    queued_try_last_tasks: deque[str] = deque()
     sleeper = _Sleeper()
     debug_status = _is_debug_status_enabled()
 
@@ -97,10 +101,26 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         elif status_queue_factory == "simple":
             session.config["_status_queue"] = queue.SimpleQueue()
 
+        if live_execution:
+            live_execution.initial_status = start_execution_state
+
         i = 0
+        prefetch_factor = (
+            2
+            if session.config["parallel_backend"]
+            in (
+                ParallelBackend.PROCESSES,
+                ParallelBackend.LOKY,
+                ParallelBackend.THREADS,
+            )
+            else 1
+        )
+        use_prefetch_queue = prefetch_factor > 1
         while session.scheduler.is_active():
             try:
                 newly_collected_reports = []
+                did_enqueue = False
+                did_submit = False
 
                 # If there is any coiled function, the user probably wants to exploit
                 # adaptive scaling. Thus, we need to submit all ready tasks.
@@ -110,7 +130,16 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                 if any_coiled_task:
                     n_new_tasks = 10_000
                 else:
-                    n_new_tasks = session.config["n_workers"] - len(running_tasks)
+                    if use_prefetch_queue:
+                        n_new_tasks = (
+                            session.config["n_workers"] * prefetch_factor
+                        ) - (
+                            len(running_tasks)
+                            + len(queued_tasks)
+                            + len(queued_try_last_tasks)
+                        )
+                    else:
+                        n_new_tasks = session.config["n_workers"] - len(running_tasks)
 
                 ready_tasks = (
                     list(session.scheduler.get_ready(n_new_tasks))
@@ -118,34 +147,87 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                     else []
                 )
 
-                for task_signature in ready_tasks:
-                    task = session.dag.nodes[task_signature]["task"]
-                    if debug_status:
-                        _log_status(
-                            "PENDING"
-                            if start_execution_state == TaskExecutionStatus.PENDING
-                            else "RUNNING",
-                            task_signature,
+                if use_prefetch_queue:
+                    for task_signature in ready_tasks:
+                        task = session.dag.nodes[task_signature]["task"]
+                        if debug_status:
+                            _log_status("PENDING", task_signature)
+                        session.hook.pytask_execute_task_log_start(
+                            session=session,
+                            task=task,
+                            status=start_execution_state,
                         )
-                    session.hook.pytask_execute_task_log_start(
-                        session=session, task=task, status=start_execution_state
-                    )
-                    try:
-                        session.hook.pytask_execute_task_setup(
-                            session=session, task=task
-                        )
-                        running_tasks[task_signature] = (
-                            session.hook.pytask_execute_task(session=session, task=task)
-                        )
-                        sleeper.reset()
-                    except Exception:  # noqa: BLE001
-                        report = ExecutionReport.from_task_and_exception(
-                            task, sys.exc_info()
-                        )
-                        newly_collected_reports.append(report)
-                        session.scheduler.done(task_signature)
+                        if get_marks(task, "try_last"):
+                            queued_try_last_tasks.append(task_signature)
+                        else:
+                            queued_tasks.append(task_signature)
+                        did_enqueue = True
 
-                if not ready_tasks:
+                    def _can_run_try_last() -> bool:
+                        return not (
+                            queued_tasks
+                            or (len(running_tasks) > len(running_try_last))
+                        )
+
+                    while len(running_tasks) < session.config["n_workers"]:
+                        if queued_tasks:
+                            task_signature = queued_tasks.popleft()
+                        elif queued_try_last_tasks and _can_run_try_last():
+                            task_signature = queued_try_last_tasks.popleft()
+                        else:
+                            break
+                        task = session.dag.nodes[task_signature]["task"]
+                        try:
+                            session.hook.pytask_execute_task_setup(
+                                session=session, task=task
+                            )
+                            running_tasks[task_signature] = (
+                                session.hook.pytask_execute_task(
+                                    session=session, task=task
+                                )
+                            )
+                            if get_marks(task, "try_last"):
+                                running_try_last.add(task_signature)
+                            sleeper.reset()
+                            did_submit = True
+                        except Exception:  # noqa: BLE001
+                            report = ExecutionReport.from_task_and_exception(
+                                task, sys.exc_info()
+                            )
+                            newly_collected_reports.append(report)
+                            session.scheduler.done(task_signature)
+                else:
+                    for task_signature in ready_tasks:
+                        task = session.dag.nodes[task_signature]["task"]
+                        if debug_status:
+                            _log_status(
+                                "PENDING"
+                                if start_execution_state == TaskExecutionStatus.PENDING
+                                else "RUNNING",
+                                task_signature,
+                            )
+                        session.hook.pytask_execute_task_log_start(
+                            session=session, task=task, status=start_execution_state
+                        )
+                        try:
+                            session.hook.pytask_execute_task_setup(
+                                session=session, task=task
+                            )
+                            running_tasks[task_signature] = (
+                                session.hook.pytask_execute_task(
+                                    session=session, task=task
+                                )
+                            )
+                            sleeper.reset()
+                            did_submit = True
+                        except Exception:  # noqa: BLE001
+                            report = ExecutionReport.from_task_and_exception(
+                                task, sys.exc_info()
+                            )
+                            newly_collected_reports.append(report)
+                            session.scheduler.done(task_signature)
+
+                if not ready_tasks and not did_enqueue and not did_submit:
                     sleeper.increment()
 
                 for task_signature in list(running_tasks):
@@ -173,6 +255,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                                 )
                             )
                             running_tasks.pop(task_signature)
+                            running_try_last.discard(task_signature)
                             session.scheduler.done(task_signature)
                         else:
                             task = session.dag.nodes[task_signature]["task"]
@@ -192,6 +275,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                                 report = ExecutionReport.from_task(task)
 
                             running_tasks.pop(task_signature)
+                            running_try_last.discard(task_signature)
                             newly_collected_reports.append(report)
                             session.scheduler.done(task_signature)
 

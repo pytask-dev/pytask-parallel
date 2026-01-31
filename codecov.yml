@@ -20,5 +20,4 @@ coverage:
           - end_to_end
 
 ignore:
-  - ".tox/**/*"
   - "src/pytask_parallel/_version.py"

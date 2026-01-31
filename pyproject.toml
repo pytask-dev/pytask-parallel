@@ -8,7 +8,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "attrs>=21.3.0",
     "click>=8.1.8,!=8.2.0",
@@ -45,14 +45,14 @@ test = [
     "nbmake",
     "pytest>=8.4.0",
     "pytest-cov>=5.0.0",
-    { include-group = "coiled" },
-    { include-group = "dask" },
+    {include-group = "coiled"},
+    {include-group = "dask"},
 ]
 typing = [
     "pytask-parallel",
-    "ty",
-    { include-group = "coiled" },
-    { include-group = "dask" },
+    "ty>=0.0.8",
+    {include-group = "coiled"},
+    {include-group = "dask"},
 ]
 
 [project.readme]
@@ -118,6 +118,25 @@ force-single-line = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
+
+[tool.ty.rules]
+unused-ignore-comment = "error"
+
+[tool.ty.terminal]
+error-on-warning = true
+
+[[tool.ty.overrides]]
+include = ["src/**/_version.py"]
+
+[tool.ty.overrides.rules]
+invalid-type-form = "ignore"
+
+[[tool.ty.overrides]]
+include = ["src/**/__init__.py"]
+
+[tool.ty.overrides.rules]
+unused-ignore-comment = "ignore"
+
 
 [tool.pytest.ini_options]
 addopts = ["--nbmake"]

@@ -9,6 +9,7 @@ from multiprocessing import Manager
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
+from typing import cast
 
 import cloudpickle
 from _pytask.node_protocols import PPathNode
@@ -245,7 +246,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         task_module = get_module(task.function, getattr(task, "path", None))
         cloudpickle.register_pickle_by_value(task_module)
 
-        return wrapper_func.submit(  # ty: ignore[possibly-unbound-attribute,invalid-return-type]
+        return cast("Any", wrapper_func).submit(
             task=task,
             console_options=console.options,
             kwargs=kwargs,
@@ -325,15 +326,15 @@ def _update_carry_over_products(
             return x
         raise NotImplementedError
 
-    structure_carry_over_products = tree_structure(carry_over_products)  # type: ignore[arg-type]
-    structure_produces = tree_structure(task.produces)  # type: ignore[arg-type]
+    structure_carry_over_products = tree_structure(carry_over_products)
+    structure_produces = tree_structure(task.produces)
     # strict must be false when none is leaf.
     if structure_produces.is_prefix(structure_carry_over_products, strict=False):
         task.produces = tree_map(
             _update_carry_over_node,
-            task.produces,  # type: ignore[arg-type]
-            carry_over_products,  # type: ignore[arg-type]
-        )  # type: ignore[assignment]
+            task.produces,
+            carry_over_products,
+        )
 
 
 @define(kw_only=True)

@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
     -   id: check-added-large-files
         args: ['--maxkb=25']
@@ -8,11 +8,14 @@ repos:
     -   id: check-merge-conflict
     -   id: check-vcs-permalinks
     -   id: check-yaml
+    -   id: debug-statements
+        exclude: ^src/pytask_parallel/wrappers.py$
     -   id: end-of-file-fixer
     -   id: fix-byte-order-marker
     -   id: mixed-line-ending
     -   id: no-commit-to-branch
         args: [--branch, main]
+    -   id: trailing-whitespace
 -   repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
@@ -23,16 +26,16 @@ repos:
     -   id: python-use-type-annotations
     -   id: text-unicode-replacement-char
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.4
+    rev: v0.14.10
     hooks:
-      - id: ruff
+      - id: ruff-check
       - id: ruff-format
 -   repo: https://github.com/kynan/nbstripout
-    rev: 0.8.1
+    rev: 0.8.2
     hooks:
     -   id: nbstripout
 -   repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.22
+    rev: 1.0.0
     hooks:
     -   id: mdformat
         additional_dependencies: [
@@ -43,7 +46,7 @@ repos:
         args: [--wrap, "88"]
         files: (docs/.)
 -   repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.22
+    rev: 1.0.0
     hooks:
     -   id: mdformat
         additional_dependencies: [
@@ -52,10 +55,10 @@ repos:
         ]
         args: [--wrap, "88"]
         files: (README\.md)
-- repo: https://github.com/codespell-project/codespell
-  rev: v2.4.1
-  hooks:
-    -   id: codespell
+-   repo: https://github.com/crate-ci/typos
+    rev: v1.40.1
+    hooks:
+    -   id: typos
 -   repo: meta
     hooks:
     -   id: check-hooks-apply

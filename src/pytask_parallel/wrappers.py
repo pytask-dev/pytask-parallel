@@ -13,6 +13,7 @@ from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import cast
 
 from attrs import define
 from pytask import PNode
@@ -35,6 +36,7 @@ from pytask_parallel.typing import is_local_path
 from pytask_parallel.utils import CoiledFunction
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import TracebackType
 
     from pytask import Mark
@@ -74,19 +76,26 @@ def wrap_task_in_thread(
     try:
         out = task.function(**kwargs)
     except Exception:  # noqa: BLE001
-        exc_info = sys.exc_info()
+        exc_info_raw = sys.exc_info()
+        exc_info = (
+            cast(
+                "tuple[type[BaseException], BaseException, TracebackType | str | None]",
+                exc_info_raw,
+            )
+            if exc_info_raw[0] is not None
+            else None
+        )
     else:
         _handle_function_products(task, out, remote=remote)
-        exc_info = None  # type: ignore[assignment]
+        exc_info = None
 
     # Remove task from shared memory to indicate that it is no longer being executed.
     if shared_memory is not None:
         shared_memory.pop(task.signature, None)
-
     return WrapperResult(
-        carry_over_products=None,  # type: ignore[arg-type]
+        carry_over_products=None,
         warning_reports=[],
-        exc_info=exc_info,  # type: ignore[arg-type]
+        exc_info=exc_info,
         stdout="",
         stderr="",
     )
@@ -180,7 +189,7 @@ def wrap_task_in_process(  # noqa: PLR0913
         shared_memory.pop(task.signature, None)
 
     return WrapperResult(
-        carry_over_products=products,  # type: ignore[arg-type]
+        carry_over_products=products,
         warning_reports=warning_reports,
         exc_info=processed_exc_info,
         stdout=captured_stdout,
@@ -189,9 +198,11 @@ def wrap_task_in_process(  # noqa: PLR0913
 
 
 def rewrap_task_with_coiled_function(task: PTask) -> CoiledFunction:
-    return functools.wraps(wrap_task_in_process)(
-        CoiledFunction(wrap_task_in_process, **task.attributes["coiled_kwargs"])
+    wrapped = CoiledFunction(wrap_task_in_process, **task.attributes["coiled_kwargs"])
+    decorated = functools.wraps(wrap_task_in_process)(
+        cast("Callable[..., Any]", wrapped)
     )
+    return cast("CoiledFunction", decorated)
 
 
 def _raise_exception_on_breakpoint(*args: Any, **kwargs: Any) -> None:  # noqa: ARG001
@@ -224,9 +235,9 @@ def _render_traceback_to_string(
 ) -> tuple[type[BaseException], BaseException, str]:
     """Process the exception and convert the traceback to a string."""
     traceback = Traceback(exc_info, show_locals=show_locals)
-    segments = console.render(traceback, options=console_options)
+    segments = console.render(cast("Any", traceback), options=console_options)
     text = "".join(segment.text for segment in segments)
-    return (*exc_info[:2], text)  # ty: ignore[invalid-return-type]
+    return (*exc_info[:2], text)
 
 
 def _handle_function_products(
@@ -290,7 +301,7 @@ def _handle_function_products(
         node.save(value)
         return None
 
-    return tree_map_with_path(_save_and_carry_over_product, task.produces)  # type: ignore[arg-type]
+    return tree_map_with_path(_save_and_carry_over_product, task.produces)
 
 
 def _write_local_files_to_remote(
@@ -302,7 +313,7 @@ def _write_local_files_to_remote(
     to be resolved.
 
     """
-    return tree_map(lambda x: x.load() if isinstance(x, RemotePathNode) else x, kwargs)  # type: ignore[arg-type, return-value]
+    return tree_map(lambda x: x.load() if isinstance(x, RemotePathNode) else x, kwargs)
 
 
 def _delete_local_files_on_remote(kwargs: dict[str, PyTree[Any]]) -> None:
@@ -319,4 +330,4 @@ def _delete_local_files_on_remote(kwargs: dict[str, PyTree[Any]]) -> None:
                 os.close(potential_node.fd)
                 Path(potential_node.remote_path).unlink(missing_ok=True)
 
-    tree_map(_delete, kwargs)  # type: ignore[arg-type]
+    tree_map(_delete, kwargs)

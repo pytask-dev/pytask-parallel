@@ -14,10 +14,14 @@ import warnings
 from importlib.metadata import version
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import Any
+from typing import cast
 
 import pytask_parallel
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import sphinx  # ty: ignore[unresolved-import]
 
 
@@ -100,7 +104,9 @@ ogp_social_cards = {"image": "_static/images/pytask_w_text.png"}
 
 
 # Linkcode, based on numpy doc/source/conf.py
-def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:  # noqa: C901
+def linkcode_resolve(  # noqa: C901, PLR0911
+    domain: str, info: dict[str, str]
+) -> str | None:
     """Determine the URL corresponding to Python object."""
     if domain != "py":
         return None
@@ -122,29 +128,35 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:  # noqa: 
         except AttributeError:  # noqa: PERF203
             return None
 
-    try:
-        fn = inspect.getsourcefile(inspect.unwrap(obj))  # ty: ignore[invalid-argument-type]
-    except TypeError:
-        try:  # property
-            fn = inspect.getsourcefile(inspect.unwrap(obj.fget))  # ty: ignore[possibly-unbound-attribute,invalid-argument-type]
-        except (AttributeError, TypeError):
-            fn = None
+    obj_for_source = obj if callable(obj) else getattr(obj, "fget", None)
+    if not callable(obj_for_source):
+        return None
+
+    fn = inspect.getsourcefile(
+        inspect.unwrap(cast("Callable[..., Any]", obj_for_source))
+    )
     if not fn:
         return None
 
     try:
         source, lineno = inspect.getsourcelines(obj)
     except TypeError:
-        try:  # property
-            source, lineno = inspect.getsourcelines(obj.fget)  # ty: ignore[possibly-unbound-attribute]
-        except (AttributeError, TypeError):
+        fget = getattr(obj, "fget", None)
+        if fget is None:
             lineno = None
+        else:
+            try:
+                source, lineno = inspect.getsourcelines(fget)
+            except TypeError:
+                lineno = None
     except OSError:
         lineno = None
 
     linespec = f"#L{lineno}-L{lineno + len(source) - 1}" if lineno else ""
 
-    fn = os.path.relpath(fn, start=Path(pytask_parallel.__file__).parent)
+    package_file = pytask_parallel.__file__
+    package_root = Path(package_file).parent if package_file else Path.cwd()
+    fn = os.path.relpath(fn, start=package_root)
 
     if "+" in pytask_parallel.__version__:
         return f"https://github.com/pytask-dev/pytask-parallel/blob/main/src/pytask_parallel/{fn}{linespec}"
@@ -202,7 +214,7 @@ html_theme_options = {
 }
 
 
-def setup(app: sphinx.application.Sphinx) -> None:  # ty: ignore[unresolved-attribute]
+def setup(app: sphinx.application.Sphinx) -> None:
     """Configure sphinx."""
     app.add_object_type(
         "confval",

@@ -6,7 +6,6 @@ import inspect
 from functools import partial
 from typing import TYPE_CHECKING
 from typing import Any
-from typing import Callable
 
 from pytask import NodeLoadError
 from pytask import PNode
@@ -19,6 +18,7 @@ from pytask_parallel.nodes import RemotePathNode
 from pytask_parallel.typing import is_local_path
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from concurrent.futures import Future
     from pathlib import Path
     from types import ModuleType
@@ -32,7 +32,7 @@ try:
     from coiled.function import Function as CoiledFunction
 except ImportError:
 
-    class CoiledFunction: ...  # type: ignore[no-redef]
+    class CoiledFunction: ...
 
 
 __all__ = [
@@ -54,7 +54,7 @@ def parse_future_result(
 
         exc_info = _parse_future_exception(future_exception)
         return WrapperResult(
-            carry_over_products=None,  # type: ignore[arg-type]
+            carry_over_products=None,
             warning_reports=[],
             exc_info=exc_info,
             stdout="",

@@ -63,6 +63,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     reports = session.execution_reports
     running_tasks: dict[str, Future[Any]] = {}
     running_try_last: set[str] = set()
+    queued_try_first_tasks: deque[str] = deque()
     queued_tasks: deque[str] = deque()
     queued_try_last_tasks: deque[str] = deque()
     sleeper = _Sleeper()
@@ -132,6 +133,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                 elif use_prefetch_queue:
                     n_new_tasks = (session.config["n_workers"] * prefetch_factor) - (
                         len(running_tasks)
+                        + len(queued_try_first_tasks)
                         + len(queued_tasks)
                         + len(queued_try_last_tasks)
                     )
@@ -154,7 +156,9 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             task=task,
                             status=start_execution_state,
                         )
-                        if get_marks(task, "try_last"):
+                        if get_marks(task, "try_first"):
+                            queued_try_first_tasks.append(task_signature)
+                        elif get_marks(task, "try_last"):
                             queued_try_last_tasks.append(task_signature)
                         else:
                             queued_tasks.append(task_signature)
@@ -162,11 +166,15 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
                     def _can_run_try_last() -> bool:
                         return not (
-                            queued_tasks or (len(running_tasks) > len(running_try_last))
+                            queued_try_first_tasks
+                            or queued_tasks
+                            or (len(running_tasks) > len(running_try_last))
                         )
 
                     while len(running_tasks) < session.config["n_workers"]:
-                        if queued_tasks:
+                        if queued_try_first_tasks:
+                            task_signature = queued_try_first_tasks.popleft()
+                        elif queued_tasks:
                             task_signature = queued_tasks.popleft()
                         elif queued_try_last_tasks and _can_run_try_last():
                             task_signature = queued_try_last_tasks.popleft()

@@ -34,6 +34,7 @@ def _write_tasks(path: Path, n_tasks: int, sleep_s: float, jitter_s: float) -> N
 
 
 def main() -> int:
+    """Run a demo pytask session to show pending/running status updates."""
     parser = argparse.ArgumentParser(
         description="Run a pytask demo to observe pending/running status updates."
     )
@@ -95,7 +96,8 @@ def main() -> int:
     env.setdefault("PYTHONUTF8", "1")
     if args.log_status:
         env.setdefault("PYTASK_PARALLEL_DEBUG_STATUS", "1")
-    return subprocess.call(cmd, env=env)
+    # Controlled command built from explicit args; safe for local demo usage.
+    return subprocess.call(cmd, env=env)  # noqa: S603
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import queue
 import sys
 import time
@@ -61,6 +62,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     reports = session.execution_reports
     running_tasks: dict[str, Future[Any]] = {}
     sleeper = _Sleeper()
+    debug_status = _is_debug_status_enabled()
 
     # Create a shared queue to differentiate between running and pending tasks for
     # some parallel backends.
@@ -118,6 +120,13 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
                 for task_signature in ready_tasks:
                     task = session.dag.nodes[task_signature]["task"]
+                    if debug_status:
+                        _log_status(
+                            "PENDING"
+                            if start_execution_state == TaskExecutionStatus.PENDING
+                            else "RUNNING",
+                            task_signature,
+                        )
                     session.hook.pytask_execute_task_log_start(
                         session=session, task=task, status=start_execution_state
                     )
@@ -188,7 +197,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
                 # Check if tasks are not pending but running and update the live
                 # status.
-                if live_execution and "_status_queue" in session.config:
+                if (live_execution or debug_status) and "_status_queue" in session.config:
                     status_queue = session.config["_status_queue"]
                     while True:
                         try:
@@ -196,9 +205,12 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                         except queue.Empty:
                             break
                         if started_task in running_tasks:
-                            live_execution.update_task(
-                                started_task, status=TaskExecutionStatus.RUNNING
-                            )
+                            if live_execution:
+                                live_execution.update_task(
+                                    started_task, status=TaskExecutionStatus.RUNNING
+                                )
+                            if debug_status:
+                                _log_status("RUNNING", started_task)
 
                 for report in newly_collected_reports:
                     session.hook.pytask_execute_task_process_report(
@@ -305,6 +317,17 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
 def pytask_unconfigure() -> None:
     """Clean up the parallel executor."""
     registry.reset()
+
+
+def _is_debug_status_enabled() -> bool:
+    """Return whether to emit debug status updates."""
+    value = os.environ.get("PYTASK_PARALLEL_DEBUG_STATUS", "")
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _log_status(status: str, task_signature: str) -> None:
+    """Log a status transition for a task."""
+    console.print(f"[pytask-parallel] {status}: {task_signature}")
 
 
 def _update_carry_over_products(

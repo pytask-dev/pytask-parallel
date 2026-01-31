@@ -48,6 +48,17 @@ def main() -> int:
     )
     parser.add_argument("--entries", type=int, default=30)
     parser.add_argument(
+        "--live",
+        action="store_true",
+        help="Use the live rich table instead of raw logs.",
+    )
+    parser.add_argument(
+        "--log-status",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Emit pending/running status logs from the main process.",
+    )
+    parser.add_argument(
         "--dir",
         type=Path,
         default=Path(__file__).with_name("pending_status_demo"),
@@ -75,9 +86,15 @@ def main() -> int:
         "--n-entries-in-table",
         str(args.entries),
     ]
+    if not args.live:
+        cmd.extend(["-s", "-v", "0"])
+    sys.stdout.write(f"Running: {' '.join(cmd)}\n")
+    sys.stdout.flush()
     env = dict(os.environ)
     env.setdefault("PYTHONIOENCODING", "utf-8")
     env.setdefault("PYTHONUTF8", "1")
+    if args.log_status:
+        env.setdefault("PYTASK_PARALLEL_DEBUG_STATUS", "1")
     return subprocess.call(cmd, env=env)
 
 

@@ -364,3 +364,56 @@ def test_execute_tasks_and_pass_values_by_python_node_product(
     )
     assert result.exit_code == ExitCode.OK
     assert tmp_path.joinpath("file.txt").read_text() == "This is the text."
+
+
+@pytest.mark.parametrize(
+    "parallel_backend",
+    [
+        ParallelBackend.PROCESSES,
+        pytest.param(ParallelBackend.LOKY, marks=skip_if_deadlock),
+    ],
+)
+def test_parallel_execution_with_mark_import(runner, tmp_path, parallel_backend):
+    source = """
+    from pytask import mark, task
+
+    @task
+    def task_assert_math():
+        assert 2 + 2 == 4
+    """
+    tmp_path.joinpath("task_mark.py").write_text(textwrap.dedent(source))
+    result = runner.invoke(
+        cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend]
+    )
+    assert result.exit_code == ExitCode.OK
+
+
+@pytest.mark.parametrize(
+    "parallel_backend",
+    [
+        ParallelBackend.PROCESSES,
+        pytest.param(ParallelBackend.LOKY, marks=skip_if_deadlock),
+    ],
+)
+def test_parallel_execution_with_closed_file_handle(
+    runner, tmp_path, parallel_backend
+):
+    source = """
+    from pathlib import Path
+    from pytask import task
+
+    data_path = Path(__file__).parent / "data.txt"
+    data_path.write_text("hello", encoding="utf-8")
+
+    with data_path.open(encoding="utf-8") as f:
+        content = f.read()
+
+    @task
+    def task_assert_math():
+        assert content == "hello"
+    """
+    tmp_path.joinpath("task_file.py").write_text(textwrap.dedent(source))
+    result = runner.invoke(
+        cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend]
+    )
+    assert result.exit_code == ExitCode.OK

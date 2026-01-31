@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import ClassVar
 
+import os
+import sys
 import cloudpickle
 from attrs import define
 from loky import get_reusable_executor
@@ -19,7 +21,46 @@ from loky import get_reusable_executor
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-__all__ = ["ParallelBackend", "ParallelBackendRegistry", "WorkerType", "registry"]
+__all__ = [
+    "ParallelBackend",
+    "ParallelBackendRegistry",
+    "WorkerType",
+    "registry",
+    "set_worker_root",
+]
+
+_WORKER_ROOT: str | None = None
+
+
+def set_worker_root(path: os.PathLike[str] | str) -> None:
+    """Configure the root path for worker processes.
+
+    Spawned workers (notably on Windows) start with a clean interpreter and may not
+    inherit the parent's import path. We set both ``sys.path`` and ``PYTHONPATH`` so
+    task modules are importable by reference, which avoids pickling module globals.
+
+    """
+    global _WORKER_ROOT
+    root = os.fspath(path)
+    _WORKER_ROOT = root
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    # Ensure custom process backends can import task modules by reference.
+    separator = os.pathsep
+    current = os.environ.get("PYTHONPATH", "")
+    parts = [p for p in current.split(separator) if p] if current else []
+    if root not in parts:
+        parts.insert(0, root)
+        os.environ["PYTHONPATH"] = separator.join(parts)
+
+
+def _configure_worker(root: str | None) -> None:
+    """Set cwd and sys.path for worker processes."""
+    if not root:
+        return
+    os.chdir(root)
+    if root not in sys.path:
+        sys.path.insert(0, root)
 
 
 def _deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:
@@ -75,12 +116,16 @@ def _get_dask_executor(n_workers: int) -> Executor:
 
 def _get_loky_executor(n_workers: int) -> Executor:
     """Get a loky executor."""
-    return get_reusable_executor(max_workers=n_workers)
+    return get_reusable_executor(
+        max_workers=n_workers, initializer=_configure_worker, initargs=(_WORKER_ROOT,)
+    )
 
 
 def _get_process_pool_executor(n_workers: int) -> Executor:
     """Get a process pool executor."""
-    return _CloudpickleProcessPoolExecutor(max_workers=n_workers)
+    return _CloudpickleProcessPoolExecutor(
+        max_workers=n_workers, initializer=_configure_worker, initargs=(_WORKER_ROOT,)
+    )
 
 
 def _get_thread_pool_executor(n_workers: int) -> Executor:

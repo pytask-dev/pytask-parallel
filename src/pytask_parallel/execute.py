@@ -197,7 +197,9 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
                 # Check if tasks are not pending but running and update the live
                 # status.
-                if (live_execution or debug_status) and "_status_queue" in session.config:
+                if (
+                    live_execution or debug_status
+                ) and "_status_queue" in session.config:
                     status_queue = session.config["_status_queue"]
                     while True:
                         try:

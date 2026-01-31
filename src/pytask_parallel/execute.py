@@ -129,17 +129,14 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                 #
                 if any_coiled_task:
                     n_new_tasks = 10_000
+                elif use_prefetch_queue:
+                    n_new_tasks = (session.config["n_workers"] * prefetch_factor) - (
+                        len(running_tasks)
+                        + len(queued_tasks)
+                        + len(queued_try_last_tasks)
+                    )
                 else:
-                    if use_prefetch_queue:
-                        n_new_tasks = (
-                            session.config["n_workers"] * prefetch_factor
-                        ) - (
-                            len(running_tasks)
-                            + len(queued_tasks)
-                            + len(queued_try_last_tasks)
-                        )
-                    else:
-                        n_new_tasks = session.config["n_workers"] - len(running_tasks)
+                    n_new_tasks = session.config["n_workers"] - len(running_tasks)
 
                 ready_tasks = (
                     list(session.scheduler.get_ready(n_new_tasks))
@@ -165,8 +162,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
                     def _can_run_try_last() -> bool:
                         return not (
-                            queued_tasks
-                            or (len(running_tasks) > len(running_try_last))
+                            queued_tasks or (len(running_tasks) > len(running_try_last))
                         )
 
                     while len(running_tasks) < session.config["n_workers"]:

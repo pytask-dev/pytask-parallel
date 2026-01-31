@@ -76,9 +76,6 @@ pytask_parallel = "pytask_parallel.plugin"
 requires = ["hatchling", "hatch_vcs"]
 build-backend = "hatchling.build"
 
-[tool.uv.source]
-pytask = { git = "https://github.com/pytask-dev/pytask", rev = "allow-setting-task-status" }
-
 [tool.hatch.build.hooks.vcs]
 version-file = "src/pytask_parallel/_version.py"
 

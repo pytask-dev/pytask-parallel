@@ -29,7 +29,7 @@ __all__ = [
     "set_worker_root",
 ]
 
-_WORKER_STATE: dict[str, str | None] = {"root": None}
+_WORKER_ROOT: str | None = None
 
 
 def set_worker_root(path: os.PathLike[str] | str) -> None:
@@ -41,7 +41,8 @@ def set_worker_root(path: os.PathLike[str] | str) -> None:
 
     """
     root = os.fspath(path)
-    _WORKER_STATE["root"] = root
+    global _WORKER_ROOT  # noqa: PLW0603
+    _WORKER_ROOT = root
     if root not in sys.path:
         sys.path.insert(0, root)
     # Ensure custom process backends can import task modules by reference.
@@ -118,7 +119,7 @@ def _get_loky_executor(n_workers: int) -> Executor:
     return get_reusable_executor(
         max_workers=n_workers,
         initializer=_configure_worker,
-        initargs=(_WORKER_STATE["root"],),
+        initargs=(_WORKER_ROOT,),
     )
 
 
@@ -127,7 +128,7 @@ def _get_process_pool_executor(n_workers: int) -> Executor:
     return _CloudpickleProcessPoolExecutor(
         max_workers=n_workers,
         initializer=_configure_worker,
-        initargs=(_WORKER_STATE["root"],),
+        initargs=(_WORKER_ROOT,),
     )
 
 

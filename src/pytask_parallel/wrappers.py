@@ -38,6 +38,7 @@ from pytask_parallel.utils import CoiledFunction
 if TYPE_CHECKING:
     from collections.abc import Callable
     from queue import Queue
+    from queue import SimpleQueue
     from types import TracebackType
 
     from pytask import Mark
@@ -62,7 +63,7 @@ def wrap_task_in_thread(
     task: PTask,
     *,
     remote: bool,
-    status_queue: Queue[str] | None = None,
+    status_queue: "Queue[str] | SimpleQueue[str] | None" = None,
     **kwargs: Any,
 ) -> WrapperResult:
     """Mock execution function such that it returns the same as for processes.
@@ -110,7 +111,7 @@ def wrap_task_in_process(  # noqa: PLR0913
     kwargs: dict[str, Any],
     remote: bool,
     session_filterwarnings: tuple[str, ...],
-    status_queue: Queue[str] | None = None,
+    status_queue: "Queue[str] | SimpleQueue[str] | None" = None,
     show_locals: bool,
     task_filterwarnings: tuple[Mark, ...],
 ) -> WrapperResult:

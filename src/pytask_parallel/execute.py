@@ -66,14 +66,19 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     # some parallel backends.
     if session.config["parallel_backend"] in (
         ParallelBackend.PROCESSES,
-        ParallelBackend.THREADS,
         ParallelBackend.LOKY,
     ):
         manager_cls: Callable[[], SyncManager] | type[ExitStack] = Manager
         start_execution_state = TaskExecutionStatus.PENDING
+        status_queue_factory = "manager"
+    elif session.config["parallel_backend"] == ParallelBackend.THREADS:
+        manager_cls = ExitStack
+        start_execution_state = TaskExecutionStatus.PENDING
+        status_queue_factory = "simple"
     else:
         manager_cls = ExitStack
         start_execution_state = TaskExecutionStatus.RUNNING
+        status_queue_factory = None
 
     # Get the live execution manager from the registry if it exists.
     live_execution = session.config["pm"].get_plugin("live_execution")
@@ -85,12 +90,10 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
         session.config["parallel_backend"], n_workers=session.config["n_workers"]
     )
     with session.config["_parallel_executor"], manager_cls() as manager:
-        if session.config["parallel_backend"] in (
-            ParallelBackend.PROCESSES,
-            ParallelBackend.THREADS,
-            ParallelBackend.LOKY,
-        ):
+        if status_queue_factory == "manager":
             session.config["_status_queue"] = manager.Queue()  # type: ignore[union-attr]
+        elif status_queue_factory == "simple":
+            session.config["_status_queue"] = queue.SimpleQueue()
 
         i = 0
         while session.scheduler.is_active():

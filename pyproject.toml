@@ -33,7 +33,7 @@ docs = [
     "matplotlib",
     "myst-parser",
     "nbsphinx",
-    "sphinx",
+    "sphinx<9",
     "sphinx-autobuild",
     "sphinx-click",
     "sphinx-copybutton",

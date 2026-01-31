@@ -217,7 +217,7 @@ def _render_traceback_to_string(
     traceback = Traceback(exc_info, show_locals=show_locals)
     segments = console.render(cast("Any", traceback), options=console_options)
     text = "".join(segment.text for segment in segments)
-    return (*exc_info[:2], text)  # ty: ignore[invalid-return-type]
+    return (*exc_info[:2], text)
 
 
 def _handle_function_products(

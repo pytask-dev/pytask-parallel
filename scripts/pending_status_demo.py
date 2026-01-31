@@ -75,7 +75,6 @@ def main() -> int:
         "--n-entries-in-table",
         str(args.entries),
     ]
-    print("Running:", " ".join(cmd))
     env = dict(os.environ)
     env.setdefault("PYTHONIOENCODING", "utf-8")
     env.setdefault("PYTHONUTF8", "1")

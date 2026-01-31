@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import queue
 import sys
 import time
 from contextlib import ExitStack
@@ -61,8 +62,8 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     running_tasks: dict[str, Future[Any]] = {}
     sleeper = _Sleeper()
 
-    # Create a shared memory object to differentiate between running and pending
-    # tasks for some parallel backends.
+    # Create a shared queue to differentiate between running and pending tasks for
+    # some parallel backends.
     if session.config["parallel_backend"] in (
         ParallelBackend.PROCESSES,
         ParallelBackend.THREADS,
@@ -89,7 +90,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
             ParallelBackend.THREADS,
             ParallelBackend.LOKY,
         ):
-            session.config["_shared_memory"] = manager.dict()  # type: ignore[union-attr]
+            session.config["_status_queue"] = manager.Queue()  # type: ignore[union-attr]
 
         i = 0
         while session.scheduler.is_active():
@@ -187,12 +188,18 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             newly_collected_reports.append(report)
                             session.scheduler.done(task_signature)
 
-                    # Check if tasks are not pending but running and update the live
-                    # status.
-                    elif live_execution and "_shared_memory" in session.config:
-                        if task_signature in session.config["_shared_memory"]:
+                # Check if tasks are not pending but running and update the live
+                # status.
+                if live_execution and "_status_queue" in session.config:
+                    status_queue = session.config["_status_queue"]
+                    while True:
+                        try:
+                            started_task = status_queue.get(block=False)
+                        except queue.Empty:
+                            break
+                        if started_task in running_tasks:
                             live_execution.update_task(
-                                task_signature, status=TaskExecutionStatus.RUNNING
+                                started_task, status=TaskExecutionStatus.RUNNING
                             )
 
                 for report in newly_collected_reports:
@@ -275,7 +282,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             kwargs=kwargs,
             remote=remote,
             session_filterwarnings=session.config["filterwarnings"],
-            shared_memory=session.config.get("_shared_memory"),
+            status_queue=session.config.get("_status_queue"),
             show_locals=session.config["show_locals"],
             task_filterwarnings=get_marks(task, "filterwarnings"),
         )
@@ -288,7 +295,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
             wrap_task_in_thread,
             task=task,
             remote=False,
-            shared_memory=session.config.get("_shared_memory"),
+            status_queue=session.config.get("_status_queue"),
             **kwargs,
         )
 

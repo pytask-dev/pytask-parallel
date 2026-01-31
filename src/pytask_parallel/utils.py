@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import importlib.util
 import inspect
-from pathlib import Path
 from functools import partial
+from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -22,7 +22,6 @@ from pytask_parallel.typing import is_local_path
 if TYPE_CHECKING:
     from collections.abc import Callable
     from concurrent.futures import Future
-    from pathlib import Path
     from types import ModuleType
     from types import TracebackType
 

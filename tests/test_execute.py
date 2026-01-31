@@ -395,9 +395,7 @@ def test_parallel_execution_with_mark_import(runner, tmp_path, parallel_backend)
         pytest.param(ParallelBackend.LOKY, marks=skip_if_deadlock),
     ],
 )
-def test_parallel_execution_with_closed_file_handle(
-    runner, tmp_path, parallel_backend
-):
+def test_parallel_execution_with_closed_file_handle(runner, tmp_path, parallel_backend):
     source = """
     from pathlib import Path
     from pytask import task

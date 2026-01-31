@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import sys
 import warnings
 from concurrent.futures import Executor
 from concurrent.futures import Future
@@ -12,8 +14,6 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import ClassVar
 
-import os
-import sys
 import cloudpickle
 from attrs import define
 from loky import get_reusable_executor

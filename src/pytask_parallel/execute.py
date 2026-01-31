@@ -105,15 +105,10 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                 # Unfortunately, all submitted tasks are shown as running although some
                 # are pending.
                 #
-                # For all other backends, at least four more tasks are submitted and
-                # otherwise 10% more. This is a heuristic to avoid submitting too few
-                # tasks.
-                #
-                # See #98 for more information.
                 if any_coiled_task:
                     n_new_tasks = 10_000
                 else:
-                    n_new_tasks = max(4, int(session.config["n_workers"] * 0.1))
+                    n_new_tasks = session.config["n_workers"] - len(running_tasks)
 
                 ready_tasks = (
                     list(session.scheduler.get_ready(n_new_tasks))

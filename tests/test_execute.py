@@ -395,6 +395,32 @@ def test_parallel_execution_with_mark_import(runner, tmp_path, parallel_backend)
         pytest.param(ParallelBackend.LOKY, marks=skip_if_deadlock),
     ],
 )
+def test_parallel_execution_with_mark_import_in_loop(
+    runner, tmp_path, parallel_backend
+):
+    source = """
+    from pytask import mark, task
+
+    for data_name in ("a", "b", "c"):
+
+        @task(id=data_name)
+        def task_assert_math_loop():
+            assert 2 + 2 == 4
+    """
+    tmp_path.joinpath("task_mark_loop.py").write_text(textwrap.dedent(source))
+    result = runner.invoke(
+        cli, [tmp_path.as_posix(), "-n", "2", "--parallel-backend", parallel_backend]
+    )
+    assert result.exit_code == ExitCode.OK
+
+
+@pytest.mark.parametrize(
+    "parallel_backend",
+    [
+        ParallelBackend.PROCESSES,
+        pytest.param(ParallelBackend.LOKY, marks=skip_if_deadlock),
+    ],
+)
 def test_parallel_execution_with_closed_file_handle(runner, tmp_path, parallel_backend):
     source = """
     from pathlib import Path

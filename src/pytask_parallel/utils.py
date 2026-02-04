@@ -40,6 +40,7 @@ __all__ = [
     "create_kwargs_for_task",
     "get_module",
     "parse_future_result",
+    "strip_annotation_locals",
     "should_pickle_module_by_value",
 ]
 
@@ -152,6 +153,19 @@ def get_module(func: Callable[..., Any], path: Path | None) -> ModuleType:
     if path:
         return inspect.getmodule(func, path.as_posix())  # type: ignore[return-value]
     return inspect.getmodule(func)  # type: ignore[return-value]
+
+
+def strip_annotation_locals(task: PTask) -> None:
+    """Remove annotation locals from task functions before pickling.
+
+    The locals snapshot is only needed during collection to evaluate annotations.
+    Keeping it around for execution can break pickling when it contains non-serializable
+    objects (for example, when importing ``pytask.mark`` in loop-generated tasks).
+
+    """
+    meta = getattr(task.function, "pytask_meta", None)
+    if meta is not None and getattr(meta, "annotation_locals", None) is not None:
+        meta.annotation_locals = None
 
 
 def should_pickle_module_by_value(module: ModuleType) -> bool:

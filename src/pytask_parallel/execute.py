@@ -32,6 +32,7 @@ from pytask_parallel.typing import is_coiled_function
 from pytask_parallel.utils import create_kwargs_for_task
 from pytask_parallel.utils import get_module
 from pytask_parallel.utils import parse_future_result
+from pytask_parallel.utils import strip_annotation_locals
 from pytask_parallel.utils import should_pickle_module_by_value
 
 if TYPE_CHECKING:
@@ -198,6 +199,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
     kwargs = create_kwargs_for_task(task, remote=remote)
 
     if is_coiled_function(task):
+        strip_annotation_locals(task)
         # Prevent circular import for coiled backend.
         from pytask_parallel.wrappers import (  # noqa: PLC0415
             rewrap_task_with_coiled_function,
@@ -225,6 +227,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         )
 
     if worker_type == WorkerType.PROCESSES:
+        strip_annotation_locals(task)
         # Prevent circular import for loky backend.
         from pytask_parallel.wrappers import wrap_task_in_process  # noqa: PLC0415
 

@@ -40,8 +40,8 @@ __all__ = [
     "create_kwargs_for_task",
     "get_module",
     "parse_future_result",
-    "strip_annotation_locals",
     "should_pickle_module_by_value",
+    "strip_annotation_locals",
 ]
 
 

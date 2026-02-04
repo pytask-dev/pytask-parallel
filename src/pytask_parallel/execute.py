@@ -32,8 +32,8 @@ from pytask_parallel.typing import is_coiled_function
 from pytask_parallel.utils import create_kwargs_for_task
 from pytask_parallel.utils import get_module
 from pytask_parallel.utils import parse_future_result
-from pytask_parallel.utils import strip_annotation_locals
 from pytask_parallel.utils import should_pickle_module_by_value
+from pytask_parallel.utils import strip_annotation_locals
 
 if TYPE_CHECKING:
     from concurrent.futures import Future

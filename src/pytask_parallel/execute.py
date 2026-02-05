@@ -26,11 +26,14 @@ from pytask.tree_util import tree_structure
 
 from pytask_parallel.backends import WorkerType
 from pytask_parallel.backends import registry
+from pytask_parallel.backends import set_worker_root
 from pytask_parallel.typing import CarryOverPath
 from pytask_parallel.typing import is_coiled_function
 from pytask_parallel.utils import create_kwargs_for_task
 from pytask_parallel.utils import get_module
 from pytask_parallel.utils import parse_future_result
+from pytask_parallel.utils import should_pickle_module_by_value
+from pytask_parallel.utils import strip_annotation_locals
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -57,6 +60,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
     # The executor can only be created after the collection to give users the
     # possibility to inject their own executors.
+    set_worker_root(session.config["root"])
     session.config["_parallel_executor"] = registry.get_parallel_backend(
         session.config["parallel_backend"], n_workers=session.config["n_workers"]
     )
@@ -195,6 +199,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
     kwargs = create_kwargs_for_task(task, remote=remote)
 
     if is_coiled_function(task):
+        strip_annotation_locals(task)
         # Prevent circular import for coiled backend.
         from pytask_parallel.wrappers import (  # noqa: PLC0415
             rewrap_task_with_coiled_function,
@@ -208,7 +213,8 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         # cloudpickle will pickle it with the function. See cloudpickle#417, pytask#373
         # and pytask#374.
         task_module = get_module(task.function, getattr(task, "path", None))
-        cloudpickle.register_pickle_by_value(task_module)
+        if should_pickle_module_by_value(task_module):
+            cloudpickle.register_pickle_by_value(task_module)
 
         return cast("Any", wrapper_func).submit(
             task=task,
@@ -221,6 +227,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         )
 
     if worker_type == WorkerType.PROCESSES:
+        strip_annotation_locals(task)
         # Prevent circular import for loky backend.
         from pytask_parallel.wrappers import wrap_task_in_process  # noqa: PLC0415
 
@@ -230,7 +237,8 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         # cloudpickle will pickle it with the function. See cloudpickle#417, pytask#373
         # and pytask#374.
         task_module = get_module(task.function, getattr(task, "path", None))
-        cloudpickle.register_pickle_by_value(task_module)
+        if should_pickle_module_by_value(task_module):
+            cloudpickle.register_pickle_by_value(task_module)
 
         return session.config["_parallel_executor"].submit(
             wrap_task_in_process,

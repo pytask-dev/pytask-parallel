@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import importlib.util
 import inspect
 from functools import partial
+from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -20,7 +22,6 @@ from pytask_parallel.typing import is_local_path
 if TYPE_CHECKING:
     from collections.abc import Callable
     from concurrent.futures import Future
-    from pathlib import Path
     from types import ModuleType
     from types import TracebackType
 
@@ -39,6 +40,8 @@ __all__ = [
     "create_kwargs_for_task",
     "get_module",
     "parse_future_result",
+    "should_pickle_module_by_value",
+    "strip_annotation_locals",
 ]
 
 
@@ -150,3 +153,43 @@ def get_module(func: Callable[..., Any], path: Path | None) -> ModuleType:
     if path:
         return inspect.getmodule(func, path.as_posix())  # type: ignore[return-value]
     return inspect.getmodule(func)  # type: ignore[return-value]
+
+
+def strip_annotation_locals(task: PTask) -> None:
+    """Remove annotation locals from task functions before pickling.
+
+    The locals snapshot is only needed during collection to evaluate annotations.
+    Keeping it around for execution can break pickling when it contains non-serializable
+    objects (for example, when importing ``pytask.mark`` in loop-generated tasks).
+
+    """
+    meta = getattr(task.function, "pytask_meta", None)
+    if meta is not None and getattr(meta, "annotation_locals", None) is not None:
+        meta.annotation_locals = None
+
+
+def should_pickle_module_by_value(module: ModuleType) -> bool:
+    """Return whether a module should be pickled by value.
+
+    We only pickle by value when the module is not importable by name in the worker.
+    This avoids serializing all module globals, which can fail for non-picklable
+    objects (e.g., closed file handles or locks stored at module scope).
+
+    """
+    module_name = getattr(module, "__name__", None)
+    module_file = getattr(module, "__file__", None)
+    if not module_name or module_name == "__main__" or module_file is None:
+        return True
+
+    try:
+        spec = importlib.util.find_spec(module_name)
+    except (ImportError, ValueError, AttributeError):
+        return True
+
+    if spec is None or spec.origin is None:
+        return True
+
+    try:
+        return Path(spec.origin).resolve() != Path(module_file).resolve()
+    except OSError:
+        return True

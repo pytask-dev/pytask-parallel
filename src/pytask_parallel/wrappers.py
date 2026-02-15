@@ -37,6 +37,8 @@ from pytask_parallel.utils import CoiledFunction
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from queue import Queue
+    from queue import SimpleQueue
     from types import TracebackType
 
     from pytask import Mark
@@ -57,7 +59,13 @@ class WrapperResult:
     stderr: str
 
 
-def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperResult:
+def wrap_task_in_thread(
+    task: PTask,
+    *,
+    remote: bool,
+    status_queue: Queue[str] | SimpleQueue[str] | None = None,
+    **kwargs: Any,
+) -> WrapperResult:
     """Mock execution function such that it returns the same as for processes.
 
     The function for processes returns ``warning_reports`` and an ``exception``. With
@@ -66,6 +74,11 @@ def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperR
 
     """
     __tracebackhide__ = True
+
+    # Add task to the status queue to indicate that it is currently being executed.
+    if status_queue is not None:
+        status_queue.put(task.signature)
+
     try:
         out = task.function(**kwargs)
     except Exception:  # noqa: BLE001
@@ -81,6 +94,7 @@ def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperR
     else:
         _handle_function_products(task, out, remote=remote)
         exc_info = None
+
     return WrapperResult(
         carry_over_products=None,
         warning_reports=[],
@@ -97,6 +111,7 @@ def wrap_task_in_process(  # noqa: PLR0913
     kwargs: dict[str, Any],
     remote: bool,
     session_filterwarnings: tuple[str, ...],
+    status_queue: Queue[str] | SimpleQueue[str] | None = None,
     show_locals: bool,
     task_filterwarnings: tuple[Mark, ...],
 ) -> WrapperResult:
@@ -108,6 +123,10 @@ def wrap_task_in_process(  # noqa: PLR0913
     """
     # Hide this function from tracebacks.
     __tracebackhide__ = True
+
+    # Add task to the status queue to indicate that it is currently being executed.
+    if status_queue is not None:
+        status_queue.put(task.signature)
 
     # Patch set_trace and breakpoint to show a better error message.
     _patch_set_trace_and_breakpoint()

@@ -32,12 +32,13 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
   or processes automatically.
 - {pull}`96` handles local paths with remote executors. `PathNode`s are not supported as
   dependencies or products (except for return annotations).
-- {pull}`99` changes that all tasks that are ready are being scheduled. It improves
-  interactions with adaptive scaling. {issue}`98` does handle the resulting issues: no
-  strong adherence to priorities, no pending status.
+- {pull}`99` changes that all ready tasks are being scheduled. It improves interactions
+  with adaptive scaling. {issue}`98` does handle the resulting issues: no strong
+  adherence to priorities, no pending status.
 - {pull}`100` adds project management with rye.
 - {pull}`101` adds syncing for local paths as dependencies or products in remote
   environments with the same OS.
+- {pull}`102` implements a pending status for scheduled but not started tasks.
 - {pull}`106` fixes {pull}`99` such that only when there are coiled functions, all ready
   tasks are submitted.
 - {pull}`107` removes status from `pytask_execute_task_log_start` hook call.

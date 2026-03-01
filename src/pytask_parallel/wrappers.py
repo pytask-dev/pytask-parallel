@@ -178,7 +178,9 @@ def wrap_task_in_process(  # noqa: PLR0913
 
 
 def rewrap_task_with_coiled_function(task: PTask) -> CoiledFunction:
-    wrapped = CoiledFunction(wrap_task_in_process, **task.attributes["coiled_kwargs"])
+    wrapped = cast("Any", CoiledFunction)(
+        wrap_task_in_process, **task.attributes["coiled_kwargs"]
+    )
     decorated = functools.wraps(wrap_task_in_process)(
         cast("Callable[..., Any]", wrapped)
     )

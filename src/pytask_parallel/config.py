@@ -27,7 +27,8 @@ def pytask_parse_config(config: dict[str, Any]) -> None:
         raise ValueError(msg) from None
 
     if config["n_workers"] == "auto":
-        config["n_workers"] = max(os.cpu_count() - 1, 1)  # type: ignore[operator]
+        cpu_count = os.cpu_count() or 1
+        config["n_workers"] = max(cpu_count - 1, 1)
 
     # If more than one worker is used, and no backend is set, use loky.
     if config["n_workers"] > 1 and config["parallel_backend"] == ParallelBackend.NONE:

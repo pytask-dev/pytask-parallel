@@ -138,7 +138,11 @@ def wrap_task_in_process(  # noqa: PLR0913
         except Exception:  # noqa: BLE001
             exc_info = sys.exc_info()
             processed_exc_info = _render_traceback_to_string(
-                exc_info,  # type: ignore[arg-type]
+                (
+                    cast("type[BaseException]", exc_info[0]),
+                    cast("BaseException", exc_info[1]),
+                    exc_info[2],
+                ),
                 show_locals,
                 console_options,
             )

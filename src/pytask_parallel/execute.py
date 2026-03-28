@@ -137,7 +137,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             newly_collected_reports.append(
                                 ExecutionReport.from_task_and_exception(
                                     task,
-                                    wrapper_result.exc_info,  # type: ignore[arg-type]
+                                    cast("Any", wrapper_result.exc_info),
                                 )
                             )
                             running_tasks.pop(task_name)
@@ -213,7 +213,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         # cloudpickle will pickle it with the function. See cloudpickle#417, pytask#373
         # and pytask#374.
         task_module = get_module(task.function, getattr(task, "path", None))
-        if should_pickle_module_by_value(task_module):
+        if task_module is not None and should_pickle_module_by_value(task_module):
             cloudpickle.register_pickle_by_value(task_module)
 
         return cast("Any", wrapper_func).submit(
@@ -237,7 +237,7 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         # cloudpickle will pickle it with the function. See cloudpickle#417, pytask#373
         # and pytask#374.
         task_module = get_module(task.function, getattr(task, "path", None))
-        if should_pickle_module_by_value(task_module):
+        if task_module is not None and should_pickle_module_by_value(task_module):
             cloudpickle.register_pickle_by_value(task_module)
 
         return session.config["_parallel_executor"].submit(

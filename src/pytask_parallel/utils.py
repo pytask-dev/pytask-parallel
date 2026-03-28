@@ -136,7 +136,7 @@ def _parse_future_exception(
     return None if exc is None else (type(exc), exc, exc.__traceback__)
 
 
-def get_module(func: Callable[..., Any], path: Path | None) -> ModuleType:
+def get_module(func: Callable[..., Any], path: Path | None) -> ModuleType | None:
     """Get the module of a python function.
 
     ``functools.partial`` obfuscates the module of the function and
@@ -151,8 +151,8 @@ def get_module(func: Callable[..., Any], path: Path | None) -> ModuleType:
         func = func.func
 
     if path:
-        return inspect.getmodule(func, path.as_posix())  # type: ignore[return-value]
-    return inspect.getmodule(func)  # type: ignore[return-value]
+        return inspect.getmodule(func, path.as_posix())
+    return inspect.getmodule(func)
 
 
 def strip_annotation_locals(task: PTask) -> None:

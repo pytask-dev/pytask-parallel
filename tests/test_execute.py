@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import sys
 import textwrap
 from time import time
 
@@ -262,7 +264,25 @@ def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
     )
 
 
-@pytest.mark.parametrize("flag", ["--pdb", "--trace", "--dry-run"])
+@pytest.mark.parametrize(
+    "flag",
+    [
+        "--pdb",
+        pytest.param(
+            "--trace",
+            marks=pytest.mark.xfail(
+                os.environ.get("GITHUB_ACTIONS") == "true"
+                and sys.version_info[:2] == (3, 14),
+                reason=(
+                    "Pdb does not consume CliRunner input on Python 3.14 in "
+                    "GitHub Actions."
+                ),
+                strict=True,
+            ),
+        ),
+        "--dry-run",
+    ],
+)
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_backend):
     tmp_path.joinpath("task_example.py").write_text("def task_example(): pass")

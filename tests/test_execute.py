@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import sys
 import textwrap
 from time import time
 
@@ -262,7 +264,20 @@ def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
     )
 
 
-@pytest.mark.parametrize("flag", ["--pdb", "--trace", "--dry-run"])
+@pytest.mark.parametrize(
+    "flag",
+    [
+        "--pdb",
+        pytest.param(
+            "--trace",
+            marks=pytest.mark.xfail(
+                sys.version_info[:2] == (3, 14) and os.environ.get("CI") == "true",
+                reason="Python 3.14 exits the CI debugger session with a failure.",
+            ),
+        ),
+        "--dry-run",
+    ],
+)
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)
 def test_parallel_execution_is_deactivated(runner, tmp_path, flag, parallel_backend):
     tmp_path.joinpath("task_example.py").write_text("def task_example(): pass")

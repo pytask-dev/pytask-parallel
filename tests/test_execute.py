@@ -271,13 +271,8 @@ def test_task_without_path_that_return(runner, tmp_path, parallel_backend):
         pytest.param(
             "--trace",
             marks=pytest.mark.xfail(
-                os.environ.get("GITHUB_ACTIONS") == "true"
-                and sys.version_info[:2] == (3, 14),
-                reason=(
-                    "Pdb does not consume CliRunner input on Python 3.14 in "
-                    "GitHub Actions."
-                ),
-                strict=True,
+                sys.version_info[:2] == (3, 14) and os.environ.get("CI") == "true",
+                reason="Python 3.14 exits the CI debugger session with a failure.",
             ),
         ),
         "--dry-run",

@@ -227,7 +227,10 @@ def _render_traceback_to_string(
 
 
 def _handle_function_products(
-    task: PTask, out: Any, *, remote: bool = False  # noqa: ANN401
+    task: PTask,
+    out: Any,
+    *,
+    remote: bool = False,  # noqa: ANN401
 ) -> PyTree[CarryOverPath | PythonNode | None]:
     """Handle the products of the task.
 

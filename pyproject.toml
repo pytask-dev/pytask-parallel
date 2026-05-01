@@ -146,6 +146,3 @@ exclude_also = [
     "\\.\\.\\.",
     "def __repr__",
 ]
-
-[tool.uv.sources]
-pytask = { git = "https://github.com/pytask-dev/pytask" }

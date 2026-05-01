@@ -71,6 +71,6 @@ class RemotePathNode(PNode):
         self.node.path = path
         return self.node.load(is_product=self.is_product)
 
-    def save(self, value: Any) -> None:
+    def save(self, value: Any) -> None:  # noqa: ANN401
         """Save strings or bytes to file."""
         self.value = value

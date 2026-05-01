@@ -1,8 +1,8 @@
 """Contains functions related to typing."""
 
-from pathlib import Path
 from pathlib import PosixPath
 from pathlib import WindowsPath
+from typing import Any
 from typing import NamedTuple
 
 from pytask import PTask
@@ -16,7 +16,7 @@ def is_coiled_function(task: PTask) -> bool:
     return "coiled_kwargs" in task.attributes
 
 
-def is_local_path(path: Path) -> bool:
+def is_local_path(path: Any) -> bool:  # noqa: ANN401
     """Check if a path is local."""
     return isinstance(path, (FilePath, PosixPath, WindowsPath))
 

@@ -63,7 +63,7 @@ def _configure_worker(root: str | None) -> None:
         sys.path.insert(0, root)
 
 
-def _deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:
+def _deserialize_and_run_with_cloudpickle(fn: bytes, kwargs: bytes) -> Any:  # noqa: ANN401
     """Deserialize and execute a function and keyword arguments."""
     deserialized_fn = cloudpickle.loads(fn)
     deserialized_kwargs = cloudpickle.loads(kwargs)
@@ -77,8 +77,8 @@ class _CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
         self,
         fn: Callable[..., Any],
         /,
-        *args: Any,  # noqa: ARG002
-        **kwargs: Any,
+        *args: Any,  # noqa: ANN401, ARG002
+        **kwargs: Any,  # noqa: ANN401
     ) -> Future[Any]:
         """Submit a new task."""
         return super().submit(

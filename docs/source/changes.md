@@ -5,6 +5,10 @@ chronological order. Releases follow [semantic versioning](https://semver.org/) 
 releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel).
 
+## 0.5.3 - 2026-05-01
+
+- {pull}`153` adds compatibility with the new pytask 0.6.0 release.
+
 ## 0.5.2 - 2026-02-06
 
 - {pull}`129` drops support for Python 3.8 and 3.9 and adds support for Python 3.14.

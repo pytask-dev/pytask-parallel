@@ -41,6 +41,18 @@ if TYPE_CHECKING:
     from pytask_parallel.wrappers import WrapperResult
 
 
+def _get_task_from_dag(session: Session, task_name: str) -> PTask:
+    """Get a task from the pre- and post-pytask 0.6 DAG representations for compat."""
+    node = session.dag.nodes[task_name]
+    task = node["task"] if isinstance(node, dict) else node
+
+    if not isinstance(task, PTask):
+        msg = f"Expected {task_name!r} to resolve to a task."
+        raise TypeError(msg)
+
+    return task
+
+
 @hookimpl
 def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR0912, PLR0915
     """Execute tasks with a parallel backend.
@@ -68,8 +80,13 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
     with session.config["_parallel_executor"]:
         sleeper = _Sleeper()
 
+        scheduler = session.scheduler
+        if scheduler is None:
+            msg = "Expected the scheduler to be initialized before executing tasks."
+            raise RuntimeError(msg)
+
         i = 0
-        while session.scheduler.is_active():
+        while scheduler.is_active():
             try:
                 newly_collected_reports = []
 
@@ -88,13 +105,11 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                     n_new_tasks = session.config["n_workers"] - len(running_tasks)
 
                 ready_tasks = (
-                    list(session.scheduler.get_ready(n_new_tasks))
-                    if n_new_tasks >= 1
-                    else []
+                    list(scheduler.get_ready(n_new_tasks)) if n_new_tasks >= 1 else []
                 )
 
                 for task_name in ready_tasks:
-                    task = session.dag.nodes[task_name]["task"]
+                    task = _get_task_from_dag(session, task_name)
                     session.hook.pytask_execute_task_log_start(
                         session=session, task=task
                     )
@@ -111,7 +126,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             task, sys.exc_info()
                         )
                         newly_collected_reports.append(report)
-                        session.scheduler.done(task_name)
+                        scheduler.done(task_name)
 
                 if not ready_tasks:
                     sleeper.increment()
@@ -133,7 +148,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             )
 
                         if wrapper_result.exc_info is not None:
-                            task = session.dag.nodes[task_name]["task"]
+                            task = _get_task_from_dag(session, task_name)
                             newly_collected_reports.append(
                                 ExecutionReport.from_task_and_exception(
                                     task,
@@ -141,9 +156,9 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                                 )
                             )
                             running_tasks.pop(task_name)
-                            session.scheduler.done(task_name)
+                            scheduler.done(task_name)
                         else:
-                            task = session.dag.nodes[task_name]["task"]
+                            task = _get_task_from_dag(session, task_name)
                             _update_carry_over_products(
                                 task, wrapper_result.carry_over_products
                             )
@@ -161,7 +176,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
 
                             running_tasks.pop(task_name)
                             newly_collected_reports.append(report)
-                            session.scheduler.done(task_name)
+                            scheduler.done(task_name)
 
                 for report in newly_collected_reports:
                     session.hook.pytask_execute_task_process_report(

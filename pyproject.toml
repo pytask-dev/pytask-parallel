@@ -99,7 +99,6 @@ unsafe-fixes = true
 
 [tool.ruff.lint]
 extend-ignore = [
-    "ANN401", # flake8-annotate typing.Any
     "COM812", # Comply with ruff-format.
     "ISC001", # Comply with ruff-format.
 ]

@@ -73,7 +73,7 @@ def _safe_load(
     *,
     is_product: bool,
     remote: bool,
-) -> Any:
+) -> Any:  # noqa: ANN401
     """Load a node and catch exceptions."""
     _rich_traceback_guard = True
     # Get the argument name like "path" or "return" for function returns.

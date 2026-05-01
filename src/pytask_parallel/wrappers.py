@@ -57,7 +57,7 @@ class WrapperResult:
     stderr: str
 
 
-def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperResult:
+def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperResult:  # noqa: ANN401
     """Mock execution function such that it returns the same as for processes.
 
     The function for processes returns ``warning_reports`` and an ``exception``. With
@@ -191,7 +191,7 @@ def rewrap_task_with_coiled_function(task: PTask) -> CoiledFunction:
     return cast("CoiledFunction", decorated)
 
 
-def _raise_exception_on_breakpoint(*args: Any, **kwargs: Any) -> None:  # noqa: ARG001
+def _raise_exception_on_breakpoint(*args: Any, **kwargs: Any) -> None:  # noqa: ANN401, ARG001
     msg = (
         "You cannot use 'breakpoint()' or 'pdb.set_trace()' while parallelizing the "
         "execution of tasks with pytask-parallel. Please, remove the breakpoint or run "
@@ -223,11 +223,11 @@ def _render_traceback_to_string(
     traceback = Traceback(exc_info, show_locals=show_locals)
     segments = console.render(cast("Any", traceback), options=console_options)
     text = "".join(segment.text for segment in segments)
-    return (*exc_info[:2], text)
+    return exc_info[0], exc_info[1], text
 
 
 def _handle_function_products(
-    task: PTask, out: Any, *, remote: bool = False
+    task: PTask, out: Any, *, remote: bool = False  # noqa: ANN401
 ) -> PyTree[CarryOverPath | PythonNode | None]:
     """Handle the products of the task.
 
@@ -310,7 +310,7 @@ def _delete_local_files_on_remote(kwargs: dict[str, PyTree[Any]]) -> None:
 
     """
 
-    def _delete(potential_node: Any) -> None:
+    def _delete(potential_node: Any) -> None:  # noqa: ANN401
         if isinstance(potential_node, RemotePathNode):
             with suppress(OSError):
                 os.close(potential_node.fd)

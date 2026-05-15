@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 def _get_task_from_dag(session: Session, task_name: str) -> PTask:
     """Get a task from the pre- and post-pytask 0.6 DAG representations for compat."""
     node = session.dag.nodes[task_name]
-    task = node["task"] if isinstance(node, dict) else node
+    task = cast("Any", node)["task"] if isinstance(node, dict) else node
 
     if not isinstance(task, PTask):
         msg = f"Expected {task_name!r} to resolve to a task."

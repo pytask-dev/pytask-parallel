@@ -1,5 +1,5 @@
 [project]
-name = "pytask_parallel"
+name = "pytask-parallel"
 description = "Parallelize the execution of tasks with pytask."
 classifiers = [
     "Development Status :: 4 - Beta",

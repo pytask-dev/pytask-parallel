@@ -308,14 +308,21 @@ def _update_carry_over_products(
             return x
         raise NotImplementedError
 
-    structure_carry_over_products = tree_structure(carry_over_products)
-    structure_produces = tree_structure(task.produces)
+    # ``PTask`` exposes node trees via a recursive alias that ``ty`` cannot prove
+    # equivalent to ``PyTree``. The tree utilities accept the same runtime shapes.
+    products_tree = cast("Any", task.produces)
+    carry_over_tree = cast("Any", carry_over_products)
+    structure_carry_over_products = tree_structure(carry_over_tree)
+    structure_produces = tree_structure(products_tree)
     # strict must be false when none is leaf.
     if structure_produces.is_prefix(structure_carry_over_products, strict=False):
-        task.produces = tree_map(
-            _update_carry_over_node,
-            task.produces,
-            carry_over_products,
+        task.produces = cast(
+            "dict[str, Any]",
+            tree_map(
+                _update_carry_over_node,
+                products_tree,
+                carry_over_tree,
+            ),
         )
 
 

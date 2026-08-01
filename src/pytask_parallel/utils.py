@@ -8,6 +8,7 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import cast
 
 from pytask import NodeLoadError
 from pytask import PNode
@@ -110,7 +111,7 @@ def create_kwargs_for_task(task: PTask, *, remote: bool) -> dict[str, PyTree[Any
                 is_product=False,
                 remote=remote,
             ),
-            value,
+            cast("Any", value),
         )
 
     for name, value in task.produces.items():
@@ -123,7 +124,7 @@ def create_kwargs_for_task(task: PTask, *, remote: bool) -> dict[str, PyTree[Any
                     is_product=True,
                     remote=remote,
                 ),
-                value,
+                cast("Any", value),
             )
 
     return kwargs

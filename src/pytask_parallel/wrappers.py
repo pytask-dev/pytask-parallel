@@ -244,7 +244,7 @@ def _handle_function_products(
     # Check that the return value has the correct structure.
     if "return" in task.produces:
         structure_out = tree_structure(out)
-        structure_return = tree_structure(task.produces["return"])
+        structure_return = tree_structure(cast("Any", task.produces["return"]))
         # strict must be false when none is leaf.
         if not structure_return.is_prefix(structure_out, strict=False):
             msg = (
@@ -290,7 +290,10 @@ def _handle_function_products(
         node.save(value)
         return None
 
-    return tree_map_with_path(_save_and_carry_over_product, task.produces)
+    return tree_map_with_path(
+        _save_and_carry_over_product,
+        cast("Any", task.produces),
+    )
 
 
 def _write_local_files_to_remote(
@@ -302,7 +305,13 @@ def _write_local_files_to_remote(
     to be resolved.
 
     """
-    return tree_map(lambda x: x.load() if isinstance(x, RemotePathNode) else x, kwargs)
+    return cast(
+        "dict[str, PyTree[Any]]",
+        tree_map(
+            lambda x: x.load() if isinstance(x, RemotePathNode) else x,
+            cast("Any", kwargs),
+        ),
+    )
 
 
 def _delete_local_files_on_remote(kwargs: dict[str, PyTree[Any]]) -> None:
@@ -319,4 +328,4 @@ def _delete_local_files_on_remote(kwargs: dict[str, PyTree[Any]]) -> None:
                 os.close(potential_node.fd)
                 Path(potential_node.remote_path).unlink(missing_ok=True)
 
-    tree_map(_delete, kwargs)
+    tree_map(_delete, cast("Any", kwargs))

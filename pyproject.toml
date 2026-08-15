@@ -50,7 +50,7 @@ test = [
 ]
 typing = [
     "pytask-parallel",
-    "ty>=0.0.8,<0.0.62",
+    "ty>=0.0.8,<0.0.70",
     {include-group = "coiled"},
     {include-group = "dask"},
 ]

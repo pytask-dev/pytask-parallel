@@ -290,9 +290,12 @@ def _handle_function_products(
         node.save(value)
         return None
 
-    return tree_map_with_path(
-        _save_and_carry_over_product,
-        cast("Any", task.produces),
+    return cast(
+        "PyTree[CarryOverPath | PythonNode | None]",
+        tree_map_with_path(
+            _save_and_carry_over_product,
+            cast("Any", task.produces),
+        ),
     )
 
 

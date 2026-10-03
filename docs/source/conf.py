@@ -34,7 +34,7 @@ copyright = f"2020, {author}"  # noqa: A001
 # The version, including alpha/beta/rc tags, but not commit hash and datestamps
 release = version("pytask_parallel")
 # The short X.Y version.
-version = ".".join(release.split(".")[:2])  # ty: ignore[invalid-assignment]
+version = ".".join(release.split(".")[:2])
 
 # -- General configuration -------------------------------------------------------------
 

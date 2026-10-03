@@ -18,6 +18,7 @@ from typing import cast
 from attrs import define
 from pytask import PNode
 from pytask import PPathNode
+from pytask import PProvisionalNode
 from pytask import PTask
 from pytask import PythonNode
 from pytask import Traceback
@@ -255,7 +256,7 @@ def _handle_function_products(
             raise ValueError(msg)
 
     def _save_and_carry_over_product(
-        path: tuple[Any, ...], node: PNode
+        path: tuple[Any, ...], node: PNode | PProvisionalNode
     ) -> CarryOverPath | PythonNode | None:
         argument = path[0]
 
@@ -275,20 +276,7 @@ def _handle_function_products(
         for p in path[1:]:
             value = value[p]
 
-        # If the node is a PythonNode, we need to carry it over to the main process.
-        if isinstance(node, PythonNode):
-            node.save(value=value)
-            return node
-
-        # If the path is local and we are remote, we need to carry over the value to
-        # the main process as a PythonNode and save it later.
-        if isinstance(node, PPathNode) and is_local_path(node.path) and remote:
-            return PythonNode(value=value)
-
-        # If no condition applies, we save the value and do not carry it over. Like a
-        # remote path to S3.
-        node.save(value)
-        return None
+        return _save_return_product(node, value, remote=remote)
 
     return cast(
         "PyTree[CarryOverPath | PythonNode | None]",
@@ -297,6 +285,29 @@ def _handle_function_products(
             cast("Any", task.produces),
         ),
     )
+
+
+def _save_return_product(
+    node: PNode | PProvisionalNode,
+    value: Any,  # noqa: ANN401
+    *,
+    remote: bool,
+) -> CarryOverPath | PythonNode | None:
+    """Save a concrete return product or defer a provisional one to collection."""
+    if isinstance(node, PProvisionalNode):
+        return None
+
+    # Python nodes must be carried back to the main process.
+    if isinstance(node, PythonNode):
+        node.save(value=value)
+        return node
+
+    # Local paths on remote workers are saved by the main process.
+    if isinstance(node, PPathNode) and is_local_path(node.path) and remote:
+        return PythonNode(value=value)
+
+    node.save(value)
+    return None
 
 
 def _write_local_files_to_remote(

@@ -7,7 +7,7 @@ releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 
 ## Unreleased
 
-- Raise the minimum supported Python version to 3.11.
+- {pull}`198` raises the minimum supported Python version to 3.11.
 
 ## 0.5.5 - 2026-08-23
 

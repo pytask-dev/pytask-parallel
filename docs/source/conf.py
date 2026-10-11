@@ -125,7 +125,7 @@ def linkcode_resolve(  # noqa: C901, PLR0911
                 # Accessing deprecated objects will generate noisy warnings
                 warnings.simplefilter("ignore", FutureWarning)
                 obj = getattr(obj, part)
-        except AttributeError:  # noqa: PERF203
+        except AttributeError:
             return None
 
     obj_for_source = obj if callable(obj) else getattr(obj, "fget", None)

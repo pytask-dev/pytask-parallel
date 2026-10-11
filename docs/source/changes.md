@@ -5,6 +5,10 @@ chronological order. Releases follow [semantic versioning](https://semver.org/) 
 releases are available on [PyPI](https://pypi.org/project/pytask-parallel) and
 [Anaconda.org](https://anaconda.org/conda-forge/pytask-parallel).
 
+## Unreleased
+
+- {pull}`198` raises the minimum supported Python version to 3.11.
+
 ## 0.5.5 - 2026-08-23
 
 - {pull}`165` explicitly sets the distribution name to `pytask-parallel`. Previously,

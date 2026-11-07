@@ -6,12 +6,15 @@ import textwrap
 from time import time
 
 import pytest
+from pytask import DirectoryNode
 from pytask import ExitCode
+from pytask import TaskWithoutPath
 from pytask import build
 from pytask import cli
 
 from pytask_parallel import ParallelBackend
 from pytask_parallel.execute import _Sleeper
+from pytask_parallel.wrappers import _handle_function_products
 from tests.conftest import restore_sys_path_and_module_after_test_execution
 from tests.conftest import skip_if_deadlock
 
@@ -26,6 +29,16 @@ _IMPLEMENTED_BACKENDS = [
     ParallelBackend.PROCESSES,
     ParallelBackend.THREADS,
 ]
+
+
+def test_provisional_return_product_is_not_saved() -> None:
+    task = TaskWithoutPath(
+        name="provisional",
+        function=lambda: None,
+        produces={"return": DirectoryNode()},
+    )
+
+    assert _handle_function_products(task, None) == {"return": None}
 
 
 @pytest.mark.parametrize("parallel_backend", _IMPLEMENTED_BACKENDS)

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import functools
 import os
-import sys
 import warnings
 from contextlib import redirect_stderr
 from contextlib import redirect_stdout
@@ -42,6 +41,7 @@ if TYPE_CHECKING:
 
     from pytask import Mark
     from rich.console import ConsoleOptions
+    from rich.traceback import Trace
 
 
 __all__ = ["wrap_task_in_process", "wrap_task_in_thread"]
@@ -52,7 +52,8 @@ class WrapperResult:
     carry_over_products: PyTree[CarryOverPath | PythonNode | None]
     warning_reports: list[WarningReport]
     exc_info: (
-        tuple[type[BaseException], BaseException, TracebackType | str | None] | None
+        tuple[type[BaseException], BaseException, TracebackType | Trace | str | None]
+        | None
     )
     stdout: str
     stderr: str
@@ -69,16 +70,8 @@ def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperR
     __tracebackhide__ = True
     try:
         out = task.function(**kwargs)
-    except Exception:  # noqa: BLE001
-        exc_info_raw = sys.exc_info()
-        exc_info = (
-            cast(
-                "tuple[type[BaseException], BaseException, TracebackType | str | None]",
-                exc_info_raw,
-            )
-            if exc_info_raw[0] is not None
-            else None
-        )
+    except Exception as exc:  # noqa: BLE001
+        exc_info = (type(exc), exc, exc.__traceback__)
     else:
         _handle_function_products(task, out, remote=remote)
         exc_info = None
@@ -94,7 +87,7 @@ def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperR
 def wrap_task_in_process(  # noqa: PLR0913
     task: PTask,
     *,
-    console_options: ConsoleOptions,
+    console_options: ConsoleOptions | None,
     kwargs: dict[str, Any],
     remote: bool,
     session_filterwarnings: tuple[str, ...],
@@ -103,8 +96,8 @@ def wrap_task_in_process(  # noqa: PLR0913
 ) -> WrapperResult:
     """Execute a task in a spawned process.
 
-    This function receives bytes and unpickles them to a task which is them execute in a
-    spawned process or thread.
+    When console options are supplied, render tracebacks before returning them.
+    Otherwise, return a Rich trace for the caller to render.
 
     """
     # Hide this function from tracebacks.
@@ -131,22 +124,20 @@ def wrap_task_in_process(  # noqa: PLR0913
             for arg in mark.args:
                 warnings.filterwarnings(*parse_warning_filter(arg, escape=False))
 
-        processed_exc_info: tuple[type[BaseException], BaseException, str] | None
-
         try:
             resolved_kwargs = _write_local_files_to_remote(kwargs)
             out = task.execute(**resolved_kwargs)
-        except Exception:  # noqa: BLE001
-            exc_info = sys.exc_info()
-            processed_exc_info = _render_traceback_to_string(
-                (
-                    cast("type[BaseException]", exc_info[0]),
-                    cast("BaseException", exc_info[1]),
-                    exc_info[2],
-                ),
-                show_locals,
-                console_options,
+        except Exception as exc:  # noqa: BLE001
+            exc_type = type(exc)
+            traceback = Traceback(
+                (exc_type, exc, exc.__traceback__), show_locals=show_locals
             )
+            transported_traceback = (
+                traceback.extract()
+                if console_options is None
+                else _render_traceback_to_string(traceback, console_options)
+            )
+            processed_exc_info = (exc_type, exc, transported_traceback)
             products = None
         else:
             products = _handle_function_products(task, out, remote=remote)
@@ -216,15 +207,12 @@ def _patch_set_trace_and_breakpoint() -> None:
 
 
 def _render_traceback_to_string(
-    exc_info: tuple[type[BaseException], BaseException, TracebackType | None],
-    show_locals: bool,  # noqa: FBT001
+    traceback: Traceback,
     console_options: ConsoleOptions,
-) -> tuple[type[BaseException], BaseException, str]:
-    """Process the exception and convert the traceback to a string."""
-    traceback = Traceback(exc_info, show_locals=show_locals)
+) -> str:
+    """Render a traceback while the worker still has access to its source files."""
     segments = console.render(cast("Any", traceback), options=console_options)
-    text = "".join(segment.text for segment in segments)
-    return exc_info[0], exc_info[1], text
+    return "".join(segment.text for segment in segments)
 
 
 def _handle_function_products(

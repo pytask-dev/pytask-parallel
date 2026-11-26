@@ -24,6 +24,7 @@ from pytask.tree_util import PyTree
 from pytask.tree_util import tree_map
 from pytask.tree_util import tree_structure
 
+from pytask_parallel.backends import ParallelBackend
 from pytask_parallel.backends import WorkerType
 from pytask_parallel.backends import registry
 from pytask_parallel.backends import set_worker_root
@@ -152,7 +153,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                             newly_collected_reports.append(
                                 ExecutionReport.from_task_and_exception(
                                     task,
-                                    cast("Any", wrapper_result.exc_info),
+                                    wrapper_result.exc_info,
                                 )
                             )
                             running_tasks.pop(task_name)
@@ -207,7 +208,8 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
     executor.
 
     """
-    parallel_backend = registry.registry[session.config["parallel_backend"]]
+    backend_name = session.config["parallel_backend"]
+    parallel_backend = registry.registry[backend_name]
     worker_type = parallel_backend.worker_type
     remote = parallel_backend.remote
 
@@ -216,9 +218,9 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
     if is_coiled_function(task):
         strip_annotation_locals(task)
         # Prevent circular import for coiled backend.
-        from pytask_parallel.wrappers import rewrap_task_with_coiled_function  # noqa: PLC0415
+        from pytask_parallel import wrappers  # noqa: PLC0415
 
-        wrapper_func = rewrap_task_with_coiled_function(task)
+        wrapper_func = wrappers.rewrap_task_with_coiled_function(task)
 
         # Task modules are dynamically loaded and added to `sys.modules`. Thus,
         # cloudpickle believes the module of the task function is also importable in the
@@ -253,10 +255,14 @@ def pytask_execute_task(session: Session, task: PTask) -> Future[WrapperResult]:
         if task_module is not None and should_pickle_module_by_value(task_module):
             cloudpickle.register_pickle_by_value(task_module)
 
+        # An existing Dask client may run on machines without shared source files.
+        console_options = (
+            console.options if remote or backend_name == ParallelBackend.DASK else None
+        )
         return session.config["_parallel_executor"].submit(
             wrap_task_in_process,
             task=task,
-            console_options=console.options,
+            console_options=console_options,
             kwargs=kwargs,
             remote=remote,
             session_filterwarnings=session.config["filterwarnings"],

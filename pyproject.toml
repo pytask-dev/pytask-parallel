@@ -15,7 +15,7 @@ dependencies = [
     "cloudpickle",
     "loky",
     "pluggy>=1.0.0",
-    "pytask>=0.5.2",
+    "pytask @ git+https://github.com/pytask-dev/pytask.git@10a51fb1647fe2befb07e7abfb4723fa74f2e39d",
     "rich",
 ]
 dynamic = ["version"]

@@ -11,6 +11,7 @@ from pytask import ExitCode
 from pytask import TaskWithoutPath
 from pytask import build
 from pytask import cli
+from rich.traceback import Trace
 
 from pytask_parallel import ParallelBackend
 from pytask_parallel.execute import _Sleeper
@@ -181,6 +182,38 @@ def test_rendering_of_tracebacks_with_rich(
     assert "───── Traceback" in result.output
     assert ("───── locals" in result.output) is show_locals
     assert ("[0, 1, 2, 3, 4]" in result.output) is show_locals
+
+
+@pytest.mark.parametrize(
+    "parallel_backend",
+    [
+        ParallelBackend.PROCESSES,
+        pytest.param(ParallelBackend.LOKY, marks=skip_if_deadlock),
+    ],
+)
+def test_process_workers_return_structured_tracebacks(tmp_path, parallel_backend):
+    source = """
+    def task_fail():
+        worker_local = "worker failure"
+        raise ValueError(worker_local)
+    """
+    tmp_path.joinpath("task_example.py").write_text(textwrap.dedent(source))
+
+    session = build(
+        paths=tmp_path, parallel_backend=parallel_backend, n_workers=2, show_locals=True
+    )
+
+    assert session.exit_code == ExitCode.FAILED
+    report = session.execution_reports[0]
+    assert report.exc_info is not None
+    exc_type, exc, traceback = report.exc_info
+    assert exc_type is ValueError
+    assert str(exc) == "worker failure"
+    assert isinstance(traceback, Trace)
+    frames = traceback.stacks[0].frames
+    assert [frame.name for frame in frames] == ["task_fail"]
+    assert frames[0].locals is not None
+    assert "worker_local" in frames[0].locals
 
 
 @pytest.mark.parametrize(

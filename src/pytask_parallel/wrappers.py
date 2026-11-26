@@ -31,6 +31,7 @@ from pytask.tree_util import tree_map_with_path
 from pytask.tree_util import tree_structure
 
 from pytask_parallel.nodes import RemotePathNode
+from pytask_parallel.tracebacks import RemoteTraceback
 from pytask_parallel.typing import CarryOverPath
 from pytask_parallel.typing import is_local_path
 from pytask_parallel.utils import CoiledFunction
@@ -57,6 +58,7 @@ class WrapperResult:
     )
     stdout: str
     stderr: str
+    remote_traceback: RemoteTraceback | None = None
 
 
 def wrap_task_in_thread(task: PTask, *, remote: bool, **kwargs: Any) -> WrapperResult:  # noqa: ANN401
@@ -96,8 +98,8 @@ def wrap_task_in_process(  # noqa: PLR0913
 ) -> WrapperResult:
     """Execute a task in a spawned process.
 
-    When console options are supplied, render tracebacks before returning them.
-    Otherwise, return a Rich trace for the caller to render.
+    Return a Rich trace for the caller to render. When console options are supplied,
+    also capture worker source excerpts and prepare a text fallback.
 
     """
     # Hide this function from tracebacks.
@@ -108,6 +110,7 @@ def wrap_task_in_process(  # noqa: PLR0913
 
     captured_stdout_buffer = StringIO()
     captured_stderr_buffer = StringIO()
+    remote_traceback = None
 
     # Catch warnings and store them in a list.
     with (
@@ -132,11 +135,16 @@ def wrap_task_in_process(  # noqa: PLR0913
             traceback = Traceback(
                 (exc_type, exc, exc.__traceback__), show_locals=show_locals
             )
-            transported_traceback = (
-                traceback.extract()
-                if console_options is None
-                else _render_traceback_to_string(traceback, console_options)
-            )
+            trace = traceback.extract()
+            if console_options is None:
+                transported_traceback = trace
+            else:
+                if trace is not None:
+                    remote_traceback = RemoteTraceback.capture(trace)
+                transported_traceback = _render_traceback_to_string(
+                    Traceback((exc_type, exc, trace), show_locals=show_locals),
+                    console_options,
+                )
             processed_exc_info = (exc_type, exc, transported_traceback)
             products = None
         else:
@@ -170,6 +178,7 @@ def wrap_task_in_process(  # noqa: PLR0913
         exc_info=processed_exc_info,
         stdout=captured_stdout,
         stderr=captured_stderr,
+        remote_traceback=remote_traceback,
     )
 
 

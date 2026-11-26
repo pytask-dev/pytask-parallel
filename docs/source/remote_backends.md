@@ -3,6 +3,13 @@
 There are a couple of things you need to know when using backends that launch workers
 remotely, meaning not on your machine.
 
+## Tracebacks
+
+Remote task failures show the paths and line numbers from the worker. When source files
+are available there, the worker sends short excerpts so the traceback can display the
+code even if the same files are unavailable on the main process. If the worker and main
+process use different Rich versions, pytask-parallel displays worker-rendered text.
+
 ## Cross-platform support
 
 Issue: {issue}`102`.

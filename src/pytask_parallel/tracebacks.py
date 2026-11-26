@@ -96,7 +96,8 @@ def _iter_frames(trace: Trace) -> Iterator[Frame]:
     """Visit frames nearest each failure first."""
     for stack in trace.stacks:
         yield from reversed(stack.frames)
-        for exception in stack.exceptions:
+        # Rich 13.8 has no nested stacks for exception groups.
+        for exception in getattr(stack, "exceptions", ()):
             yield from _iter_frames(exception)
 
 

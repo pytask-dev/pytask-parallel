@@ -17,6 +17,7 @@ from pytask import PNode
 from pytask import PTask
 from pytask import PythonNode
 from pytask import Session
+from pytask import TaskOutcome
 from pytask import console
 from pytask import get_marks
 from pytask import hookimpl
@@ -28,6 +29,7 @@ from pytask_parallel.backends import ParallelBackend
 from pytask_parallel.backends import WorkerType
 from pytask_parallel.backends import registry
 from pytask_parallel.backends import set_worker_root
+from pytask_parallel.tracebacks import RemoteExecutionReport
 from pytask_parallel.typing import CarryOverPath
 from pytask_parallel.typing import is_coiled_function
 from pytask_parallel.utils import create_kwargs_for_task
@@ -151,10 +153,7 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
                         if wrapper_result.exc_info is not None:
                             task = _get_task_from_dag(session, task_name)
                             newly_collected_reports.append(
-                                ExecutionReport.from_task_and_exception(
-                                    task,
-                                    wrapper_result.exc_info,
-                                )
+                                _create_failure_report(task, wrapper_result)
                             )
                             running_tasks.pop(task_name)
                             scheduler.done(task_name)
@@ -198,6 +197,21 @@ def pytask_execute_build(session: Session) -> bool | None:  # noqa: C901, PLR091
             i += 1
 
     return True
+
+
+def _create_failure_report(task: PTask, result: WrapperResult) -> ExecutionReport:
+    assert result.exc_info is not None  # noqa: S101
+    remote = result.remote_traceback
+    if remote is not None and (trace := remote.decode()) is not None:
+        exc_type, exc, _ = result.exc_info
+        return RemoteExecutionReport(
+            task=task,
+            outcome=TaskOutcome.FAIL,
+            exc_info=(exc_type, exc, trace),
+            sections=task.report_sections,
+            excerpts=remote.excerpts,
+        )
+    return ExecutionReport.from_task_and_exception(task, result.exc_info)
 
 
 @hookimpl
